@@ -1,5 +1,10 @@
 import { useMemo, useState } from "react";
-import { buildTeamSeasonPlayerRows, sortTeamSeasonRows } from "../utils/teamSeasonStats";
+import { getStaticTeamStatsForSeason } from "../data/seasonTeamStatsOverrides";
+import {
+  buildStaticTeamSeasonRows,
+  buildTeamSeasonPlayerRows,
+  sortTeamSeasonRows,
+} from "../utils/teamSeasonStats";
 
 function fmtPer(n) {
   if (n === 0) return "0";
@@ -23,18 +28,28 @@ export default function TeamStatsPage({
   players,
   attendance,
   stats,
+  seasonSlug,
   seasonLabel: seasonLabelText,
   onBack,
   onOpenPlayer,
 }) {
-  const [sortKey, setSortKey] = useState("involvement");
+  const [sortKey, setSortKey] = useState("gamesPlayed");
+
+  const staticData = useMemo(
+    () => getStaticTeamStatsForSeason(seasonSlug),
+    [seasonSlug]
+  );
 
   const rows = useMemo(() => {
-    const built = buildTeamSeasonPlayerRows(games, players, attendance, stats);
+    const built = staticData
+      ? buildStaticTeamSeasonRows(staticData, players)
+      : buildTeamSeasonPlayerRows(games, players, attendance, stats);
     return sortTeamSeasonRows(built, sortKey);
-  }, [attendance, games, players, sortKey, stats]);
+  }, [attendance, games, players, sortKey, staticData, stats]);
 
-  const totalGames = games?.length ?? 0;
+  const denominator = staticData
+    ? rows[0]?.totalSeasonGames ?? 0
+    : games?.length ?? 0;
 
   return (
     <section className="panel team-stats-panel">
@@ -42,8 +57,18 @@ export default function TeamStatsPage({
         <div>
           <h2>Team stats · {seasonLabelText}</h2>
           <p className="team-stats-sub">
-            {seasonLabelText} totals · {totalGames} scheduled game{totalGames === 1 ? "" : "s"} · GP = games
-            marked <em>playing</em> · % = GP ÷ season games
+            {staticData ? (
+              <>
+                {seasonLabelText} snapshot · {denominator} games played · % = GP ÷ games
+                played · sourced from the LZV team page
+              </>
+            ) : (
+              <>
+                {seasonLabelText} totals · {denominator} scheduled game
+                {denominator === 1 ? "" : "s"} · GP = games marked <em>playing</em> · % = GP ÷
+                season games
+              </>
+            )}
           </p>
         </div>
         <button type="button" className="team-stats-back" onClick={onBack}>
@@ -72,9 +97,17 @@ export default function TeamStatsPage({
             {rows.map((r) => (
               <tr key={r.id}>
                 <td>
-                  <button type="button" className="player-link" onClick={() => onOpenPlayer(r.id)}>
-                    {r.name}
-                  </button>
+                  {r.hasProfile === false ? (
+                    <span className="player-name-plain">{r.name}</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="player-link"
+                      onClick={() => onOpenPlayer(r.id)}
+                    >
+                      {r.name}
+                    </button>
+                  )}
                   {!r.fixed && <span className="guest-badge">Guest</span>}
                 </td>
                 <td>{r.gamesPlayed}</td>

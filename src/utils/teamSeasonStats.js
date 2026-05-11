@@ -49,6 +49,56 @@ export function buildTeamSeasonPlayerRows(games, playersWithRole, attendance, st
   });
 }
 
+function normalizeName(name) {
+  return String(name || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Build rows from a static snapshot, resolving each name to a player id when possible. */
+export function buildStaticTeamSeasonRows(staticData, playersWithRole) {
+  if (!staticData || !Array.isArray(staticData.rows) || staticData.rows.length === 0) {
+    return [];
+  }
+
+  const playerByName = new Map(
+    (playersWithRole || []).map((p) => [normalizeName(p.name), p])
+  );
+
+  const totalGamesPlayed =
+    staticData.totalGamesPlayed && staticData.totalGamesPlayed > 0
+      ? staticData.totalGamesPlayed
+      : Math.max(0, ...staticData.rows.map((r) => Number(r.gamesPlayed) || 0));
+
+  return staticData.rows.map((row) => {
+    const matched = playerByName.get(normalizeName(row.name));
+    const gamesPlayed = Number(row.gamesPlayed) || 0;
+    const goals = Number(row.goals) || 0;
+    const assists = Number(row.assists) || 0;
+    const involvement = goals + assists;
+    const pctPlayed =
+      totalGamesPlayed > 0 ? Math.round((gamesPlayed / totalGamesPlayed) * 100) : 0;
+
+    return {
+      id: matched?.id ?? `static-${normalizeName(row.name)}`,
+      name: matched?.name ?? row.name,
+      fixed: matched ? matched.fixed : true,
+      isGuest: matched ? matched.isGuest : false,
+      hasProfile: Boolean(matched),
+      gamesPlayed,
+      totalSeasonGames: totalGamesPlayed,
+      pctPlayed,
+      goals,
+      assists,
+      goalsPerGame: gamesPlayed > 0 ? goals / gamesPlayed : 0,
+      assistsPerGame: gamesPlayed > 0 ? assists / gamesPlayed : 0,
+      involvement,
+      involvementPerGame: gamesPlayed > 0 ? involvement / gamesPlayed : 0,
+    };
+  });
+}
+
 export function sortTeamSeasonRows(rows, key = "involvement") {
   const copy = [...(rows || [])];
   copy.sort((a, b) => {

@@ -1113,6 +1113,11 @@ input {
   color: #1e3a8a;
 }
 
+.player-name-plain {
+  font-weight: 700;
+  color: #0f172a;
+}
+
 .profile-modal-backdrop {
   position: fixed;
   inset: 0;

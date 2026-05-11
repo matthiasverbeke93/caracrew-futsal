@@ -24,6 +24,18 @@ export function isStatsEditable(game, nowMs = Date.now()) {
   return !isStatsFrozen(game, nowMs);
 }
 
+/** Days remaining before stats freeze; null if not played yet or already frozen. */
+export function getStatsLockDaysLeft(game, nowMs = Date.now()) {
+  if (!game?.game_date) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  if (game.game_date > today) return null;
+  const gameMs = new Date(`${game.game_date}T00:00:00`).getTime();
+  if (Number.isNaN(gameMs)) return null;
+  const days = Math.floor((nowMs - gameMs) / (24 * 60 * 60 * 1000));
+  const left = STATS_FREEZE_DAYS - days;
+  return left > 0 ? left : null;
+}
+
 export function readinessClass(count) {
   if (count <= 5) return "game-card danger";
   if (count === 6) return "game-card warning";

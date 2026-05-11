@@ -2,7 +2,7 @@ import { useState } from "react";
 import { MIN_PLAYERS_WARNING, TEAM_NAME } from "../constants";
 import { getDifficulty } from "../utils/difficulty";
 import { isPlayed } from "../utils/game";
-import { buildWhatsAppShareUrl } from "../utils/formatMatch";
+import { buildWhatsAppNudgeUrl, buildWhatsAppShareUrl } from "../utils/formatMatch";
 import { getHeadToHeadSummary } from "../utils/headToHead";
 import { cleanOpponentName } from "../utils/opponent";
 
@@ -59,6 +59,8 @@ export default function SelectedGamePanel({
   selectedGame,
   counts,
   allGames,
+  fixedPlayers,
+  gameAttendance,
   saveFinalScore,
   canWrite,
 }) {
@@ -67,6 +69,10 @@ export default function SelectedGamePanel({
   const difficulty = getDifficulty(selectedGame.opponent);
   const h2h = getHeadToHeadSummary(allGames, selectedGame.opponent);
   const played = isPlayed(selectedGame);
+
+  const missingFixed = (fixedPlayers || []).filter(
+    (p) => !(gameAttendance || []).some((a) => a.player_id === p.id)
+  );
 
   async function handleShare() {
     const url = new URL(window.location.href);
@@ -103,6 +109,12 @@ export default function SelectedGamePanel({
     window.open(wa, "_blank", "noopener,noreferrer");
   }
 
+  function handleNudge() {
+    const firstNames = missingFixed.map((p) => p.name.split(" ")[0]);
+    const wa = buildWhatsAppNudgeUrl(selectedGame, firstNames);
+    window.open(wa, "_blank", "noopener,noreferrer");
+  }
+
   const resultChip =
     played &&
     selectedGame.home_score != null &&
@@ -128,6 +140,16 @@ export default function SelectedGamePanel({
           <button type="button" className="whatsapp-button" onClick={handleWhatsApp}>
             Send to WhatsApp
           </button>
+          {!played && missingFixed.length > 0 && (
+            <button
+              type="button"
+              className="whatsapp-button nudge"
+              onClick={handleNudge}
+              title={`Nudge ${missingFixed.map((p) => p.name).join(", ")}`}
+            >
+              Nudge missing ({missingFixed.length})
+            </button>
+          )}
         </div>
       </div>
       <p>

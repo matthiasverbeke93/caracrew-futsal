@@ -21,3 +21,10 @@ export function buildWhatsAppShareUrl(game) {
   const line = `Match ${formatMatchDayTime(game)} vs ${cleanOpponentName(game.opponent)} — confirm here: ${shareUrl}`;
   return `https://wa.me/?text=${encodeURIComponent(line)}`;
 }
+
+export function buildWhatsAppNudgeUrl(game, missingNames) {
+  const shareUrl = buildShareGameUrl(game.id);
+  const list = missingNames.join(", ");
+  const line = `Yo, still no answer for ${formatMatchDayTime(game)} vs ${cleanOpponentName(game.opponent)}: ${list} — confirm here: ${shareUrl}`;
+  return `https://wa.me/?text=${encodeURIComponent(line)}`;
+}

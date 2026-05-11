@@ -90,6 +90,39 @@ export default function PlayerProfileModal({
 
     const motmWins = countPlayerMotmWins(playerId, games, motmVotes, now);
 
+    let bestGame = null;
+    for (const r of rows) {
+      if (!r.played) continue;
+      const involvement = (r.goals || 0) + (r.assists || 0);
+      if (involvement <= 0) continue;
+      if (!bestGame || involvement > bestGame.involvement) {
+        bestGame = {
+          involvement,
+          goals: r.goals,
+          assists: r.assists,
+          game: r.game,
+        };
+      }
+    }
+
+    let longestStreak = 0;
+    let runningStreak = 0;
+    for (const r of rows) {
+      if (r.status === "playing") {
+        runningStreak += 1;
+        if (runningStreak > longestStreak) longestStreak = runningStreak;
+      } else {
+        runningStreak = 0;
+      }
+    }
+
+    let currentStreak = 0;
+    for (let i = rows.length - 1; i >= 0; i--) {
+      if (!rows[i].played) continue;
+      if (rows[i].status === "playing") currentStreak += 1;
+      else break;
+    }
+
     return {
       goals,
       assists,
@@ -98,6 +131,9 @@ export default function PlayerProfileModal({
       playing,
       lastFive,
       motmWins,
+      bestGame,
+      longestStreak,
+      currentStreak,
     };
   }, [attendance, games, guestPlayers, motmVotes, now, playerId, stats]);
 
@@ -159,6 +195,31 @@ export default function PlayerProfileModal({
               <div>
                 <strong>{summary.attendancePct != null ? `${summary.attendancePct}%` : "—"}</strong>
                 <span>Playing rate ({summary.playing}/{summary.denom} games)</span>
+              </div>
+            </div>
+
+            <div className="profile-highlights">
+              <div>
+                <span className="profile-highlight-label">Best game</span>
+                {summary.bestGame ? (
+                  <span className="profile-highlight-value">
+                    {summary.bestGame.goals}G {summary.bestGame.assists}A · {summary.bestGame.game.game_date} vs {cleanOpponentName(summary.bestGame.game.opponent)}
+                  </span>
+                ) : (
+                  <span className="profile-highlight-value muted">No goals or assists yet.</span>
+                )}
+              </div>
+              <div>
+                <span className="profile-highlight-label">Longest playing streak</span>
+                <span className="profile-highlight-value">
+                  {summary.longestStreak > 0 ? `${summary.longestStreak} games` : "—"}
+                </span>
+              </div>
+              <div>
+                <span className="profile-highlight-label">Current playing streak</span>
+                <span className="profile-highlight-value">
+                  {summary.currentStreak > 0 ? `${summary.currentStreak} games` : "—"}
+                </span>
               </div>
             </div>
 

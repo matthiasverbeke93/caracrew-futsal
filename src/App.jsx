@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import AttendanceTab from "./components/AttendanceTab";
+import FormChip from "./components/FormChip";
 import GameSidebar from "./components/GameSidebar";
 import PlayerProfileModal from "./components/PlayerProfileModal";
 import SelectedGamePanel from "./components/SelectedGamePanel";
@@ -47,6 +48,7 @@ export default function App() {
     loading,
     motmVotes,
     players,
+    fixedPlayers,
     attendance,
     guestPlayers,
     externalPlayerPool,
@@ -106,7 +108,10 @@ export default function App() {
       <header className="hero">
         <div>
           <div className="pill">Season 25-26</div>
-          <h1>{TEAM_NAME}</h1>
+          <div className="hero-title-row">
+            <h1>{TEAM_NAME}</h1>
+            <FormChip games={games} />
+          </div>
           <p>Attendance, goals and assists tracker</p>
           <a
             className="hero-link"
@@ -160,6 +165,8 @@ export default function App() {
                 selectedGame={selectedGame}
                 counts={counts}
                 allGames={games}
+                fixedPlayers={fixedPlayers}
+                gameAttendance={gameAttendance}
                 saveFinalScore={saveFinalScore}
                 canWrite={canWrite}
               />

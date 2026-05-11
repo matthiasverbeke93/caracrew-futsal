@@ -5,6 +5,7 @@ export default function AccountChip({
   authLoading,
   onSignInClick,
   onSignOut,
+  onAdminClick,
 }) {
   if (authLoading) {
     return <div className="account-chip skeleton" aria-hidden="true">…</div>;
@@ -29,14 +30,26 @@ export default function AccountChip({
         </span>
         <span className={`account-chip-role role-${role.toLowerCase()}`}>{role}</span>
       </div>
-      <button
-        type="button"
-        className="account-chip-signout"
-        onClick={onSignOut}
-        title="Sign out"
-      >
-        Sign out
-      </button>
+      <div className="account-chip-actions">
+        {onAdminClick && (
+          <button
+            type="button"
+            className="account-chip-admin"
+            onClick={onAdminClick}
+            title="Open admin panel"
+          >
+            Admin
+          </button>
+        )}
+        <button
+          type="button"
+          className="account-chip-signout"
+          onClick={onSignOut}
+          title="Sign out"
+        >
+          Sign out
+        </button>
+      </div>
     </div>
   );
 }

@@ -12,6 +12,10 @@ export function useAuthSession() {
   const [currentPlayer, setCurrentPlayer] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [myClaim, setMyClaim] = useState(null);
+  const [claimsTick, setClaimsTick] = useState(0);
+
+  const refreshClaim = useCallback(() => setClaimsTick((n) => n + 1), []);
 
   useEffect(() => {
     let mounted = true;
@@ -37,6 +41,7 @@ export function useAuthSession() {
     async function loadPlayer() {
       if (!user) {
         setCurrentPlayer(null);
+        setMyClaim(null);
         setAuthLoading(false);
         return;
       }
@@ -55,7 +60,30 @@ export function useAuthSession() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, claimsTick]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadClaim() {
+      if (!user) {
+        setMyClaim(null);
+        return;
+      }
+      const { data, error: claimErr } = await supabase
+        .from("player_claims")
+        .select("id, player_id, status, message, created_at, decided_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (cancelled) return;
+      if (claimErr) console.error("loadClaim failed:", claimErr);
+      setMyClaim(data?.[0] || null);
+    }
+    loadClaim();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, claimsTick]);
 
   const signIn = useCallback(async (email, password) => {
     setError(null);
@@ -88,6 +116,33 @@ export function useAuthSession() {
     await supabase.auth.signOut();
   }, []);
 
+  const submitClaim = useCallback(
+    async (playerId, message) => {
+      if (!user) return { error: "Sign in first" };
+      const { error: insertErr } = await supabase.from("player_claims").insert({
+        user_id: user.id,
+        player_id: playerId,
+        message: message?.trim() || null,
+        status: "pending",
+      });
+      if (insertErr) return { error: insertErr.message };
+      refreshClaim();
+      return {};
+    },
+    [user, refreshClaim]
+  );
+
+  const cancelClaim = useCallback(async () => {
+    if (!myClaim || myClaim.status !== "pending") return { error: "No pending claim" };
+    const { error: updateErr } = await supabase
+      .from("player_claims")
+      .update({ status: "cancelled", decided_at: new Date().toISOString() })
+      .eq("id", myClaim.id);
+    if (updateErr) return { error: updateErr.message };
+    refreshClaim();
+    return {};
+  }, [myClaim, refreshClaim]);
+
   const isAdmin = !!currentPlayer?.is_admin;
   const isLinked = !!currentPlayer;
   const isSignedIn = !!user;
@@ -101,9 +156,13 @@ export function useAuthSession() {
       isSignedIn,
       authLoading,
       error,
+      myClaim,
       signIn,
       signUp,
       signOut,
+      submitClaim,
+      cancelClaim,
+      refreshClaim,
     }),
     [
       user,
@@ -113,9 +172,13 @@ export function useAuthSession() {
       isSignedIn,
       authLoading,
       error,
+      myClaim,
       signIn,
       signUp,
       signOut,
+      submitClaim,
+      cancelClaim,
+      refreshClaim,
     ]
   );
 }

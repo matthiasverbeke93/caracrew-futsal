@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AccountChip from "./components/AccountChip";
+import AdminPanel from "./components/AdminPanel";
 import AttendanceTab from "./components/AttendanceTab";
 import AuthModal from "./components/AuthModal";
+import ClaimPlayerModal from "./components/ClaimPlayerModal";
 import FormChip from "./components/FormChip";
 import GameSidebar from "./components/GameSidebar";
+import MyNextGameCard from "./components/MyNextGameCard";
 import PlayerProfileModal from "./components/PlayerProfileModal";
 import SelectedGamePanel from "./components/SelectedGamePanel";
 import StatsTab from "./components/StatsTab";
@@ -12,6 +15,7 @@ import Tabs from "./components/Tabs";
 import { TEAM_NAME } from "./constants";
 import { useAuthSession } from "./hooks/useAuthSession";
 import { useFutsalData } from "./hooks/useFutsalData";
+import { isPlayed } from "./utils/game";
 import {
   DEFAULT_SEASON_SLUG,
   isSeasonSlug,
@@ -27,11 +31,17 @@ export default function App() {
     isAdmin,
     isSignedIn,
     authLoading,
+    myClaim,
     signIn,
     signUp,
     signOut,
+    submitClaim,
+    cancelClaim,
+    refreshClaim,
   } = useAuthSession();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [claimModalOpen, setClaimModalOpen] = useState(false);
+  const [adminPanelOpen, setAdminPanelOpen] = useState(false);
 
   const [profilePlayerId, setProfilePlayerId] = useState(() =>
     new URLSearchParams(window.location.search).get("player")
@@ -155,6 +165,23 @@ export default function App() {
   const canManageGame = isSignedIn && isAdmin;
   const canVote = isSignedIn;
 
+  const claimedPlayerName = useMemo(() => {
+    if (!myClaim) return null;
+    return players.find((p) => p.id === myClaim.player_id)?.name || myClaim.player_id;
+  }, [myClaim, players]);
+
+  const nextUpcomingGame = useMemo(() => {
+    if (!games?.length) return null;
+    return [...games]
+      .sort((a, b) => (a.game_date || "").localeCompare(b.game_date || ""))
+      .find((g) => !isPlayed(g));
+  }, [games]);
+
+  const showNextGameCard =
+    !!currentPlayer &&
+    !!nextUpcomingGame &&
+    selectedGameId !== nextUpcomingGame.id;
+
   return (
     <div className="app">
       <header className="hero">
@@ -202,14 +229,69 @@ export default function App() {
             authLoading={authLoading}
             onSignInClick={() => setAuthModalOpen(true)}
             onSignOut={signOut}
+            onAdminClick={isAdmin ? () => setAdminPanelOpen(true) : null}
           />
         </div>
       </header>
 
       {isSignedIn && !currentPlayer && (
-        <section className="auth-banner">
-          You're signed in but not linked to a player yet. Send your full name to the admin so they
-          can link your account.
+        <section className={`auth-banner claim-banner status-${myClaim?.status || "none"}`}>
+          {!myClaim && (
+            <>
+              <span>You're signed in but not linked to a player yet.</span>
+              <button
+                type="button"
+                className="auth-banner-btn"
+                onClick={() => setClaimModalOpen(true)}
+              >
+                Claim your player
+              </button>
+            </>
+          )}
+          {myClaim?.status === "pending" && (
+            <>
+              <span>
+                Claim for <strong>{claimedPlayerName}</strong> is awaiting admin approval.
+              </span>
+              <button
+                type="button"
+                className="auth-banner-btn ghost"
+                onClick={async () => {
+                  const res = await cancelClaim();
+                  if (res?.error) console.error(res.error);
+                }}
+              >
+                Cancel
+              </button>
+            </>
+          )}
+          {myClaim?.status === "rejected" && (
+            <>
+              <span>
+                Your claim for <strong>{claimedPlayerName}</strong> was rejected.
+                {myClaim.message ? ` (${myClaim.message})` : ""}
+              </span>
+              <button
+                type="button"
+                className="auth-banner-btn"
+                onClick={() => setClaimModalOpen(true)}
+              >
+                Try another
+              </button>
+            </>
+          )}
+          {myClaim?.status === "cancelled" && (
+            <>
+              <span>You cancelled your previous claim.</span>
+              <button
+                type="button"
+                className="auth-banner-btn"
+                onClick={() => setClaimModalOpen(true)}
+              >
+                Claim again
+              </button>
+            </>
+          )}
         </section>
       )}
 
@@ -254,6 +336,18 @@ export default function App() {
               seasonLabel={seasonLabel(seasonSlug)}
               onBack={closeTeamStats}
               onOpenPlayer={openPlayer}
+            />
+          )}
+
+          {!loading && !teamStatsOpen && showNextGameCard && (
+            <MyNextGameCard
+              games={games}
+              attendance={attendance}
+              currentPlayer={currentPlayer}
+              onJumpToGame={(id) => setSelectedGameId(id)}
+              onMarkAttendance={(gameId, status) =>
+                saveAttendance(currentPlayer.id, status, gameId)
+              }
             />
           )}
 
@@ -352,6 +446,20 @@ export default function App() {
         onClose={() => setAuthModalOpen(false)}
         signIn={signIn}
         signUp={signUp}
+      />
+
+      <ClaimPlayerModal
+        open={claimModalOpen}
+        onClose={() => setClaimModalOpen(false)}
+        onSubmit={submitClaim}
+      />
+
+      <AdminPanel
+        open={adminPanelOpen}
+        onClose={() => setAdminPanelOpen(false)}
+        onChanged={() => {
+          refreshClaim();
+        }}
       />
     </div>
   );

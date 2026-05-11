@@ -290,10 +290,11 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     return isAdmin || (currentPlayerId && playerId === currentPlayerId);
   }
 
-  async function saveAttendance(playerId, status) {
-    const gameId = selectedGameId;
+  async function saveAttendance(playerId, status, gameIdArg) {
+    const gameId = gameIdArg || selectedGameId;
     if (!gameId) return;
-    if (!isAttendanceEditable(selectedGame)) return;
+    const game = gameIdArg ? games.find((g) => g.id === gameIdArg) : selectedGame;
+    if (!isAttendanceEditable(game)) return;
     if (!canEditAttendanceFor(playerId)) return;
     const updated_at = new Date().toISOString();
     const snapshot = attendance;

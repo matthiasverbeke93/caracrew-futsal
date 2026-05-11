@@ -18,7 +18,6 @@ npm run dev
 ```
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
-VITE_REQUIRE_AUTH_FOR_WRITES=false   # optional
 ```
 
 ## Scripts
@@ -61,33 +60,41 @@ Email + password auth via Supabase. Reads stay public; writes are scoped:
 ### One-time setup
 
 1. **Enable email auth in Supabase** (Authentication → Providers → Email). For a friction-free family team, you can disable email confirmation while you onboard, then re-enable.
-2. **Apply the migration**:
+2. **Apply the migrations** in order (idempotent):
    ```sql
-   -- in the Supabase SQL editor
    \i supabase/auth_ownership.sql
+   \i supabase/auth_claims.sql
    ```
-   This adds `players.auth_user_id` + `players.is_admin`, helper functions, and RLS policies.
+   `auth_ownership.sql` adds `players.auth_user_id` + `players.is_admin`, helper functions, and RLS policies. `auth_claims.sql` adds the `player_claims` table, RLS, and admin RPC functions used by the in-app **Admin panel**.
 
-### Onboarding a player
+### Onboarding a player (self-service)
 
-1. They click **Sign in → Create an account** in the hero and sign up with their email.
-2. Run in the Supabase SQL editor (replace placeholders):
-   ```sql
-   update players
-      set auth_user_id = (
-        select id from auth.users where email = lower('player@example.com')
-      )
-    where lower(name) = lower('Their Full Name');
-   ```
-3. They refresh — the hero chip should now show their name + “Player” badge.
+1. Player clicks **Sign in → Create an account** in the hero and signs up with their email.
+2. They see a yellow **"Claim your player"** banner. Clicking it opens a roster picker — they pick their name and submit.
+3. Admin opens the **Admin panel** (chip in the hero) and sees the pending claim. One click on **Approve** links the account; **Approve + admin** also grants admin.
 
-### Promoting an admin
+The player refreshes — the hero chip shows their name + role badge.
+
+### Manual linking / promotion (fallback)
+
+Everything is also doable directly in SQL when needed:
 
 ```sql
+-- Link an account to a player manually
+update players
+   set auth_user_id = (select id from auth.users where email = lower('player@example.com'))
+ where lower(name) = lower('Their Full Name');
+
+-- Promote yourself (or anyone) to admin
 update players set is_admin = true where lower(name) = lower('matthias verbeke');
 ```
 
-You'll see “Admin” on the hero chip and admin-only controls become enabled.
+### Admin panel
+
+The hero shows an **Admin** button for users with `is_admin = true`. It opens a modal with three tabs:
+- **Claims** — pending self-service claims with Approve / Approve + admin / Reject.
+- **Players** — full roster with quick **Make admin / Remove admin / Unlink / Link to account…** actions.
+- **Accounts** — every auth user, highlighting those not linked yet.
 
 ## SQL
 All schema migrations live under `supabase/` and are safe to re-run.

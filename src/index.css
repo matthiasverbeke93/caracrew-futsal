@@ -356,6 +356,29 @@ button {
   font-size: 12px;
 }
 
+.badge-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.error-box {
+  margin-top: 8px;
+  margin-bottom: 14px;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 13px;
+  display: grid;
+  gap: 4px;
+}
+
 .content {
   min-width: 0;
 }

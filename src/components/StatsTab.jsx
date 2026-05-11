@@ -31,16 +31,44 @@ export default function StatsTab({
 
   const currentGoals = gameStats.reduce((sum, row) => sum + (row.goals || 0), 0);
   const currentAssists = gameStats.reduce((sum, row) => sum + (row.assists || 0), 0);
-  const goalsMissing =
-    selectedGameTotals.goals === null || currentGoals < selectedGameTotals.goals;
+  const goalsTarget = selectedGameTotals.goals;
+  const assistsTarget = selectedGameTotals.assists;
+  const goalsOverTarget = goalsTarget !== null && goalsTarget !== undefined && currentGoals > goalsTarget;
+  const assistsOverTarget =
+    assistsTarget !== null && assistsTarget !== undefined && currentAssists > assistsTarget;
+  const goalsMissing = !goalsOverTarget && (goalsTarget === null || currentGoals < goalsTarget);
   const assistsMissing =
-    selectedGameTotals.assists === null || currentAssists < selectedGameTotals.assists;
+    !assistsOverTarget && (assistsTarget === null || currentAssists < assistsTarget);
+  const goalsBadgeClass = goalsOverTarget
+    ? "badge-error"
+    : goalsMissing
+    ? "badge-warning"
+    : "badge-ok";
+  const assistsBadgeClass = assistsOverTarget
+    ? "badge-error"
+    : assistsMissing
+    ? "badge-warning"
+    : "badge-ok";
 
   return (
     <section className="panel">
       <h2>Goals and assists</h2>
       {lockedForFutureGame && (
         <div className="warning-box">Stats can only be entered for games played today or earlier.</div>
+      )}
+      {(goalsOverTarget || assistsOverTarget) && (
+        <div className="error-box">
+          {goalsOverTarget && (
+            <div>
+              Per-player goals ({currentGoals}) exceed the total goals target ({goalsTarget}).
+            </div>
+          )}
+          {assistsOverTarget && (
+            <div>
+              Per-player assists ({currentAssists}) exceed the total assists target ({assistsTarget}).
+            </div>
+          )}
+        </div>
       )}
       <div className="tally-box">
         <div className="tally-row">
@@ -59,8 +87,8 @@ export default function StatsTab({
               }
             }}
           />
-          <span className={goalsMissing ? "badge-warning" : "badge-ok"}>
-            {currentGoals} / {selectedGameTotals.goals ?? "?"}
+          <span className={goalsBadgeClass}>
+            {currentGoals} / {goalsTarget ?? "?"}
           </span>
         </div>
         <div className="tally-row">
@@ -79,8 +107,8 @@ export default function StatsTab({
               }
             }}
           />
-          <span className={assistsMissing ? "badge-warning" : "badge-ok"}>
-            {currentAssists} / {selectedGameTotals.assists ?? "?"}
+          <span className={assistsBadgeClass}>
+            {currentAssists} / {assistsTarget ?? "?"}
           </span>
         </div>
       </div>

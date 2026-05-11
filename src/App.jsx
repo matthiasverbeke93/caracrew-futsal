@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AttendanceTab from "./components/AttendanceTab";
 import GameSidebar from "./components/GameSidebar";
+import PlayerProfileModal from "./components/PlayerProfileModal";
 import SelectedGamePanel from "./components/SelectedGamePanel";
 import StatsTab from "./components/StatsTab";
 import Tabs from "./components/Tabs";
@@ -13,8 +14,39 @@ export default function App() {
   const requireAuthForWrites =
     import.meta.env.VITE_REQUIRE_AUTH_FOR_WRITES === "true";
 
+  const [profilePlayerId, setProfilePlayerId] = useState(() =>
+    new URLSearchParams(window.location.search).get("player")
+  );
+
+  const openPlayer = useCallback((id) => {
+    if (!id) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("player", id);
+    window.history.pushState({}, "", url);
+    setProfilePlayerId(id);
+  }, []);
+
+  const closePlayer = useCallback(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("player");
+    window.history.pushState({}, "", url);
+    setProfilePlayerId(null);
+  }, []);
+
+  useEffect(() => {
+    const onPop = () => {
+      setProfilePlayerId(new URLSearchParams(window.location.search).get("player"));
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   const {
+    games,
     filteredGames,
+    loading,
+    motmVotes,
+    players,
     attendance,
     guestPlayers,
     externalPlayerPool,
@@ -34,6 +66,7 @@ export default function App() {
     allGamePlayers,
     gameAttendance,
     gameStats,
+    stats,
     selectedGameTotals,
     counts,
     saveAttendance,
@@ -41,6 +74,8 @@ export default function App() {
     saveStat,
     saveGuestStat,
     saveGameTally,
+    saveFinalScore,
+    submitMotmVote,
     addGuestPlayer,
     removeGuestPlayer,
   } = useFutsalData();
@@ -102,14 +137,31 @@ export default function App() {
           onFiltersChange={setGameFilters}
           selectedGameId={selectedGameId}
           onSelectGame={setSelectedGameId}
+          loading={loading}
         />
 
         <section className="content">
-          {selectedGame && (
+          {loading && (
+            <div className="content-skeleton panel" aria-busy="true">
+              <div className="skeleton-line lg" />
+              <div className="skeleton-line" />
+              <div className="skeleton-line" />
+              <div className="skeleton-grid">
+                <div className="skeleton-block" />
+                <div className="skeleton-block" />
+                <div className="skeleton-block" />
+              </div>
+            </div>
+          )}
+
+          {!loading && selectedGame && (
             <>
               <SelectedGamePanel
                 selectedGame={selectedGame}
                 counts={counts}
+                allGames={games}
+                saveFinalScore={saveFinalScore}
+                canWrite={canWrite}
               />
 
               <Tabs activeTab={tab} onTabChange={setTab} />
@@ -127,12 +179,14 @@ export default function App() {
                   saveGuestAttendance={saveGuestAttendance}
                   saveAttendance={saveAttendance}
                   removeGuestPlayer={removeGuestPlayer}
+                  onOpenPlayer={openPlayer}
                   canWrite={canWrite}
                 />
               )}
 
               {tab === "stats" && (
                 <StatsTab
+                  key={selectedGame.id}
                   allGamePlayers={allGamePlayers}
                   selectedGame={selectedGame}
                   gameStats={gameStats}
@@ -140,13 +194,35 @@ export default function App() {
                   saveGuestStat={saveGuestStat}
                   saveStat={saveStat}
                   saveGameTally={saveGameTally}
+                  motmVotes={motmVotes}
+                  submitMotmVote={submitMotmVote}
+                  onOpenPlayer={openPlayer}
                   canWrite={canWrite}
                 />
               )}
             </>
           )}
+
+          {!loading && !selectedGame && (
+            <div className="panel content-empty">
+              <p>No game selected yet. Choose a match in the sidebar when games load.</p>
+            </div>
+          )}
         </section>
       </main>
+
+      {profilePlayerId && (
+        <PlayerProfileModal
+          playerId={profilePlayerId}
+          onClose={closePlayer}
+          games={games}
+          attendance={attendance}
+          stats={stats}
+          guestPlayers={guestPlayers}
+          players={players}
+          motmVotes={motmVotes}
+        />
+      )}
     </div>
   );
 }

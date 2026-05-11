@@ -1,5 +1,12 @@
-import { useEffect, useState } from "react";
-import { isStatsEditable } from "../utils/game";
+import { useEffect, useMemo, useState } from "react";
+import { isPlayed, isStatsEditable } from "../utils/game";
+import {
+  getMotmLeaderIds,
+  getMotmVotingEnd,
+  getMotmVotingStart,
+  getVoterKey,
+  isMotmVotingOpen,
+} from "../utils/motm";
 
 export default function StatsTab({
   allGamePlayers,
@@ -9,25 +16,30 @@ export default function StatsTab({
   saveGuestStat,
   saveStat,
   saveGameTally,
+  motmVotes,
+  submitMotmVote,
+  onOpenPlayer,
   canWrite,
 }) {
   const editable = canWrite && isStatsEditable(selectedGame);
   const lockedForFutureGame = !isStatsEditable(selectedGame);
-  const [goalsInput, setGoalsInput] = useState("");
-  const [assistsInput, setAssistsInput] = useState("");
+  const [goalsInput, setGoalsInput] = useState(() =>
+    selectedGameTotals.goals === null || selectedGameTotals.goals === undefined
+      ? ""
+      : String(selectedGameTotals.goals)
+  );
+  const [assistsInput, setAssistsInput] = useState(() =>
+    selectedGameTotals.assists === null || selectedGameTotals.assists === undefined
+      ? ""
+      : String(selectedGameTotals.assists)
+  );
+  const [motmMessage, setMotmMessage] = useState(null);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    setGoalsInput(
-      selectedGameTotals.goals === null || selectedGameTotals.goals === undefined
-        ? ""
-        : String(selectedGameTotals.goals)
-    );
-    setAssistsInput(
-      selectedGameTotals.assists === null || selectedGameTotals.assists === undefined
-        ? ""
-        : String(selectedGameTotals.assists)
-    );
-  }, [selectedGameTotals.assists, selectedGameTotals.goals]);
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   const currentGoals = gameStats.reduce((sum, row) => sum + (row.goals || 0), 0);
   const currentAssists = gameStats.reduce((sum, row) => sum + (row.assists || 0), 0);
@@ -42,13 +54,49 @@ export default function StatsTab({
   const goalsBadgeClass = goalsOverTarget
     ? "badge-error"
     : goalsMissing
-    ? "badge-warning"
-    : "badge-ok";
+      ? "badge-warning"
+      : "badge-ok";
   const assistsBadgeClass = assistsOverTarget
     ? "badge-error"
     : assistsMissing
-    ? "badge-warning"
-    : "badge-ok";
+      ? "badge-warning"
+      : "badge-ok";
+
+  const motmEnd = getMotmVotingEnd(selectedGame);
+  const motmStart = getMotmVotingStart(selectedGame);
+  const votingOpen = isMotmVotingOpen(selectedGame, now);
+  const votingFinished = isPlayed(selectedGame) && motmEnd && now > motmEnd.getTime();
+  const votingPending =
+    isPlayed(selectedGame) && motmStart && motmEnd && now < motmStart.getTime();
+
+  const motmVotesForGame = useMemo(
+    () => motmVotes.filter((v) => v.game_id === selectedGame.id),
+    [motmVotes, selectedGame.id]
+  );
+
+  const voterKey = useMemo(() => getVoterKey(), []);
+  const myNomineeId = motmVotesForGame.find((v) => v.voter_key === voterKey)?.nominee_id;
+
+  const motmCounts = useMemo(() => {
+    const m = {};
+    for (const v of motmVotesForGame) {
+      m[v.nominee_id] = (m[v.nominee_id] || 0) + 1;
+    }
+    return m;
+  }, [motmVotesForGame]);
+
+  const motmLeaders = useMemo(
+    () => getMotmLeaderIds(selectedGame.id, motmVotes),
+    [motmVotes, selectedGame.id]
+  );
+
+  const showMotmBlock = isPlayed(selectedGame) && !!motmEnd;
+
+  async function handleMotmVote(nomineeId) {
+    setMotmMessage(null);
+    const res = await submitMotmVote(nomineeId);
+    if (res.error) setMotmMessage(res.error);
+  }
 
   return (
     <section className="panel">
@@ -113,6 +161,67 @@ export default function StatsTab({
         </div>
       </div>
 
+      {showMotmBlock && (
+        <div className="motm-panel">
+          <h3>Player of the match</h3>
+          {votingPending && (
+            <p className="motm-hint">
+              MOTM voting opens about 2 hours after kickoff, then stays open for 24 hours.
+            </p>
+          )}
+          {votingOpen && (
+            <p className="motm-hint">One vote per device — tap again to change your pick.</p>
+          )}
+          {votingFinished && motmLeaders.length > 0 && (
+            <p className="motm-result">
+              Winner{motmLeaders.length > 1 ? "s (tie)" : ""}:{" "}
+              {motmLeaders
+                .map((id) => {
+                  const p = allGamePlayers.find((x) => x.id === id);
+                  return p?.name || "Unknown";
+                })
+                .join(" · ")}
+            </p>
+          )}
+          {votingFinished && motmLeaders.length === 0 && (
+            <p className="motm-hint">No votes recorded for this game.</p>
+          )}
+          {motmMessage && <p className="error-inline">{motmMessage}</p>}
+          {votingOpen && canWrite && (
+            <div className="motm-vote-grid">
+              {allGamePlayers.map((player) => (
+                <button
+                  key={player.id}
+                  type="button"
+                  className={myNomineeId === player.id ? "motm-vote active" : "motm-vote"}
+                  onClick={() => handleMotmVote(player.id)}
+                >
+                  <span>{player.name}</span>
+                  <span className="motm-count">{motmCounts[player.id] || 0}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {votingOpen && !canWrite && (
+            <p className="motm-hint">Log in to vote (if your deployment requires auth for writes).</p>
+          )}
+          {!votingOpen && votingFinished && motmVotesForGame.length > 0 && (
+            <ul className="motm-tally">
+              {Object.entries(motmCounts)
+                .sort((a, b) => b[1] - a[1])
+                .map(([id, n]) => {
+                  const p = allGamePlayers.find((x) => x.id === id);
+                  return (
+                    <li key={id}>
+                      {p?.name || id}: {n}
+                    </li>
+                  );
+                })}
+            </ul>
+          )}
+        </div>
+      )}
+
       <table>
         <thead>
           <tr>
@@ -131,7 +240,9 @@ export default function StatsTab({
             return (
               <tr key={player.id}>
                 <td>
-                  {player.name}
+                  <button type="button" className="player-link" onClick={() => onOpenPlayer(player.id)}>
+                    {player.name}
+                  </button>
                   {player.type !== "fixed" && <span className="guest-badge">Guest</span>}
                 </td>
                 <td>

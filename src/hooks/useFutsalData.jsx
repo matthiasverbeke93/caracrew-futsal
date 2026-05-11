@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { isPlayed } from "../utils/game";
+import { getVoterKey } from "../utils/motm";
 
 const FORCED_GUEST_NAMES = new Set(["bart moyens"]);
 const FORCED_FIXED_NAMES = new Set([
@@ -26,51 +27,63 @@ export function useFutsalData() {
   const [newGuestLastName, setNewGuestLastName] = useState("");
   const [gameFilters, setGameFilters] = useState([]);
   const [tallyError, setTallyError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [motmVotes, setMotmVotes] = useState([]);
 
   useEffect(() => {
     loadAll();
   }, []);
 
   async function loadAll() {
-    const [gamesRes, playersRes, attendanceRes, statsRes, guestsRes] =
-      await Promise.all([
-        supabase.from("games").select("*").order("game_date", { ascending: true }),
-        supabase.from("players").select("*").order("fixed", { ascending: false }),
-        supabase.from("attendance").select("*"),
-        supabase.from("player_stats").select("*"),
-        supabase.from("guest_players").select("*"),
-      ]);
+    setLoading(true);
+    try {
+      const [gamesRes, playersRes, attendanceRes, statsRes, guestsRes, motmRes] =
+        await Promise.all([
+          supabase.from("games").select("*").order("game_date", { ascending: true }),
+          supabase.from("players").select("*").order("fixed", { ascending: false }),
+          supabase.from("attendance").select("*"),
+          supabase.from("player_stats").select("*"),
+          supabase.from("guest_players").select("*"),
+          supabase.from("motm_votes").select("*"),
+        ]);
 
-    if (gamesRes.error) console.error(gamesRes.error);
-    if (playersRes.error) console.error(playersRes.error);
-    if (attendanceRes.error) console.error(attendanceRes.error);
-    if (statsRes.error) console.error(statsRes.error);
-    if (guestsRes.error) console.error(guestsRes.error);
+      if (gamesRes.error) console.error(gamesRes.error);
+      if (playersRes.error) console.error(playersRes.error);
+      if (attendanceRes.error) console.error(attendanceRes.error);
+      if (statsRes.error) console.error(statsRes.error);
+      if (guestsRes.error) console.error(guestsRes.error);
+      if (motmRes.error) console.error(motmRes.error);
 
-    setGames(gamesRes.data || []);
-    setPlayers(playersRes.data || []);
-    setAttendance(attendanceRes.data || []);
-    setStats(statsRes.data || []);
-    setGuestPlayers(guestsRes.data || []);
+      setGames(gamesRes.data || []);
+      setPlayers(playersRes.data || []);
+      setAttendance(attendanceRes.data || []);
+      setStats(statsRes.data || []);
+      setGuestPlayers(guestsRes.data || []);
+      setMotmVotes(motmRes.data || []);
 
-    const nextGames = gamesRes.data || [];
-    const firstUpcoming = nextGames.find((g) => !isPlayed(g));
-    const urlGameId = new URLSearchParams(window.location.search).get("game");
-    const gameFromUrl = urlGameId && nextGames.find((g) => g.id === urlGameId);
+      const nextGames = gamesRes.data || [];
+      const firstUpcoming = nextGames.find((g) => !isPlayed(g));
+      const urlGameId = new URLSearchParams(window.location.search).get("game");
+      const gameFromUrl = urlGameId && nextGames.find((g) => g.id === urlGameId);
 
-    setSelectedGameId((prevSelected) => {
-      if (gameFromUrl) return gameFromUrl.id;
-      if (prevSelected && nextGames.some((game) => game.id === prevSelected)) {
-        return prevSelected;
-      }
-      return firstUpcoming?.id || nextGames[0]?.id || null;
-    });
+      setSelectedGameId((prevSelected) => {
+        if (gameFromUrl) return gameFromUrl.id;
+        if (prevSelected && nextGames.some((game) => game.id === prevSelected)) {
+          return prevSelected;
+        }
+        return firstUpcoming?.id || nextGames[0]?.id || null;
+      });
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
     if (!selectedGameId) return;
     const url = new URL(window.location.href);
+    const player = url.searchParams.get("player");
     url.searchParams.set("game", selectedGameId);
+    if (player) url.searchParams.set("player", player);
     window.history.replaceState({}, "", url);
   }, [selectedGameId]);
 
@@ -204,49 +217,100 @@ export function useFutsalData() {
   }, [gameFilters, gameStatusById, games]);
 
   async function saveAttendance(playerId, status) {
-    await supabase.from("attendance").upsert({
-      game_id: selectedGameId,
+    const gameId = selectedGameId;
+    if (!gameId) return;
+    const updated_at = new Date().toISOString();
+    const snapshot = attendance;
+    setAttendance((prev) => {
+      const idx = prev.findIndex((a) => a.game_id === gameId && a.player_id === playerId);
+      const row = { game_id: gameId, player_id: playerId, status, updated_at };
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = row;
+        return next;
+      }
+      return [...prev, row];
+    });
+    const { error } = await supabase.from("attendance").upsert({
+      game_id: gameId,
       player_id: playerId,
       status,
-      updated_at: new Date().toISOString(),
+      updated_at,
     });
-    await loadAll();
+    if (error) {
+      console.error(error);
+      setAttendance(snapshot);
+      loadAll();
+    }
   }
 
   async function saveGuestAttendance(playerId, status) {
-    await supabase
+    const updated_at = new Date().toISOString();
+    const snapshot = guestPlayers;
+    setGuestPlayers((prev) =>
+      prev.map((g) => (g.id === playerId ? { ...g, status, updated_at } : g))
+    );
+    const { error } = await supabase
       .from("guest_players")
-      .update({
-        status,
-        updated_at: new Date().toISOString(),
-      })
+      .update({ status, updated_at })
       .eq("id", playerId);
-    await loadAll();
+    if (error) {
+      console.error(error);
+      setGuestPlayers(snapshot);
+      loadAll();
+    }
   }
 
   async function saveStat(playerId, field, value) {
+    const gameId = selectedGameId;
+    if (!gameId) return;
     const existing = gameStats.find((s) => s.player_id === playerId);
-    await supabase.from("player_stats").upsert({
-      game_id: selectedGameId,
-      player_id: playerId,
-      goals: field === "goals" ? Number(value || 0) : existing?.goals || 0,
-      assists: field === "assists" ? Number(value || 0) : existing?.assists || 0,
-      updated_at: new Date().toISOString(),
+    const goals = field === "goals" ? Number(value || 0) : existing?.goals || 0;
+    const assists = field === "assists" ? Number(value || 0) : existing?.assists || 0;
+    const updated_at = new Date().toISOString();
+    const snapshot = stats;
+    setStats((prev) => {
+      const idx = prev.findIndex((s) => s.game_id === gameId && s.player_id === playerId);
+      const row = { game_id: gameId, player_id: playerId, goals, assists, updated_at };
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = row;
+        return next;
+      }
+      return [...prev, row];
     });
-    await loadAll();
+    const { error } = await supabase.from("player_stats").upsert({
+      game_id: gameId,
+      player_id: playerId,
+      goals,
+      assists,
+      updated_at,
+    });
+    if (error) {
+      console.error(error);
+      setStats(snapshot);
+      loadAll();
+    }
   }
 
   async function saveGuestStat(playerId, field, value) {
     const existing = selectedGameGuests.find((g) => g.id === playerId);
-    await supabase
+    const goals = field === "goals" ? Number(value || 0) : existing?.goals || 0;
+    const assists = field === "assists" ? Number(value || 0) : existing?.assists || 0;
+    const updated_at = new Date().toISOString();
+    const snapshot = guestPlayers;
+    setGuestPlayers((prev) =>
+      prev.map((g) => (g.id === playerId ? { ...g, goals, assists, updated_at } : g))
+    );
+    const { error } = await supabase
       .from("guest_players")
-      .update({
-        goals: field === "goals" ? Number(value || 0) : existing?.goals || 0,
-        assists: field === "assists" ? Number(value || 0) : existing?.assists || 0,
-        updated_at: new Date().toISOString(),
-      })
+      .update({ goals, assists, updated_at })
       .eq("id", playerId);
-    await loadAll();
+    if (error) {
+      console.error(error);
+      setGuestPlayers(snapshot);
+      loadAll();
+    }
   }
 
   async function addGuestPlayer() {
@@ -288,6 +352,18 @@ export function useFutsalData() {
         ? { expected_goals: numericValue }
         : { expected_assists: numericValue };
 
+    const snapshot = games;
+    setGames((prev) =>
+      prev.map((g) =>
+        g.id === selectedGameId
+          ? {
+              ...g,
+              ...(field === "goals" ? { expected_goals: numericValue } : { expected_assists: numericValue }),
+            }
+          : g
+      )
+    );
+
     const { data, error } = await supabase
       .from("games")
       .update(payload)
@@ -296,6 +372,7 @@ export function useFutsalData() {
 
     if (error) {
       console.error("saveGameTally failed:", error);
+      setGames(snapshot);
       setTallyError(
         error.message?.includes("expected_goals") || error.message?.includes("expected_assists")
           ? "Tally columns are missing in the database. Run the games_expected_totals.sql migration."
@@ -305,22 +382,79 @@ export function useFutsalData() {
     }
 
     if (!data || data.length === 0) {
+      setGames(snapshot);
       setTallyError("Tally update affected no rows. Check Supabase RLS policies for the games table.");
       return;
     }
 
     setTallyError(null);
-    await loadAll();
+  }
+
+  async function saveFinalScore(homeScore, awayScore) {
+    const gid = selectedGameId;
+    if (!gid) return;
+    const hs = homeScore === "" || homeScore === undefined ? null : Number(homeScore);
+    const as = awayScore === "" || awayScore === undefined ? null : Number(awayScore);
+    const snapshot = games;
+    setGames((prev) =>
+      prev.map((g) => (g.id === gid ? { ...g, home_score: hs, away_score: as } : g))
+    );
+    const { data, error } = await supabase
+      .from("games")
+      .update({ home_score: hs, away_score: as })
+      .eq("id", gid)
+      .select();
+    if (error || !data?.length) {
+      console.error(error);
+      setGames(snapshot);
+      loadAll();
+    }
+  }
+
+  async function submitMotmVote(nomineeId) {
+    const gid = selectedGameId;
+    if (!gid) return { error: "No game selected" };
+    const voterKey = getVoterKey();
+    const id = `motm-${gid}-${voterKey}`;
+    const created_at = new Date().toISOString();
+    const snapshot = motmVotes;
+    setMotmVotes((prev) => {
+      const rest = prev.filter((v) => !(v.game_id === gid && v.voter_key === voterKey));
+      return [...rest, { id, game_id: gid, nominee_id: nomineeId, voter_key: voterKey, created_at }];
+    });
+    const { error } = await supabase.from("motm_votes").upsert(
+      {
+        id,
+        game_id: gid,
+        nominee_id: nomineeId,
+        voter_key: voterKey,
+      },
+      { onConflict: "game_id,voter_key" }
+    );
+    if (error) {
+      console.error(error);
+      setMotmVotes(snapshot);
+      return { error: error.message || "Vote failed" };
+    }
+    return {};
   }
 
   async function removeGuestPlayer(playerId) {
-    await supabase.from("guest_players").delete().eq("id", playerId);
-    await loadAll();
+    const snapshot = guestPlayers;
+    setGuestPlayers((prev) => prev.filter((g) => g.id !== playerId));
+    const { error } = await supabase.from("guest_players").delete().eq("id", playerId);
+    if (error) {
+      console.error(error);
+      setGuestPlayers(snapshot);
+      loadAll();
+    }
   }
 
   return {
     games,
     filteredGames,
+    loading,
+    motmVotes,
     players: playersWithRole,
     fixedPlayers,
     externalPlayerPool,
@@ -341,6 +475,7 @@ export function useFutsalData() {
     allGamePlayers,
     gameAttendance,
     gameStats,
+    stats,
     selectedGameTotals,
     counts,
     guestPlayers,
@@ -350,6 +485,8 @@ export function useFutsalData() {
     saveStat,
     saveGuestStat,
     saveGameTally,
+    saveFinalScore,
+    submitMotmVote,
     addGuestPlayer,
     removeGuestPlayer,
   };

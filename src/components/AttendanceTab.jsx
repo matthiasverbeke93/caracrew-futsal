@@ -12,6 +12,7 @@ export default function AttendanceTab({
   saveGuestAttendance,
   saveAttendance,
   removeGuestPlayer,
+  onOpenPlayer,
   canWrite,
 }) {
   return (
@@ -29,7 +30,9 @@ export default function AttendanceTab({
             <div className={`player-card ${player.type !== "fixed" ? "guest-player-card" : ""}`} key={player.id}>
               <div className="player-card-header">
                 <strong>
-                  {player.name}
+                  <button type="button" className="player-link" onClick={() => onOpenPlayer(player.id)}>
+                    {player.name}
+                  </button>
                   <span className={player.type === "fixed" ? "fixed-badge" : "guest-badge"}>
                     {player.type === "fixed" ? "Fixed" : "Guest"}
                   </span>

@@ -12,6 +12,7 @@ export default function GameSidebar({
   onFiltersChange,
   selectedGameId,
   onSelectGame,
+  loading,
 }) {
   function toggleFilter(filterId) {
     if (filterId === "all") {
@@ -72,7 +73,19 @@ export default function GameSidebar({
         ))}
       </div>
 
-      {showCalendar && (
+      {loading && (
+        <div className="sidebar-skeleton" aria-hidden>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="skeleton-game-card" />
+          ))}
+        </div>
+      )}
+
+      {!loading && games.length === 0 && (
+        <p className="sidebar-empty">No games match these filters. Try clearing filters or pick &quot;All&quot;.</p>
+      )}
+
+      {showCalendar && !loading && games.length > 0 && (
         <div className="calendar-panel">
           {gamesByMonth.map(([month, monthGames]) => (
             <section key={month} className="calendar-month">
@@ -89,6 +102,10 @@ export default function GameSidebar({
                     ? "neutral"
                     : readinessClass(playing).replace("game-card ", "");
                   const difficulty = getDifficulty(game.opponent);
+                  const hasScore =
+                    status?.played &&
+                    game.home_score != null &&
+                    game.away_score != null;
 
                   return (
                     <button
@@ -100,6 +117,11 @@ export default function GameSidebar({
                         {game.game_date} · {game.game_time || "--:--"}
                       </span>
                       <strong>{game.opponent}</strong>
+                      {hasScore && (
+                        <span className="result-chip-mini">
+                          {game.home_score}–{game.away_score}
+                        </span>
+                      )}
                       {difficulty && (
                         <span className={`difficulty-chip ${difficulty.className}`}>
                           {difficulty.label} · P{difficulty.position}
@@ -115,6 +137,7 @@ export default function GameSidebar({
       )}
 
       {!showCalendar &&
+        !loading &&
         games.map((game) => {
         const gameRows = attendance.filter((a) => a.game_id === game.id);
         const gameGuestPlayers = guestPlayers.filter((p) => p.game_id === game.id);
@@ -126,6 +149,8 @@ export default function GameSidebar({
         const played = status?.played;
         const cardClass = played ? "game-card neutral" : readinessClass(playing);
         const difficulty = getDifficulty(game.opponent);
+        const hasScore =
+          played && game.home_score != null && game.away_score != null;
 
         return (
           <button
@@ -145,6 +170,11 @@ export default function GameSidebar({
 
             <div className="mini-counts">
               {!played && <span>{playerStatusLabel(playing)}</span>}
+              {hasScore && (
+                <span className="result-chip-mini" title="Caracrew – opponent">
+                  {game.home_score}–{game.away_score}
+                </span>
+              )}
               {difficulty && (
                 <span className={`difficulty-chip ${difficulty.className}`}>
                   {difficulty.label} · P{difficulty.position}

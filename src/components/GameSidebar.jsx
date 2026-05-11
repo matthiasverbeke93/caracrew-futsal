@@ -1,4 +1,5 @@
-import { GAME_FILTERS } from "../constants";
+import { FILTER_CONFLICTS, GAME_FILTERS } from "../constants";
+import { getDifficulty } from "../utils/difficulty";
 import { playerStatusLabel, readinessClass } from "../utils/game";
 import { useMemo, useState } from "react";
 
@@ -7,11 +8,33 @@ export default function GameSidebar({
   attendance,
   guestPlayers,
   gameStatusById,
-  gameFilter,
-  onFilterChange,
+  gameFilters,
+  onFiltersChange,
   selectedGameId,
   onSelectGame,
 }) {
+  function toggleFilter(filterId) {
+    if (filterId === "all") {
+      onFiltersChange([]);
+      return;
+    }
+
+    const isActive = gameFilters.includes(filterId);
+    if (isActive) {
+      onFiltersChange(gameFilters.filter((f) => f !== filterId));
+      return;
+    }
+
+    const conflicts = FILTER_CONFLICTS[filterId] || [];
+    const cleaned = gameFilters.filter((f) => !conflicts.includes(f));
+    onFiltersChange([...cleaned, filterId]);
+  }
+
+  function isFilterActive(filterId) {
+    if (filterId === "all") return gameFilters.length === 0;
+    return gameFilters.includes(filterId);
+  }
+
   const [showCalendar, setShowCalendar] = useState(false);
   const gamesByMonth = useMemo(() => {
     const groups = {};
@@ -41,8 +64,8 @@ export default function GameSidebar({
         {GAME_FILTERS.map((filter) => (
           <button
             key={filter.id}
-            className={gameFilter === filter.id ? "active" : ""}
-            onClick={() => onFilterChange(filter.id)}
+            className={isFilterActive(filter.id) ? "active" : ""}
+            onClick={() => toggleFilter(filter.id)}
           >
             {filter.label}
           </button>
@@ -65,6 +88,7 @@ export default function GameSidebar({
                   const tone = status?.played
                     ? "neutral"
                     : readinessClass(playing).replace("game-card ", "");
+                  const difficulty = getDifficulty(game.opponent);
 
                   return (
                     <button
@@ -76,6 +100,11 @@ export default function GameSidebar({
                         {game.game_date} · {game.game_time || "--:--"}
                       </span>
                       <strong>{game.opponent}</strong>
+                      {difficulty && (
+                        <span className={`difficulty-chip ${difficulty.className}`}>
+                          {difficulty.label} · P{difficulty.position}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -96,6 +125,7 @@ export default function GameSidebar({
 
         const played = status?.played;
         const cardClass = played ? "game-card neutral" : readinessClass(playing);
+        const difficulty = getDifficulty(game.opponent);
 
         return (
           <button
@@ -115,6 +145,11 @@ export default function GameSidebar({
 
             <div className="mini-counts">
               {!played && <span>{playerStatusLabel(playing)}</span>}
+              {difficulty && (
+                <span className={`difficulty-chip ${difficulty.className}`}>
+                  {difficulty.label} · P{difficulty.position}
+                </span>
+              )}
               {status?.statsMissing && <span className="badge-warning">Stats missing</span>}
             </div>
           </button>

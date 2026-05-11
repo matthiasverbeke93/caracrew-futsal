@@ -23,9 +23,10 @@ export default function App() {
     selectedGame,
     tab,
     setTab,
-    gameFilter,
-    setGameFilter,
+    gameFilters,
+    setGameFilters,
     gameStatusById,
+    tallyError,
     newGuestFirstName,
     setNewGuestFirstName,
     newGuestLastName,
@@ -81,14 +82,16 @@ export default function App() {
         </section>
       )}
 
+      {tallyError && <section className="auth-banner">{tallyError}</section>}
+
       <main className="layout">
         <GameSidebar
           games={filteredGames}
           attendance={attendance}
           guestPlayers={guestPlayers}
           gameStatusById={gameStatusById}
-          gameFilter={gameFilter}
-          onFilterChange={setGameFilter}
+          gameFilters={gameFilters}
+          onFiltersChange={setGameFilters}
           selectedGameId={selectedGameId}
           onSelectGame={setSelectedGameId}
         />

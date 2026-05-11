@@ -17,3 +17,12 @@ export const GAME_FILTERS = [
   { id: "players_just_enough", label: "Just enough players" },
   { id: "players_right", label: "Right amount players" },
 ];
+
+export const FILTER_CONFLICTS = {
+  upcoming: ["played", "stats_missing"],
+  played: ["upcoming"],
+  stats_missing: ["upcoming"],
+  players_not_enough: ["players_just_enough", "players_right"],
+  players_just_enough: ["players_not_enough", "players_right"],
+  players_right: ["players_not_enough", "players_just_enough"],
+};

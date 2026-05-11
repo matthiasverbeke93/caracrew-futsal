@@ -24,7 +24,8 @@ export function useFutsalData() {
   const [tab, setTab] = useState("attendance");
   const [newGuestFirstName, setNewGuestFirstName] = useState("");
   const [newGuestLastName, setNewGuestLastName] = useState("");
-  const [gameFilter, setGameFilter] = useState("all");
+  const [gameFilters, setGameFilters] = useState([]);
+  const [tallyError, setTallyError] = useState(null);
 
   useEffect(() => {
     loadAll();
@@ -173,26 +174,23 @@ export function useFutsalData() {
   }, [attendance, games, guestPlayers, stats]);
 
   const filteredGames = useMemo(() => {
-    if (gameFilter === "all") return games;
+    if (!gameFilters.length) return games;
 
     return games.filter((game) => {
       const status = gameStatusById[game.id];
       if (!status) return false;
-      if (gameFilter === "played") return status.played;
-      if (gameFilter === "upcoming") return status.upcoming;
-      if (gameFilter === "stats_missing") return status.statsMissing;
-      if (gameFilter === "players_not_enough") {
-        return status.playerReadiness === "players_not_enough";
-      }
-      if (gameFilter === "players_just_enough") {
-        return status.playerReadiness === "players_just_enough";
-      }
-      if (gameFilter === "players_right") {
-        return status.playerReadiness === "players_right";
-      }
-      return true;
+
+      return gameFilters.every((filter) => {
+        if (filter === "played") return status.played;
+        if (filter === "upcoming") return status.upcoming;
+        if (filter === "stats_missing") return status.statsMissing;
+        if (filter === "players_not_enough") return status.playerReadiness === "players_not_enough";
+        if (filter === "players_just_enough") return status.playerReadiness === "players_just_enough";
+        if (filter === "players_right") return status.playerReadiness === "players_right";
+        return true;
+      });
     });
-  }, [gameFilter, gameStatusById, games]);
+  }, [gameFilters, gameStatusById, games]);
 
   async function saveAttendance(playerId, status) {
     await supabase.from("attendance").upsert({
@@ -279,11 +277,28 @@ export function useFutsalData() {
         ? { expected_goals: numericValue }
         : { expected_assists: numericValue };
 
-    await supabase
+    const { data, error } = await supabase
       .from("games")
       .update(payload)
-      .eq("id", selectedGameId);
+      .eq("id", selectedGameId)
+      .select();
 
+    if (error) {
+      console.error("saveGameTally failed:", error);
+      setTallyError(
+        error.message?.includes("expected_goals") || error.message?.includes("expected_assists")
+          ? "Tally columns are missing in the database. Run the games_expected_totals.sql migration."
+          : `Could not save tally: ${error.message}`
+      );
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      setTallyError("Tally update affected no rows. Check Supabase RLS policies for the games table.");
+      return;
+    }
+
+    setTallyError(null);
     await loadAll();
   }
 
@@ -304,8 +319,9 @@ export function useFutsalData() {
     selectedGame,
     tab,
     setTab,
-    gameFilter,
-    setGameFilter,
+    gameFilters,
+    setGameFilters,
+    tallyError,
     gameStatusById,
     newGuestFirstName,
     setNewGuestFirstName,

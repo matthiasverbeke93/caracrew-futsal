@@ -1,4 +1,5 @@
 import { ATTENDANCE_OPTIONS } from "../constants";
+import { isAttendanceEditable } from "../utils/game";
 
 export default function AttendanceTab({
   allGamePlayers,
@@ -13,11 +14,22 @@ export default function AttendanceTab({
   saveAttendance,
   removeGuestPlayer,
   onOpenPlayer,
+  selectedGame,
   canWrite,
 }) {
+  const attendanceOpen = isAttendanceEditable(selectedGame);
+  const canEdit = canWrite && attendanceOpen;
+  const lockedBecausePlayed = canWrite && !attendanceOpen;
+
   return (
     <section className="panel">
       <h2>Attendance</h2>
+
+      {lockedBecausePlayed && (
+        <div className="warning-box">
+          Attendance is locked — this match was played on {selectedGame.game_date}.
+        </div>
+      )}
 
       <div className="player-grid">
         {allGamePlayers.map((player) => {
@@ -41,7 +53,7 @@ export default function AttendanceTab({
                   <button
                     className="remove-player-button"
                     onClick={() => removeGuestPlayer(player.id)}
-                    disabled={!canWrite}
+                    disabled={!canEdit}
                   >
                     Remove
                   </button>
@@ -52,7 +64,7 @@ export default function AttendanceTab({
                 <button
                   key={option.value}
                   className={current === option.value ? "active" : ""}
-                  disabled={!canWrite}
+                  disabled={!canEdit}
                   onClick={() =>
                     player.type === "ad_hoc_guest"
                       ? saveGuestAttendance(player.id, option.value)
@@ -83,7 +95,7 @@ export default function AttendanceTab({
               if (e.key === "Enter") addGuestPlayer();
             }}
             placeholder="First name"
-            disabled={!canWrite}
+            disabled={!canEdit}
           />
           <input
             value={newGuestLastName}
@@ -92,9 +104,9 @@ export default function AttendanceTab({
               if (e.key === "Enter") addGuestPlayer();
             }}
             placeholder="Last name"
-            disabled={!canWrite}
+            disabled={!canEdit}
           />
-          <button onClick={addGuestPlayer} disabled={!canWrite}>
+          <button onClick={addGuestPlayer} disabled={!canEdit}>
             +
           </button>
         </div>

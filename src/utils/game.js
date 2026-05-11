@@ -24,6 +24,13 @@ export function isStatsEditable(game, nowMs = Date.now()) {
   return !isStatsFrozen(game, nowMs);
 }
 
+/** Attendance locks the day after the match: editable up to and including the game day. */
+export function isAttendanceEditable(game) {
+  if (!game?.game_date) return false;
+  const today = new Date().toISOString().slice(0, 10);
+  return game.game_date >= today;
+}
+
 /** Days remaining before stats freeze; null if not played yet or already frozen. */
 export function getStatsLockDaysLeft(game, nowMs = Date.now()) {
   if (!game?.game_date) return null;

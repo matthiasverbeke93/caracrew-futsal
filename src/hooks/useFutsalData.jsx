@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { isPlayed } from "../utils/game";
+import { isAttendanceEditable, isPlayed } from "../utils/game";
 import { getVoterKey } from "../utils/motm";
 
 const FORCED_GUEST_NAMES = new Set(["bart moyens"]);
@@ -254,6 +254,7 @@ export function useFutsalData(seasonSlug) {
   async function saveAttendance(playerId, status) {
     const gameId = selectedGameId;
     if (!gameId) return;
+    if (!isAttendanceEditable(selectedGame)) return;
     const updated_at = new Date().toISOString();
     const snapshot = attendance;
     setAttendance((prev) => {
@@ -280,6 +281,7 @@ export function useFutsalData(seasonSlug) {
   }
 
   async function saveGuestAttendance(playerId, status) {
+    if (!isAttendanceEditable(selectedGame)) return;
     const updated_at = new Date().toISOString();
     const snapshot = guestPlayers;
     setGuestPlayers((prev) =>
@@ -352,6 +354,7 @@ export function useFutsalData(seasonSlug) {
     const firstName = newGuestFirstName.trim();
     const lastName = newGuestLastName.trim();
     if (!firstName || !lastName || !selectedGameId) return;
+    if (!isAttendanceEditable(selectedGame)) return;
     const fullName = `${firstName} ${lastName}`.replace(/\s+/g, " ").trim();
     const existingExternal = playersWithRole.find(
       (entry) => entry.name.toLowerCase().trim() === fullName.toLowerCase()
@@ -475,6 +478,7 @@ export function useFutsalData(seasonSlug) {
   }
 
   async function removeGuestPlayer(playerId) {
+    if (!isAttendanceEditable(selectedGame)) return;
     const snapshot = guestPlayers;
     setGuestPlayers((prev) => prev.filter((g) => g.id !== playerId));
     const { error } = await supabase.from("guest_players").delete().eq("id", playerId);

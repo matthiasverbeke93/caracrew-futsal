@@ -275,6 +275,7 @@ export default function App() {
                   saveAttendance={saveAttendance}
                   removeGuestPlayer={removeGuestPlayer}
                   onOpenPlayer={openPlayer}
+                  selectedGame={selectedGame}
                   canWrite={canWrite}
                 />
               )}

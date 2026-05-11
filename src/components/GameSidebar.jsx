@@ -4,6 +4,13 @@ import { playerStatusLabel, readinessClass } from "../utils/game";
 import { cleanOpponentName } from "../utils/opponent";
 import { useMemo, useState } from "react";
 
+function formatCalendarMonthLabel(yyyyMm) {
+  if (!yyyyMm || yyyyMm.length < 7) return yyyyMm || "";
+  const d = new Date(`${yyyyMm}-01T12:00:00`);
+  if (Number.isNaN(d.getTime())) return yyyyMm;
+  return d.toLocaleString("en-GB", { month: "long", year: "numeric" });
+}
+
 export default function GameSidebar({
   games,
   attendance,
@@ -90,7 +97,7 @@ export default function GameSidebar({
         <div className="calendar-panel">
           {gamesByMonth.map(([month, monthGames]) => (
             <section key={month} className="calendar-month">
-              <h3>{month}</h3>
+              <h3>{formatCalendarMonthLabel(month)}</h3>
               <div className="calendar-game-list">
                 {monthGames.map((game) => {
                   const gameRows = attendance.filter((a) => a.game_id === game.id);

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { isPlayed } from "../utils/game";
 import { countPlayerMotmWins, getMotmLeaderIds, getMotmVotingEnd } from "../utils/motm";
+import { cleanOpponentName } from "../utils/opponent";
 
 function resolveName(playerId, players, guestPlayers) {
   const p = players.find((x) => x.id === playerId);
@@ -167,7 +168,7 @@ export default function PlayerProfileModal({
                 <ul>
                   {recentMotm.map(({ game, shared }) => (
                     <li key={game.id}>
-                      🏆 {game.game_date} vs {game.opponent}
+                      🏆 {game.game_date} vs {cleanOpponentName(game.opponent)}
                       {shared ? " (shared)" : ""}
                     </li>
                   ))}
@@ -180,7 +181,7 @@ export default function PlayerProfileModal({
               {summary.lastFive.map(({ game, status, goals, assists, played }) => (
                 <li key={game.id}>
                   <span className="profile-last-date">{game.game_date}</span>
-                  <span className="profile-last-opponent">{game.opponent}</span>
+                  <span className="profile-last-opponent">{cleanOpponentName(game.opponent)}</span>
                   <span className={`profile-last-status status-${status}`}>{status.replace("_", " ")}</span>
                   {played && (
                     <span className="profile-last-ga">

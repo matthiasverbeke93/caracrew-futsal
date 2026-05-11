@@ -1,7 +1,8 @@
 import { LEAGUE_STANDINGS, OUR_TEAM_NAME } from "../data/leagueStandings";
+import { cleanOpponentName } from "./opponent";
 
 function normalize(name) {
-  return (name || "")
+  return cleanOpponentName(name)
     .toLowerCase()
     .replace(/[.,]/g, "")
     .replace(/\s+/g, " ")

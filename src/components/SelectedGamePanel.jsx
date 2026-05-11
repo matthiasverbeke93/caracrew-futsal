@@ -4,6 +4,7 @@ import { getDifficulty } from "../utils/difficulty";
 import { isPlayed } from "../utils/game";
 import { buildWhatsAppShareUrl } from "../utils/formatMatch";
 import { getHeadToHeadSummary } from "../utils/headToHead";
+import { cleanOpponentName } from "../utils/opponent";
 
 function FinalScoreFields({ game, canWrite, saveFinalScore }) {
   const [homeScoreInput, setHomeScoreInput] = useState(() =>
@@ -62,6 +63,7 @@ export default function SelectedGamePanel({
   canWrite,
 }) {
   const [shareFeedback, setShareFeedback] = useState(null);
+  const opponentName = cleanOpponentName(selectedGame.opponent);
   const difficulty = getDifficulty(selectedGame.opponent);
   const h2h = getHeadToHeadSummary(allGames, selectedGame.opponent);
   const played = isPlayed(selectedGame);
@@ -71,7 +73,7 @@ export default function SelectedGamePanel({
     url.searchParams.set("game", selectedGame.id);
     const shareUrl = url.toString();
     const shareData = {
-      title: `${TEAM_NAME} vs ${selectedGame.opponent}`,
+      title: `${TEAM_NAME} vs ${opponentName}`,
       text: `${selectedGame.game_date} · ${selectedGame.game_time || ""} · ${selectedGame.location || ""}`.trim(),
       url: shareUrl,
     };
@@ -113,7 +115,7 @@ export default function SelectedGamePanel({
   return (
     <section className="panel selected-game-panel">
       <div className="selected-game-header">
-        <h2>{selectedGame.title || selectedGame.opponent}</h2>
+        <h2>{selectedGame.title || opponentName}</h2>
         <div className="share-actions">
           <button
             type="button"
@@ -141,8 +143,8 @@ export default function SelectedGamePanel({
           </span>
           {h2h && (
             <div className="head-to-head-inline">
-              <span>{h2h.lastLine}</span>
-              <span>{h2h.seasonLine}</span>
+              {h2h.lastLine && <span>{h2h.lastLine}</span>}
+              {h2h.seasonLine && <span>{h2h.seasonLine}</span>}
             </div>
           )}
         </div>
@@ -150,8 +152,8 @@ export default function SelectedGamePanel({
 
       {!difficulty && h2h && (
         <div className="head-to-head-block standalone">
-          <span>{h2h.lastLine}</span>
-          <span>{h2h.seasonLine}</span>
+          {h2h.lastLine && <span>{h2h.lastLine}</span>}
+          {h2h.seasonLine && <span>{h2h.seasonLine}</span>}
         </div>
       )}
 

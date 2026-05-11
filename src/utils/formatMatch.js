@@ -1,3 +1,5 @@
+import { cleanOpponentName } from "./opponent";
+
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export function formatMatchDayTime(game) {
@@ -16,6 +18,6 @@ export function buildShareGameUrl(gameId) {
 
 export function buildWhatsAppShareUrl(game) {
   const shareUrl = buildShareGameUrl(game.id);
-  const line = `Match ${formatMatchDayTime(game)} vs ${game.opponent} — confirm here: ${shareUrl}`;
+  const line = `Match ${formatMatchDayTime(game)} vs ${cleanOpponentName(game.opponent)} — confirm here: ${shareUrl}`;
   return `https://wa.me/?text=${encodeURIComponent(line)}`;
 }

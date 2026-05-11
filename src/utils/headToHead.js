@@ -1,7 +1,8 @@
 import { isPlayed } from "./game";
+import { cleanOpponentName } from "./opponent";
 
 function normalizeOpponent(name) {
-  return (name || "")
+  return cleanOpponentName(name)
     .toLowerCase()
     .replace(/[.,]/g, "")
     .replace(/\s+/g, " ")
@@ -46,10 +47,13 @@ export function getHeadToHeadSummary(games, opponentName) {
   }
 
   const withScores = playedVs.filter((g) => g.home_score != null && g.away_score != null).length;
-  const seasonLine =
-    withScores > 0
-      ? `This season vs them: ${wins}–${draws}–${losses} (${withScores} played)`
-      : "This season: set final scores on played games to see record";
+
+  let seasonLine = null;
+  if (withScores >= 2) {
+    seasonLine = `Season vs them: ${wins}W-${draws}D-${losses}L (${withScores} played)`;
+  } else if (withScores === 0 && playedVs.length > 0) {
+    seasonLine = "This season: set final scores on played games to see record";
+  }
 
   return { lastLine, seasonLine, gamesPlayed: playedVs.length };
 }

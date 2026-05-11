@@ -1,6 +1,7 @@
 import { FILTER_CONFLICTS, GAME_FILTERS } from "../constants";
 import { getDifficulty } from "../utils/difficulty";
 import { playerStatusLabel, readinessClass } from "../utils/game";
+import { cleanOpponentName } from "../utils/opponent";
 import { useMemo, useState } from "react";
 
 export default function GameSidebar({
@@ -116,7 +117,7 @@ export default function GameSidebar({
                       <span>
                         {game.game_date} · {game.game_time || "--:--"}
                       </span>
-                      <strong>{game.opponent}</strong>
+                      <strong>{cleanOpponentName(game.opponent)}</strong>
                       {hasScore && (
                         <span className="result-chip-mini">
                           {game.home_score}–{game.away_score}
@@ -159,7 +160,7 @@ export default function GameSidebar({
             onClick={() => onSelectGame(game.id)}
           >
             <div className="game-top">
-              <strong>{game.opponent}</strong>
+              <strong>{cleanOpponentName(game.opponent)}</strong>
               <span>{played ? "Played" : "To be played"}</span>
             </div>
 

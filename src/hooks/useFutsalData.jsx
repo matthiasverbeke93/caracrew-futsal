@@ -77,6 +77,14 @@ export function useFutsalData() {
       }),
     [players]
   );
+  const sortedPlayersWithRole = useMemo(
+    () =>
+      [...playersWithRole].sort((a, b) => {
+        if (a.isGuest !== b.isGuest) return a.isGuest ? 1 : -1;
+        return a.name.localeCompare(b.name);
+      }),
+    [playersWithRole]
+  );
   const fixedPlayers = playersWithRole.filter((player) => player.fixed);
   const externalPlayerPool = playersWithRole.filter((player) => player.isGuest);
   const gameAttendance = attendance.filter((a) => a.game_id === selectedGameId);
@@ -90,13 +98,13 @@ export function useFutsalData() {
 
   const allGamePlayers = useMemo(
     () => [
-      ...playersWithRole.map((player) => ({
+      ...sortedPlayersWithRole.map((player) => ({
         ...player,
         type: player.isGuest ? "guest" : "fixed",
       })),
       ...adHocGameGuests.map((player) => ({ ...player, type: "ad_hoc_guest" })),
     ],
-    [adHocGameGuests, playersWithRole]
+    [adHocGameGuests, sortedPlayersWithRole]
   );
 
   const counts = useMemo(() => {

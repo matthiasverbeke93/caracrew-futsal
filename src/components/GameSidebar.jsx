@@ -55,18 +55,30 @@ export default function GameSidebar({
             <section key={month} className="calendar-month">
               <h3>{month}</h3>
               <div className="calendar-game-list">
-                {monthGames.map((game) => (
-                  <button
-                    key={game.id}
-                    className={`calendar-game-item ${game.id === selectedGameId ? "selected" : ""}`}
-                    onClick={() => onSelectGame(game.id)}
-                  >
-                    <span>
-                      {game.game_date} · {game.game_time || "--:--"}
-                    </span>
-                    <strong>{game.opponent}</strong>
-                  </button>
-                ))}
+                {monthGames.map((game) => {
+                  const gameRows = attendance.filter((a) => a.game_id === game.id);
+                  const gameGuestRows = guestPlayers.filter((p) => p.game_id === game.id);
+                  const playing =
+                    gameRows.filter((a) => a.status === "playing").length +
+                    gameGuestRows.filter((p) => p.status === "playing").length;
+                  const status = gameStatusById[game.id];
+                  const tone = status?.played
+                    ? "neutral"
+                    : readinessClass(playing).replace("game-card ", "");
+
+                  return (
+                    <button
+                      key={game.id}
+                      className={`calendar-game-item ${tone} ${game.id === selectedGameId ? "selected" : ""}`}
+                      onClick={() => onSelectGame(game.id)}
+                    >
+                      <span>
+                        {game.game_date} · {game.game_time || "--:--"}
+                      </span>
+                      <strong>{game.opponent}</strong>
+                    </button>
+                  );
+                })}
               </div>
             </section>
           ))}
@@ -82,15 +94,18 @@ export default function GameSidebar({
           gameGuestPlayers.filter((p) => p.status === "playing").length;
         const status = gameStatusById[game.id];
 
+        const played = status?.played;
+        const cardClass = played ? "game-card neutral" : readinessClass(playing);
+
         return (
           <button
             key={game.id}
-            className={`${readinessClass(playing)} ${game.id === selectedGameId ? "selected" : ""}`}
+            className={`${cardClass} ${game.id === selectedGameId ? "selected" : ""}`}
             onClick={() => onSelectGame(game.id)}
           >
             <div className="game-top">
               <strong>{game.opponent}</strong>
-              <span>{status?.played ? "Played" : "To be played"}</span>
+              <span>{played ? "Played" : "To be played"}</span>
             </div>
 
             <div>
@@ -99,7 +114,7 @@ export default function GameSidebar({
             <div>{game.location}</div>
 
             <div className="mini-counts">
-              <span>{playerStatusLabel(playing)}</span>
+              {!played && <span>{playerStatusLabel(playing)}</span>}
               {status?.statsMissing && <span className="badge-warning">Stats missing</span>}
             </div>
           </button>

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { isStatsEditable } from "../utils/game";
 
 export default function StatsTab({
   allGamePlayers,
+  selectedGame,
   gameStats,
   selectedGameTotals,
   saveGuestStat,
@@ -9,6 +11,8 @@ export default function StatsTab({
   saveGameTally,
   canWrite,
 }) {
+  const editable = canWrite && isStatsEditable(selectedGame);
+  const lockedForFutureGame = !isStatsEditable(selectedGame);
   const [goalsInput, setGoalsInput] = useState("");
   const [assistsInput, setAssistsInput] = useState("");
 
@@ -35,6 +39,9 @@ export default function StatsTab({
   return (
     <section className="panel">
       <h2>Goals and assists</h2>
+      {lockedForFutureGame && (
+        <div className="warning-box">Stats can only be entered for games played today or earlier.</div>
+      )}
       <div className="tally-box">
         <div className="tally-row">
           <label>Total goals</label>
@@ -43,7 +50,7 @@ export default function StatsTab({
             min="0"
             value={goalsInput}
             placeholder="Set target"
-            disabled={!canWrite}
+            disabled={!editable}
             onChange={(e) => setGoalsInput(e.target.value)}
             onBlur={() => saveGameTally("goals", goalsInput)}
             onKeyDown={(e) => {
@@ -63,7 +70,7 @@ export default function StatsTab({
             min="0"
             value={assistsInput}
             placeholder="Set target"
-            disabled={!canWrite}
+            disabled={!editable}
             onChange={(e) => setAssistsInput(e.target.value)}
             onBlur={() => saveGameTally("assists", assistsInput)}
             onKeyDown={(e) => {
@@ -104,7 +111,7 @@ export default function StatsTab({
                     type="number"
                     min="0"
                     value={row?.goals || 0}
-                    disabled={!canWrite}
+                    disabled={!editable}
                     onChange={(e) =>
                       player.type === "ad_hoc_guest"
                         ? saveGuestStat(player.id, "goals", e.target.value)
@@ -117,7 +124,7 @@ export default function StatsTab({
                     type="number"
                     min="0"
                     value={row?.assists || 0}
-                    disabled={!canWrite}
+                    disabled={!editable}
                     onChange={(e) =>
                       player.type === "ad_hoc_guest"
                         ? saveGuestStat(player.id, "assists", e.target.value)

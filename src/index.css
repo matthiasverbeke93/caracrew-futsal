@@ -147,7 +147,24 @@ button {
 }
 
 .calendar-game-item.selected {
-  border-color: #94a3b8;
+  border-color: #020617;
+  box-shadow: 0 0 0 3px rgba(2, 6, 23, 0.12);
+}
+
+.calendar-game-item.danger {
+  background: #fef2f2;
+}
+
+.calendar-game-item.warning {
+  background: #fff7ed;
+}
+
+.calendar-game-item.success {
+  background: #ecfdf5;
+}
+
+.calendar-game-item.neutral {
+  background: #f1f5f9;
 }
 
 .game-filters {
@@ -192,8 +209,8 @@ button {
 }
 
 .game-card.selected {
-  border-color: transparent;
-  box-shadow: none;
+  border-color: #020617;
+  box-shadow: 0 0 0 3px rgba(2, 6, 23, 0.12);
 }
 
 .game-card.danger {
@@ -206,6 +223,10 @@ button {
 
 .game-card.success {
   background: #ecfdf5;
+}
+
+.game-card.neutral {
+  background: #f1f5f9;
 }
 
 .game-top {

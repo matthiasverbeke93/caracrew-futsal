@@ -123,6 +123,7 @@ export default function App() {
               {tab === "stats" && (
                 <StatsTab
                   allGamePlayers={allGamePlayers}
+                  selectedGame={selectedGame}
                   gameStats={gameStats}
                   selectedGameTotals={selectedGameTotals}
                   saveGuestStat={saveGuestStat}

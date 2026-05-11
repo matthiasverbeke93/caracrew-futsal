@@ -3,6 +3,12 @@ export function isPlayed(game) {
   return game.game_date < today;
 }
 
+export function isStatsEditable(game) {
+  if (!game?.game_date) return false;
+  const today = new Date().toISOString().slice(0, 10);
+  return game.game_date <= today;
+}
+
 export function readinessClass(count) {
   if (count <= 5) return "game-card danger";
   if (count === 6) return "game-card warning";

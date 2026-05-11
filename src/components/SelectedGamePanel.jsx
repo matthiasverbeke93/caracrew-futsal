@@ -62,12 +62,13 @@ export default function SelectedGamePanel({
   fixedPlayers,
   gameAttendance,
   opponentStrengths,
+  seasonSlug,
   saveFinalScore,
   canWrite,
 }) {
   const [shareFeedback, setShareFeedback] = useState(null);
   const opponentName = cleanOpponentName(selectedGame.opponent);
-  const difficulty = getDifficulty(selectedGame.opponent, opponentStrengths);
+  const difficulty = getDifficulty(selectedGame.opponent, opponentStrengths, seasonSlug);
   const h2h = getHeadToHeadSummary(allGames, selectedGame.opponent);
   const played = isPlayed(selectedGame);
 

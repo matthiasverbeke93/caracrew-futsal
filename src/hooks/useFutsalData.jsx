@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { isPlayed } from "../utils/game";
 import { getVoterKey } from "../utils/motm";
@@ -15,7 +15,7 @@ function makeGuestId() {
   return `guest-${crypto.randomUUID()}`;
 }
 
-export function useFutsalData() {
+export function useFutsalData(seasonSlug) {
   const [games, setGames] = useState([]);
   const [players, setPlayers] = useState([]);
   const [attendance, setAttendance] = useState([]);
@@ -31,32 +31,48 @@ export function useFutsalData() {
   const [motmVotes, setMotmVotes] = useState([]);
   const [opponentStrengths, setOpponentStrengths] = useState([]);
 
-  useEffect(() => {
-    loadAll();
-  }, []);
-
-  async function loadAll() {
+  const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [
-        gamesRes,
-        playersRes,
-        attendanceRes,
-        statsRes,
-        guestsRes,
-        motmRes,
-        strengthsRes,
-      ] = await Promise.all([
-        supabase.from("games").select("*").order("game_date", { ascending: true }),
-        supabase.from("players").select("*").order("fixed", { ascending: false }),
-        supabase.from("attendance").select("*"),
-        supabase.from("player_stats").select("*"),
-        supabase.from("guest_players").select("*"),
-        supabase.from("motm_votes").select("*"),
-        supabase.from("opponent_strength").select("*"),
-      ]);
+      const gamesRes = await supabase
+        .from("games")
+        .select("*")
+        .eq("season_slug", seasonSlug)
+        .order("game_date", { ascending: true });
 
       if (gamesRes.error) console.error(gamesRes.error);
+
+      const nextGames = gamesRes.data || [];
+      const gameIds = nextGames.map((g) => g.id);
+
+      const empty = { data: [], error: null };
+      const attendancePromise =
+        gameIds.length > 0
+          ? supabase.from("attendance").select("*").in("game_id", gameIds)
+          : Promise.resolve(empty);
+      const statsPromise =
+        gameIds.length > 0
+          ? supabase.from("player_stats").select("*").in("game_id", gameIds)
+          : Promise.resolve(empty);
+      const guestsPromise =
+        gameIds.length > 0
+          ? supabase.from("guest_players").select("*").in("game_id", gameIds)
+          : Promise.resolve(empty);
+      const motmPromise =
+        gameIds.length > 0
+          ? supabase.from("motm_votes").select("*").in("game_id", gameIds)
+          : Promise.resolve(empty);
+
+      const [playersRes, attendanceRes, statsRes, guestsRes, motmRes, strengthsRes] =
+        await Promise.all([
+          supabase.from("players").select("*").order("fixed", { ascending: false }),
+          attendancePromise,
+          statsPromise,
+          guestsPromise,
+          motmPromise,
+          supabase.from("opponent_strength").select("*").eq("season_slug", seasonSlug),
+        ]);
+
       if (playersRes.error) console.error(playersRes.error);
       if (attendanceRes.error) console.error(attendanceRes.error);
       if (statsRes.error) console.error(statsRes.error);
@@ -64,7 +80,7 @@ export function useFutsalData() {
       if (motmRes.error) console.error(motmRes.error);
       if (strengthsRes.error) console.error(strengthsRes.error);
 
-      setGames(gamesRes.data || []);
+      setGames(nextGames);
       setPlayers(playersRes.data || []);
       setAttendance(attendanceRes.data || []);
       setStats(statsRes.data || []);
@@ -72,7 +88,6 @@ export function useFutsalData() {
       setMotmVotes(motmRes.data || []);
       setOpponentStrengths(strengthsRes.data || []);
 
-      const nextGames = gamesRes.data || [];
       const firstUpcoming = nextGames.find((g) => !isPlayed(g));
       const urlGameId = new URLSearchParams(window.location.search).get("game");
       const gameFromUrl = urlGameId && nextGames.find((g) => g.id === urlGameId);
@@ -87,16 +102,25 @@ export function useFutsalData() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [seasonSlug]);
+
+  useEffect(() => {
+    // Load when `seasonSlug` changes; initialises sidebar + selected game from URL.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch updates many list states
+    loadAll();
+  }, [loadAll]);
 
   useEffect(() => {
     if (!selectedGameId) return;
     const url = new URL(window.location.href);
     const player = url.searchParams.get("player");
+    const teamStats = url.searchParams.get("team_stats");
+    url.searchParams.set("season", seasonSlug);
     url.searchParams.set("game", selectedGameId);
     if (player) url.searchParams.set("player", player);
+    if (teamStats) url.searchParams.set("team_stats", teamStats);
     window.history.replaceState({}, "", url);
-  }, [selectedGameId]);
+  }, [selectedGameId, seasonSlug]);
 
   const selectedGame = games.find((g) => g.id === selectedGameId);
   const playersWithRole = useMemo(

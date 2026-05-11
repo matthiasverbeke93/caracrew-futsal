@@ -5,10 +5,18 @@ import GameSidebar from "./components/GameSidebar";
 import PlayerProfileModal from "./components/PlayerProfileModal";
 import SelectedGamePanel from "./components/SelectedGamePanel";
 import StatsTab from "./components/StatsTab";
+import TeamStatsPage from "./components/TeamStatsPage";
 import Tabs from "./components/Tabs";
 import { TEAM_NAME } from "./constants";
 import { useFutsalData } from "./hooks/useFutsalData";
 import { supabase } from "./lib/supabase";
+import {
+  DEFAULT_SEASON_SLUG,
+  isSeasonSlug,
+  readSeasonSlugFromSearch,
+  seasonLabel,
+  SEASON_OPTIONS,
+} from "./seasons";
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -19,27 +27,73 @@ export default function App() {
     new URLSearchParams(window.location.search).get("player")
   );
 
+  const [teamStatsOpen, setTeamStatsOpen] = useState(() =>
+    new URLSearchParams(window.location.search).get("team_stats") === "1"
+  );
+
+  const [seasonSlug, setSeasonSlug] = useState(() =>
+    readSeasonSlugFromSearch(new URLSearchParams(window.location.search))
+  );
+
+  const openTeamStats = useCallback(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("team_stats", "1");
+    window.history.pushState({}, "", url);
+    setTeamStatsOpen(true);
+  }, []);
+
+  const closeTeamStats = useCallback(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("team_stats");
+    window.history.pushState({}, "", url);
+    setTeamStatsOpen(false);
+  }, []);
+
   const openPlayer = useCallback((id) => {
     if (!id) return;
     const url = new URL(window.location.href);
+    const ts = url.searchParams.get("team_stats");
     url.searchParams.set("player", id);
+    if (ts) url.searchParams.set("team_stats", ts);
     window.history.pushState({}, "", url);
     setProfilePlayerId(id);
   }, []);
 
   const closePlayer = useCallback(() => {
     const url = new URL(window.location.href);
+    const ts = url.searchParams.get("team_stats");
     url.searchParams.delete("player");
+    if (ts) url.searchParams.set("team_stats", ts);
     window.history.pushState({}, "", url);
     setProfilePlayerId(null);
   }, []);
 
   useEffect(() => {
     const onPop = () => {
-      setProfilePlayerId(new URLSearchParams(window.location.search).get("player"));
+      const sp = new URLSearchParams(window.location.search);
+      setProfilePlayerId(sp.get("player"));
+      setTeamStatsOpen(sp.get("team_stats") === "1");
+      setSeasonSlug(readSeasonSlugFromSearch(sp));
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.get("season")) {
+      url.searchParams.set("season", DEFAULT_SEASON_SLUG);
+      window.history.replaceState({}, "", url);
+    }
+  }, []);
+
+  const selectSeason = useCallback((slug) => {
+    if (!isSeasonSlug(slug)) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("season", slug);
+    url.searchParams.delete("game");
+    window.history.pushState({}, "", url);
+    setSeasonSlug(slug);
   }, []);
 
   const {
@@ -81,7 +135,7 @@ export default function App() {
     submitMotmVote,
     addGuestPlayer,
     removeGuestPlayer,
-  } = useFutsalData();
+  } = useFutsalData(seasonSlug);
 
   useEffect(() => {
     let mounted = true;
@@ -108,20 +162,36 @@ export default function App() {
     <div className="app">
       <header className="hero">
         <div>
-          <div className="pill">Season 25-26</div>
+          <div className="hero-season-row" role="navigation" aria-label="Season">
+            {SEASON_OPTIONS.map((opt) => (
+              <button
+                key={opt.slug}
+                type="button"
+                className={`season-pill ${opt.slug === seasonSlug ? "active" : ""}`}
+                onClick={() => selectSeason(opt.slug)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           <div className="hero-title-row">
             <h1>{TEAM_NAME}</h1>
             <FormChip games={games} />
           </div>
           <p>Attendance, goals and assists tracker</p>
-          <a
-            className="hero-link"
-            href="https://www.lzvcup.be/teams/detail/742"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View on LZV Cup ↗
-          </a>
+          <nav className="hero-nav" aria-label="External and team links">
+            <button type="button" className="hero-link hero-link-button" onClick={openTeamStats}>
+              Team stats
+            </button>
+            <a
+              className="hero-link"
+              href="https://www.lzvcup.be/teams/detail/742"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View on LZV Cup ↗
+            </a>
+          </nav>
         </div>
       </header>
 
@@ -145,6 +215,7 @@ export default function App() {
           onSelectGame={setSelectedGameId}
           loading={loading}
           opponentStrengths={opponentStrengths}
+          seasonSlug={seasonSlug}
         />
 
         <section className="content">
@@ -161,7 +232,19 @@ export default function App() {
             </div>
           )}
 
-          {!loading && selectedGame && (
+          {!loading && teamStatsOpen && (
+            <TeamStatsPage
+              games={games}
+              players={players}
+              attendance={attendance}
+              stats={stats}
+              seasonLabel={seasonLabel(seasonSlug)}
+              onBack={closeTeamStats}
+              onOpenPlayer={openPlayer}
+            />
+          )}
+
+          {!loading && !teamStatsOpen && selectedGame && (
             <>
               <SelectedGamePanel
                 selectedGame={selectedGame}
@@ -170,6 +253,7 @@ export default function App() {
                 fixedPlayers={fixedPlayers}
                 gameAttendance={gameAttendance}
                 opponentStrengths={opponentStrengths}
+                seasonSlug={seasonSlug}
                 saveFinalScore={saveFinalScore}
                 canWrite={canWrite}
               />
@@ -213,9 +297,19 @@ export default function App() {
             </>
           )}
 
-          {!loading && !selectedGame && (
+          {!loading && !teamStatsOpen && !selectedGame && (
             <div className="panel content-empty">
-              <p>No game selected yet. Choose a match in the sidebar when games load.</p>
+              {games.length === 0 ? (
+                <>
+                  <p>
+                    No fixtures loaded for <strong>{seasonLabel(seasonSlug)}</strong>. Add rows in
+                    Supabase <code>games</code> with <code>season_slug = &apos;{seasonSlug}&apos;</code>
+                    , or switch season above.
+                  </p>
+                </>
+              ) : (
+                <p>No game selected yet. Choose a match in the sidebar.</p>
+              )}
             </div>
           )}
         </section>

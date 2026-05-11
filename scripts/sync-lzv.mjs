@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 import { createClient } from "@supabase/supabase-js";
+import { DEFAULT_SEASON_SLUG } from "../src/seasons.js";
 
 const LZV_URL =
   process.env.LZV_TEAM_URL || "https://www.lzvcup.be/teams/overview/742";
+
+const SEASON_SLUG = process.env.LZV_SEASON_SLUG || DEFAULT_SEASON_SLUG;
 
 function stripTags(html) {
   return html
@@ -142,7 +145,9 @@ async function main() {
   const html = await res.text();
 
   const parsed = parseMatches(html);
-  console.log(`[lzv-sync] Parsed ${parsed.length} played Caracrew matches.`);
+  console.log(
+    `[lzv-sync] Season ${SEASON_SLUG} · Parsed ${parsed.length} played Caracrew matches.`
+  );
   if (parsed.length === 0) {
     console.warn(
       "[lzv-sync] No matches parsed. The page layout may have changed."
@@ -152,7 +157,8 @@ async function main() {
 
   const { data: games, error } = await supabase
     .from("games")
-    .select("id, game_date, opponent, home_score, away_score");
+    .select("id, game_date, opponent, home_score, away_score")
+    .eq("season_slug", SEASON_SLUG);
   if (error) throw error;
 
   const targets = (games || []).filter(

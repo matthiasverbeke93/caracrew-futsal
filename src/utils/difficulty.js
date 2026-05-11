@@ -1,4 +1,5 @@
-import { LEAGUE_STANDINGS, OUR_TEAM_NAME } from "../data/leagueStandings";
+import { OUR_TEAM_NAME } from "../data/leagueStandings";
+import { getLeagueStandingsForSeason } from "../data/seasonLeagueStandings";
 import { cleanOpponentName } from "./opponent";
 
 function normalize(name) {
@@ -10,16 +11,18 @@ function normalize(name) {
     .trim();
 }
 
-export function getOpponentStanding(opponent) {
+export function getOpponentStanding(opponent, seasonSlug) {
+  const standings = getLeagueStandingsForSeason(seasonSlug);
   const normalized = normalize(opponent);
-  return LEAGUE_STANDINGS.find((team) => {
+  return standings.find((team) => {
     const teamName = normalize(team.name);
     return teamName === normalized || teamName.includes(normalized) || normalized.includes(teamName);
   });
 }
 
-export function getOurStanding() {
-  return LEAGUE_STANDINGS.find((team) => normalize(team.name) === normalize(OUR_TEAM_NAME));
+export function getOurStanding(seasonSlug) {
+  const standings = getLeagueStandingsForSeason(seasonSlug);
+  return standings.find((team) => normalize(team.name) === normalize(OUR_TEAM_NAME));
 }
 
 function findStrengthRow(opponent, strengths) {
@@ -72,8 +75,8 @@ function summariseHistory(history) {
   };
 }
 
-/** Live-data difficulty using opponent_strength when available, falling back to LEAGUE_STANDINGS. */
-export function getDifficulty(opponent, strengths) {
+/** Live-data difficulty using opponent_strength when available, falling back to manual standings for that season. */
+export function getDifficulty(opponent, strengths, seasonSlug) {
   const row = findStrengthRow(opponent, strengths);
 
   if (row && row.current_position != null) {
@@ -95,7 +98,7 @@ export function getDifficulty(opponent, strengths) {
     };
   }
 
-  const team = getOpponentStanding(opponent);
+  const team = getOpponentStanding(opponent, seasonSlug);
   if (!team) return null;
   const lvl = levelFromPosition(team.position);
   return {

@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 import { createClient } from "@supabase/supabase-js";
+import { DEFAULT_SEASON_SLUG } from "../src/seasons.js";
+
+const SEASON_SLUG = process.env.LZV_SEASON_SLUG || DEFAULT_SEASON_SLUG;
 
 const TEAM_OVERVIEW_URL =
   process.env.LZV_TEAM_URL || "https://www.lzvcup.be/teams/overview/742";
@@ -205,7 +208,9 @@ async function main() {
     auth: { persistSession: false },
   });
 
-  console.log(`[palmares] Discovering opponents from ${TEAM_OVERVIEW_URL}`);
+  console.log(
+    `[palmares] Season ${SEASON_SLUG} · Discovering opponents from ${TEAM_OVERVIEW_URL}`
+  );
   const overviewHtml = await fetchText(TEAM_OVERVIEW_URL);
   const opponents = discoverOpponents(overviewHtml, OUR_TEAM_ID);
   const standings = parseCurrentStandings(overviewHtml);
@@ -233,6 +238,7 @@ async function main() {
     const { error } = await supabase
       .from("opponent_strength")
       .upsert({
+        season_slug: SEASON_SLUG,
         team_id: opp.team_id,
         name: opp.name,
         last_synced: new Date().toISOString(),

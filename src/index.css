@@ -46,8 +46,223 @@ button {
 .hero-right {
   flex: 0 0 auto;
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+}
+
+.account-chip {
+  display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
+  gap: 10px;
+  padding: 6px 10px 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.account-chip.skeleton {
+  opacity: 0.4;
+}
+
+.account-chip-signin {
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  background: #fbbf24;
+  color: #0f172a;
+  border-color: #fbbf24;
+  padding: 8px 16px;
+}
+
+.account-chip-signin:hover {
+  background: #f59e0b;
+  border-color: #f59e0b;
+}
+
+.account-chip-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.account-chip-name {
+  font-weight: 700;
+  color: #f8fafc;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-chip-role {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #cbd5e1;
+  margin-top: 2px;
+}
+
+.account-chip-role.role-admin {
+  color: #fbbf24;
+}
+
+.account-chip-role.role-unlinked {
+  color: #fda4af;
+}
+
+.account-chip-signout {
+  background: rgba(15, 23, 42, 0.4);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.account-chip-signout:hover {
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.auth-modal {
+  background: white;
+  border-radius: 20px;
+  width: min(420px, 100%);
+  padding: 24px;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.3);
+}
+
+.auth-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.auth-modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.auth-modal-close {
+  background: none;
+  border: 0;
+  font-size: 24px;
+  cursor: pointer;
+  color: #475569;
+  line-height: 1;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.auth-form input {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font: inherit;
+}
+
+.auth-form input:focus {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 0;
+  border-color: #1d4ed8;
+}
+
+.auth-error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin: 0;
+}
+
+.auth-info {
+  color: #065f46;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin: 0;
+}
+
+.auth-submit {
+  margin-top: 4px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #020617;
+  color: #f8fafc;
+  font-weight: 700;
+  font-size: 14px;
+  border: 0;
+  cursor: pointer;
+}
+
+.auth-submit:hover:not(:disabled) {
+  background: #1e293b;
+}
+
+.auth-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-switch {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.auth-switch-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: #1d4ed8;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.auth-fineprint {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
 }
 
 .auth-banner {

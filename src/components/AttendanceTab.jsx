@@ -15,11 +15,19 @@ export default function AttendanceTab({
   removeGuestPlayer,
   onOpenPlayer,
   selectedGame,
-  canWrite,
+  canEditAttendanceFor,
+  canManageGame,
+  isSignedIn,
+  onRequestSignIn,
 }) {
   const attendanceOpen = isAttendanceEditable(selectedGame);
-  const canEdit = canWrite && attendanceOpen;
-  const lockedBecausePlayed = canWrite && !attendanceOpen;
+  const lockedBecausePlayed = !attendanceOpen;
+
+  function disabledTitle(player) {
+    if (!isSignedIn) return "Sign in to mark attendance";
+    if (lockedBecausePlayed) return "Attendance is locked — match already played";
+    return `Only ${player.name} or an admin can edit this`;
+  }
 
   return (
     <section className="panel">
@@ -31,12 +39,26 @@ export default function AttendanceTab({
         </div>
       )}
 
+      {!isSignedIn && !lockedBecausePlayed && (
+        <div className="info-banner">
+          <button type="button" className="player-link" onClick={onRequestSignIn}>
+            Sign in
+          </button>{" "}
+          to mark your own attendance.
+        </div>
+      )}
+
       <div className="player-grid">
         {allGamePlayers.map((player) => {
           const current =
             player.type === "ad_hoc_guest"
               ? player.status
               : gameAttendance.find((a) => a.player_id === player.id)?.status;
+
+          const isAdHoc = player.type === "ad_hoc_guest";
+          const rowEditable =
+            !lockedBecausePlayed &&
+            (isAdHoc ? canManageGame : canEditAttendanceFor(player.id));
 
           return (
             <div className={`player-card ${player.type !== "fixed" ? "guest-player-card" : ""}`} key={player.id}>
@@ -49,11 +71,12 @@ export default function AttendanceTab({
                     {player.type === "fixed" ? "Fixed" : "Guest"}
                   </span>
                 </strong>
-                {player.type === "ad_hoc_guest" && (
+                {isAdHoc && (
                   <button
                     className="remove-player-button"
                     onClick={() => removeGuestPlayer(player.id)}
-                    disabled={!canEdit}
+                    disabled={!canManageGame || lockedBecausePlayed}
+                    title={!canManageGame ? "Admin only" : ""}
                   >
                     Remove
                   </button>
@@ -64,9 +87,10 @@ export default function AttendanceTab({
                 <button
                   key={option.value}
                   className={current === option.value ? "active" : ""}
-                  disabled={!canEdit}
+                  disabled={!rowEditable}
+                  title={!rowEditable ? disabledTitle(player) : undefined}
                   onClick={() =>
-                    player.type === "ad_hoc_guest"
+                    isAdHoc
                       ? saveGuestAttendance(player.id, option.value)
                       : saveAttendance(player.id, option.value)
                   }
@@ -81,7 +105,7 @@ export default function AttendanceTab({
 
       <div className="guest-card">
         <div>
-          <div className="section-label">Guests</div>
+          <div className="section-label">Guests · admin only</div>
           <h3>Add guest player</h3>
           <p>Guests are saved for future games and shown in all historical player cards.</p>
           <p>Current known guests: {externalPlayerPool.map((p) => p.name).join(", ") || "None"}</p>
@@ -95,7 +119,7 @@ export default function AttendanceTab({
               if (e.key === "Enter") addGuestPlayer();
             }}
             placeholder="First name"
-            disabled={!canEdit}
+            disabled={!canManageGame || lockedBecausePlayed}
           />
           <input
             value={newGuestLastName}
@@ -104,9 +128,13 @@ export default function AttendanceTab({
               if (e.key === "Enter") addGuestPlayer();
             }}
             placeholder="Last name"
-            disabled={!canEdit}
+            disabled={!canManageGame || lockedBecausePlayed}
           />
-          <button onClick={addGuestPlayer} disabled={!canEdit}>
+          <button
+            onClick={addGuestPlayer}
+            disabled={!canManageGame || lockedBecausePlayed}
+            title={!canManageGame ? "Admin only" : ""}
+          >
             +
           </button>
         </div>

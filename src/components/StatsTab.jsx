@@ -6,11 +6,11 @@ import {
   isStatsEditable,
   isStatsFrozen,
 } from "../utils/game";
+import { supabase } from "../lib/supabase";
 import {
   getMotmLeaderIds,
   getMotmVotingEnd,
   getMotmVotingStart,
-  getVoterKey,
   isMotmVotingOpen,
 } from "../utils/motm";
 
@@ -25,11 +25,14 @@ export default function StatsTab({
   motmVotes,
   submitMotmVote,
   onOpenPlayer,
-  canWrite,
+  canEditStatsFor,
+  canManageGame,
+  canVote,
 }) {
-  const editable = canWrite && isStatsEditable(selectedGame);
+  const statsWindowOpen = isStatsEditable(selectedGame);
   const frozen = isStatsFrozen(selectedGame);
-  const lockedForFutureGame = !isStatsEditable(selectedGame) && !frozen;
+  const lockedForFutureGame = !statsWindowOpen && !frozen;
+  const tallyEditable = canManageGame && statsWindowOpen;
   const daysUntilLock = getStatsLockDaysLeft(selectedGame);
   const [goalsInput, setGoalsInput] = useState(() =>
     selectedGameTotals.goals === null || selectedGameTotals.goals === undefined
@@ -82,8 +85,19 @@ export default function StatsTab({
     [motmVotes, selectedGame.id]
   );
 
-  const voterKey = useMemo(() => getVoterKey(), []);
-  const myNomineeId = motmVotesForGame.find((v) => v.voter_key === voterKey)?.nominee_id;
+  const [voterKey, setVoterKey] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!cancelled) setVoterKey(data?.session?.user?.id || null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const myNomineeId = voterKey
+    ? motmVotesForGame.find((v) => v.voter_key === voterKey)?.nominee_id
+    : null;
 
   const motmCounts = useMemo(() => {
     const m = {};
@@ -144,7 +158,8 @@ export default function StatsTab({
             min="0"
             value={goalsInput}
             placeholder="Set target"
-            disabled={!editable}
+            disabled={!tallyEditable}
+            title={!canManageGame ? "Admin only" : undefined}
             onChange={(e) => setGoalsInput(e.target.value)}
             onBlur={() => saveGameTally("goals", goalsInput)}
             onKeyDown={(e) => {
@@ -164,7 +179,8 @@ export default function StatsTab({
             min="0"
             value={assistsInput}
             placeholder="Set target"
-            disabled={!editable}
+            disabled={!tallyEditable}
+            title={!canManageGame ? "Admin only" : undefined}
             onChange={(e) => setAssistsInput(e.target.value)}
             onBlur={() => saveGameTally("assists", assistsInput)}
             onKeyDown={(e) => {
@@ -205,7 +221,7 @@ export default function StatsTab({
             <p className="motm-hint">No votes recorded for this game.</p>
           )}
           {motmMessage && <p className="error-inline">{motmMessage}</p>}
-          {votingOpen && canWrite && (
+          {votingOpen && canVote && (
             <div className="motm-vote-grid">
               {allGamePlayers.map((player) => (
                 <button
@@ -220,8 +236,8 @@ export default function StatsTab({
               ))}
             </div>
           )}
-          {votingOpen && !canWrite && (
-            <p className="motm-hint">Log in to vote (if your deployment requires auth for writes).</p>
+          {votingOpen && !canVote && (
+            <p className="motm-hint">Sign in to vote for player of the match.</p>
           )}
           {!votingOpen && votingFinished && motmVotesForGame.length > 0 && (
             <ul className="motm-tally">
@@ -250,10 +266,17 @@ export default function StatsTab({
         </thead>
         <tbody>
           {allGamePlayers.map((player) => {
-            const row =
-              player.type === "ad_hoc_guest"
-                ? player
-                : gameStats.find((s) => s.player_id === player.id);
+            const isAdHoc = player.type === "ad_hoc_guest";
+            const row = isAdHoc
+              ? player
+              : gameStats.find((s) => s.player_id === player.id);
+            const rowEditable =
+              statsWindowOpen && (isAdHoc ? canManageGame : canEditStatsFor(player.id));
+            const disabledTitle = !statsWindowOpen
+              ? undefined
+              : isAdHoc
+                ? "Admin only"
+                : `Only ${player.name} or an admin can edit this`;
 
             return (
               <tr key={player.id}>
@@ -268,9 +291,10 @@ export default function StatsTab({
                     type="number"
                     min="0"
                     value={row?.goals || 0}
-                    disabled={!editable}
+                    disabled={!rowEditable}
+                    title={!rowEditable ? disabledTitle : undefined}
                     onChange={(e) =>
-                      player.type === "ad_hoc_guest"
+                      isAdHoc
                         ? saveGuestStat(player.id, "goals", e.target.value)
                         : saveStat(player.id, "goals", e.target.value)
                     }
@@ -281,9 +305,10 @@ export default function StatsTab({
                     type="number"
                     min="0"
                     value={row?.assists || 0}
-                    disabled={!editable}
+                    disabled={!rowEditable}
+                    title={!rowEditable ? disabledTitle : undefined}
                     onChange={(e) =>
-                      player.type === "ad_hoc_guest"
+                      isAdHoc
                         ? saveGuestStat(player.id, "assists", e.target.value)
                         : saveStat(player.id, "assists", e.target.value)
                     }

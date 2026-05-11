@@ -44,5 +44,50 @@ To start a new season:
 - **Attendance** is editable up to and including the game day; it locks the day after.
 - **Stats** (goals/assists, tally targets) lock 10 days after the game (`STATS_FREEZE_DAYS` in `src/utils/game.js`).
 
+## Accounts and permissions
+
+Email + password auth via Supabase. Reads stay public; writes are scoped:
+
+| Action                                  | Who can do it                          |
+|-----------------------------------------|-----------------------------------------|
+| Read everything                         | Anyone                                  |
+| Mark own attendance                     | Signed-in, linked player (own row)     |
+| Edit own goals / assists                | Signed-in, linked player (own row)     |
+| Vote MOTM                               | Any signed-in user (one per game)      |
+| Set final score, expected G/A           | Admin                                  |
+| Add / remove ad-hoc guest               | Admin                                  |
+| Override anyone's attendance or stats   | Admin                                  |
+
+### One-time setup
+
+1. **Enable email auth in Supabase** (Authentication → Providers → Email). For a friction-free family team, you can disable email confirmation while you onboard, then re-enable.
+2. **Apply the migration**:
+   ```sql
+   -- in the Supabase SQL editor
+   \i supabase/auth_ownership.sql
+   ```
+   This adds `players.auth_user_id` + `players.is_admin`, helper functions, and RLS policies.
+
+### Onboarding a player
+
+1. They click **Sign in → Create an account** in the hero and sign up with their email.
+2. Run in the Supabase SQL editor (replace placeholders):
+   ```sql
+   update players
+      set auth_user_id = (
+        select id from auth.users where email = lower('player@example.com')
+      )
+    where lower(name) = lower('Their Full Name');
+   ```
+3. They refresh — the hero chip should now show their name + “Player” badge.
+
+### Promoting an admin
+
+```sql
+update players set is_admin = true where lower(name) = lower('matthias verbeke');
+```
+
+You'll see “Admin” on the hero chip and admin-only controls become enabled.
+
 ## SQL
 All schema migrations live under `supabase/` and are safe to re-run.

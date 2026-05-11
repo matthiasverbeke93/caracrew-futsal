@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { isAttendanceEditable, isPlayed } from "../utils/game";
-import { getVoterKey } from "../utils/motm";
 
 const FORCED_GUEST_NAMES = new Set(["bart moyens"]);
 const FORCED_FIXED_NAMES = new Set([
@@ -15,7 +14,7 @@ function makeGuestId() {
   return `guest-${crypto.randomUUID()}`;
 }
 
-export function useFutsalData(seasonSlug) {
+export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
   const [games, setGames] = useState([]);
   const [players, setPlayers] = useState([]);
   const [attendance, setAttendance] = useState([]);
@@ -287,10 +286,15 @@ export function useFutsalData(seasonSlug) {
     });
   }, [gameFilters, gameStatusById, games]);
 
+  function canEditAttendanceFor(playerId) {
+    return isAdmin || (currentPlayerId && playerId === currentPlayerId);
+  }
+
   async function saveAttendance(playerId, status) {
     const gameId = selectedGameId;
     if (!gameId) return;
     if (!isAttendanceEditable(selectedGame)) return;
+    if (!canEditAttendanceFor(playerId)) return;
     const updated_at = new Date().toISOString();
     const snapshot = attendance;
     setAttendance((prev) => {
@@ -318,6 +322,7 @@ export function useFutsalData(seasonSlug) {
 
   async function saveGuestAttendance(playerId, status) {
     if (!isAttendanceEditable(selectedGame)) return;
+    if (!isAdmin) return;
     const updated_at = new Date().toISOString();
     const snapshot = guestPlayers;
     setGuestPlayers((prev) =>
@@ -337,6 +342,7 @@ export function useFutsalData(seasonSlug) {
   async function saveStat(playerId, field, value) {
     const gameId = selectedGameId;
     if (!gameId) return;
+    if (!canEditAttendanceFor(playerId)) return;
     const existing = gameStats.find((s) => s.player_id === playerId);
     const goals = field === "goals" ? Number(value || 0) : existing?.goals || 0;
     const assists = field === "assists" ? Number(value || 0) : existing?.assists || 0;
@@ -367,6 +373,7 @@ export function useFutsalData(seasonSlug) {
   }
 
   async function saveGuestStat(playerId, field, value) {
+    if (!isAdmin) return;
     const existing = selectedGameGuests.find((g) => g.id === playerId);
     const goals = field === "goals" ? Number(value || 0) : existing?.goals || 0;
     const assists = field === "assists" ? Number(value || 0) : existing?.assists || 0;
@@ -391,6 +398,7 @@ export function useFutsalData(seasonSlug) {
     const lastName = newGuestLastName.trim();
     if (!firstName || !lastName || !selectedGameId) return;
     if (!isAttendanceEditable(selectedGame)) return;
+    if (!isAdmin) return;
     const fullName = `${firstName} ${lastName}`.replace(/\s+/g, " ").trim();
     const existingExternal = playersWithRole.find(
       (entry) => entry.name.toLowerCase().trim() === fullName.toLowerCase()
@@ -419,6 +427,7 @@ export function useFutsalData(seasonSlug) {
 
   async function saveGameTally(field, value) {
     if (!selectedGameId) return;
+    if (!isAdmin) return;
 
     const numericValue = value === "" ? null : Number(value);
     const payload =
@@ -467,6 +476,7 @@ export function useFutsalData(seasonSlug) {
   async function saveFinalScore(homeScore, awayScore) {
     const gid = selectedGameId;
     if (!gid) return;
+    if (!isAdmin) return;
     const hs = homeScore === "" || homeScore === undefined ? null : Number(homeScore);
     const as = awayScore === "" || awayScore === undefined ? null : Number(awayScore);
     const snapshot = games;
@@ -488,7 +498,10 @@ export function useFutsalData(seasonSlug) {
   async function submitMotmVote(nomineeId) {
     const gid = selectedGameId;
     if (!gid) return { error: "No game selected" };
-    const voterKey = getVoterKey();
+    const { data: sessionData } = await supabase.auth.getSession();
+    const authedUserId = sessionData?.session?.user?.id;
+    if (!authedUserId) return { error: "Sign in to vote" };
+    const voterKey = authedUserId;
     const id = `motm-${gid}-${voterKey}`;
     const created_at = new Date().toISOString();
     const snapshot = motmVotes;
@@ -515,6 +528,7 @@ export function useFutsalData(seasonSlug) {
 
   async function removeGuestPlayer(playerId) {
     if (!isAttendanceEditable(selectedGame)) return;
+    if (!isAdmin) return;
     const snapshot = guestPlayers;
     setGuestPlayers((prev) => prev.filter((g) => g.id !== playerId));
     const { error } = await supabase.from("guest_players").delete().eq("id", playerId);

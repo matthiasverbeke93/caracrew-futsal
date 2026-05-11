@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import AccountChip from "./components/AccountChip";
 import AttendanceTab from "./components/AttendanceTab";
+import AuthModal from "./components/AuthModal";
 import FormChip from "./components/FormChip";
 import GameSidebar from "./components/GameSidebar";
 import PlayerProfileModal from "./components/PlayerProfileModal";
@@ -8,8 +10,8 @@ import StatsTab from "./components/StatsTab";
 import TeamStatsPage from "./components/TeamStatsPage";
 import Tabs from "./components/Tabs";
 import { TEAM_NAME } from "./constants";
+import { useAuthSession } from "./hooks/useAuthSession";
 import { useFutsalData } from "./hooks/useFutsalData";
-import { supabase } from "./lib/supabase";
 import {
   DEFAULT_SEASON_SLUG,
   isSeasonSlug,
@@ -19,9 +21,17 @@ import {
 } from "./seasons";
 
 export default function App() {
-  const [user, setUser] = useState(null);
-  const requireAuthForWrites =
-    import.meta.env.VITE_REQUIRE_AUTH_FOR_WRITES === "true";
+  const {
+    user,
+    currentPlayer,
+    isAdmin,
+    isSignedIn,
+    authLoading,
+    signIn,
+    signUp,
+    signOut,
+  } = useAuthSession();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const [profilePlayerId, setProfilePlayerId] = useState(() =>
     new URLSearchParams(window.location.search).get("player")
@@ -135,28 +145,15 @@ export default function App() {
     submitMotmVote,
     addGuestPlayer,
     removeGuestPlayer,
-  } = useFutsalData(seasonSlug);
+  } = useFutsalData(seasonSlug, { currentPlayerId: currentPlayer?.id, isAdmin });
 
-  useEffect(() => {
-    let mounted = true;
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (mounted) setUser(data.session?.user || null);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const canWrite = !requireAuthForWrites || !!user;
+  const canEditAttendanceFor = useCallback(
+    (playerId) => isSignedIn && (isAdmin || playerId === currentPlayer?.id),
+    [isSignedIn, isAdmin, currentPlayer]
+  );
+  const canEditStatsFor = canEditAttendanceFor;
+  const canManageGame = isSignedIn && isAdmin;
+  const canVote = isSignedIn;
 
   return (
     <div className="app">
@@ -198,12 +195,21 @@ export default function App() {
               );
             })}
           </div>
+          <AccountChip
+            user={user}
+            currentPlayer={currentPlayer}
+            isAdmin={isAdmin}
+            authLoading={authLoading}
+            onSignInClick={() => setAuthModalOpen(true)}
+            onSignOut={signOut}
+          />
         </div>
       </header>
 
-      {!canWrite && (
+      {isSignedIn && !currentPlayer && (
         <section className="auth-banner">
-          Log in required for write actions. Reading remains public.
+          You're signed in but not linked to a player yet. Send your full name to the admin so they
+          can link your account.
         </section>
       )}
 
@@ -262,7 +268,7 @@ export default function App() {
                 opponentStrengths={opponentStrengths}
                 seasonSlug={seasonSlug}
                 saveFinalScore={saveFinalScore}
-                canWrite={canWrite}
+                canManageGame={canManageGame}
               />
 
               <Tabs activeTab={tab} onTabChange={setTab} />
@@ -282,7 +288,10 @@ export default function App() {
                   removeGuestPlayer={removeGuestPlayer}
                   onOpenPlayer={openPlayer}
                   selectedGame={selectedGame}
-                  canWrite={canWrite}
+                  canEditAttendanceFor={canEditAttendanceFor}
+                  canManageGame={canManageGame}
+                  isSignedIn={isSignedIn}
+                  onRequestSignIn={() => setAuthModalOpen(true)}
                 />
               )}
 
@@ -299,7 +308,9 @@ export default function App() {
                   motmVotes={motmVotes}
                   submitMotmVote={submitMotmVote}
                   onOpenPlayer={openPlayer}
-                  canWrite={canWrite}
+                  canEditStatsFor={canEditStatsFor}
+                  canManageGame={canManageGame}
+                  canVote={canVote}
                 />
               )}
             </>
@@ -335,6 +346,13 @@ export default function App() {
           motmVotes={motmVotes}
         />
       )}
+
+      <AuthModal
+        open={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        signIn={signIn}
+        signUp={signUp}
+      />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { buildWhatsAppNudgeUrl } from "../utils/formatMatch";
 import { getHeadToHeadSummary } from "../utils/headToHead";
 import { cleanOpponentName } from "../utils/opponent";
 
-function FinalScoreFields({ game, canWrite, saveFinalScore }) {
+function FinalScoreFields({ game, canManageGame, saveFinalScore }) {
   const [homeScoreInput, setHomeScoreInput] = useState(() =>
     game.home_score == null || game.home_score === undefined ? "" : String(game.home_score)
   );
@@ -15,7 +15,7 @@ function FinalScoreFields({ game, canWrite, saveFinalScore }) {
   );
 
   function persistScore() {
-    if (!canWrite) return;
+    if (!canManageGame) return;
     saveFinalScore(homeScoreInput, awayScoreInput);
   }
 
@@ -29,7 +29,8 @@ function FinalScoreFields({ game, canWrite, saveFinalScore }) {
           inputMode="numeric"
           aria-label="Caracrew goals"
           value={homeScoreInput}
-          disabled={!canWrite}
+          disabled={!canManageGame}
+          title={!canManageGame ? "Admin only" : undefined}
           onChange={(e) => setHomeScoreInput(e.target.value)}
           onBlur={persistScore}
           onKeyDown={(e) => {
@@ -43,7 +44,8 @@ function FinalScoreFields({ game, canWrite, saveFinalScore }) {
           inputMode="numeric"
           aria-label="Opponent goals"
           value={awayScoreInput}
-          disabled={!canWrite}
+          disabled={!canManageGame}
+          title={!canManageGame ? "Admin only" : undefined}
           onChange={(e) => setAwayScoreInput(e.target.value)}
           onBlur={persistScore}
           onKeyDown={(e) => {
@@ -64,7 +66,7 @@ export default function SelectedGamePanel({
   opponentStrengths,
   seasonSlug,
   saveFinalScore,
-  canWrite,
+  canManageGame,
 }) {
   const [shareFeedback, setShareFeedback] = useState(null);
   const opponentName = cleanOpponentName(selectedGame.opponent);
@@ -136,7 +138,7 @@ export default function SelectedGamePanel({
           >
             {shareFeedback || "Share"}
           </button>
-          {!played && missingFixed.length > 0 && (
+          {!played && missingFixed.length > 0 && canManageGame && (
             <button
               type="button"
               className="whatsapp-button nudge"
@@ -199,7 +201,7 @@ export default function SelectedGamePanel({
         <FinalScoreFields
           key={selectedGame.id}
           game={selectedGame}
-          canWrite={canWrite}
+          canManageGame={canManageGame}
           saveFinalScore={saveFinalScore}
         />
       )}

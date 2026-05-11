@@ -61,12 +61,3 @@ export function countPlayerMotmWins(playerId, games, votes, nowMs = Date.now()) 
   return wins;
 }
 
-export function getVoterKey() {
-  const key = "caracrew_motm_voter";
-  let id = localStorage.getItem(key);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(key, id);
-  }
-  return id;
-}

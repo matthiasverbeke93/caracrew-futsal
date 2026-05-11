@@ -98,6 +98,58 @@ button {
   margin: 12px 0 12px;
 }
 
+.sidebar-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.calendar-toggle-button {
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: #020617;
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.calendar-panel {
+  margin-bottom: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.calendar-month h3 {
+  margin: 6px 0;
+  font-size: 13px;
+  color: #334155;
+}
+
+.calendar-game-list {
+  display: grid;
+  gap: 8px;
+}
+
+.calendar-game-item {
+  width: 100%;
+  text-align: left;
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.calendar-game-item.selected {
+  border-color: #020617;
+}
+
 .game-filters {
   display: flex;
   flex-wrap: wrap;
@@ -308,6 +360,11 @@ button {
   cursor: pointer;
   background: #e2e8f0;
   color: #0f172a;
+}
+
+.guest-player-card {
+  border-color: #fde68a;
+  background: #fffbeb;
 }
 
 .tabs {

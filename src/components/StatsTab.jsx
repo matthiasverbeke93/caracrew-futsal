@@ -15,13 +15,15 @@ export default function StatsTab({ allGamePlayers, gameStats, saveGuestStat, sav
         <tbody>
           {allGamePlayers.map((player) => {
             const row =
-              player.type === "guest" ? player : gameStats.find((s) => s.player_id === player.id);
+              player.type === "ad_hoc_guest"
+                ? player
+                : gameStats.find((s) => s.player_id === player.id);
 
             return (
               <tr key={player.id}>
                 <td>
                   {player.name}
-                  {player.type === "guest" && <span className="guest-badge">External</span>}
+                  {player.type !== "fixed" && <span className="guest-badge">Guest</span>}
                 </td>
                 <td>
                   <input
@@ -30,7 +32,7 @@ export default function StatsTab({ allGamePlayers, gameStats, saveGuestStat, sav
                     value={row?.goals || 0}
                     disabled={!canWrite}
                     onChange={(e) =>
-                      player.type === "guest"
+                      player.type === "ad_hoc_guest"
                         ? saveGuestStat(player.id, "goals", e.target.value)
                         : saveStat(player.id, "goals", e.target.value)
                     }
@@ -43,7 +45,7 @@ export default function StatsTab({ allGamePlayers, gameStats, saveGuestStat, sav
                     value={row?.assists || 0}
                     disabled={!canWrite}
                     onChange={(e) =>
-                      player.type === "guest"
+                      player.type === "ad_hoc_guest"
                         ? saveGuestStat(player.id, "assists", e.target.value)
                         : saveStat(player.id, "assists", e.target.value)
                     }

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import AttendanceTab from "./components/AttendanceTab";
 import GameSidebar from "./components/GameSidebar";
-import SeasonTab from "./components/SeasonTab";
 import SelectedGamePanel from "./components/SelectedGamePanel";
 import StatsTab from "./components/StatsTab";
 import Tabs from "./components/Tabs";
@@ -35,13 +34,11 @@ export default function App() {
     gameAttendance,
     gameStats,
     counts,
-    seasonLeaders,
     saveAttendance,
     saveGuestAttendance,
     saveStat,
     saveGuestStat,
     addGuestPlayer,
-    addExistingExternalPlayerToGame,
     removeGuestPlayer,
   } = useFutsalData();
 
@@ -72,7 +69,7 @@ export default function App() {
         <div>
           <div className="pill">Season 25-26</div>
           <h1>{TEAM_NAME}</h1>
-          <p>Attendance, goals and assists tracker 🙂</p>
+          <p>Attendance, goals and assists tracker</p>
         </div>
       </header>
 
@@ -100,14 +97,6 @@ export default function App() {
               <SelectedGamePanel
                 selectedGame={selectedGame}
                 counts={counts}
-                newGuestFirstName={newGuestFirstName}
-                setNewGuestFirstName={setNewGuestFirstName}
-                newGuestLastName={newGuestLastName}
-                setNewGuestLastName={setNewGuestLastName}
-                externalPlayerPool={externalPlayerPool}
-                addExistingExternalPlayerToGame={addExistingExternalPlayerToGame}
-                addGuestPlayer={addGuestPlayer}
-                canWrite={canWrite}
               />
 
               <Tabs activeTab={tab} onTabChange={setTab} />
@@ -115,6 +104,12 @@ export default function App() {
               {tab === "attendance" && (
                 <AttendanceTab
                   allGamePlayers={allGamePlayers}
+                  externalPlayerPool={externalPlayerPool}
+                  newGuestFirstName={newGuestFirstName}
+                  setNewGuestFirstName={setNewGuestFirstName}
+                  newGuestLastName={newGuestLastName}
+                  setNewGuestLastName={setNewGuestLastName}
+                  addGuestPlayer={addGuestPlayer}
                   gameAttendance={gameAttendance}
                   saveGuestAttendance={saveGuestAttendance}
                   saveAttendance={saveAttendance}
@@ -132,8 +127,6 @@ export default function App() {
                   canWrite={canWrite}
                 />
               )}
-
-              {tab === "season" && <SeasonTab seasonLeaders={seasonLeaders} />}
             </>
           )}
         </section>

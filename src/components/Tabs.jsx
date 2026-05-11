@@ -1,7 +1,6 @@
 const TABS = [
   { id: "attendance", label: "Game attendance" },
   { id: "stats", label: "Game stats" },
-  { id: "season", label: "Season leaders" },
 ];
 
 export default function Tabs({ activeTab, onTabChange }) {

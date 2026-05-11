@@ -1,5 +1,6 @@
 import { GAME_FILTERS } from "../constants";
 import { playerStatusLabel, readinessClass } from "../utils/game";
+import { useMemo, useState } from "react";
 
 export default function GameSidebar({
   games,
@@ -11,9 +12,31 @@ export default function GameSidebar({
   selectedGameId,
   onSelectGame,
 }) {
+  const [showCalendar, setShowCalendar] = useState(false);
+  const gamesByMonth = useMemo(() => {
+    const groups = {};
+
+    games.forEach((game) => {
+      const monthKey = (game.game_date || "").slice(0, 7);
+      if (!groups[monthKey]) groups[monthKey] = [];
+      groups[monthKey].push(game);
+    });
+
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  }, [games]);
+
   return (
     <aside className="sidebar">
-      <h2>All games</h2>
+      <div className="sidebar-header-row">
+        <h2>All games</h2>
+        <button
+          className="calendar-toggle-button"
+          type="button"
+          onClick={() => setShowCalendar((prev) => !prev)}
+        >
+          {showCalendar ? "List" : "Calendar"}
+        </button>
+      </div>
       <div className="game-filters">
         {GAME_FILTERS.map((filter) => (
           <button
@@ -26,7 +49,30 @@ export default function GameSidebar({
         ))}
       </div>
 
-      {games.map((game) => {
+      {showCalendar && (
+        <div className="calendar-panel">
+          {gamesByMonth.map(([month, monthGames]) => (
+            <section key={month} className="calendar-month">
+              <h3>{month}</h3>
+              <div className="calendar-game-list">
+                {monthGames.map((game) => (
+                  <button
+                    key={game.id}
+                    className={`calendar-game-item ${game.id === selectedGameId ? "selected" : ""}`}
+                    onClick={() => onSelectGame(game.id)}
+                  >
+                    <span>{game.game_date}</span>
+                    <strong>{game.opponent}</strong>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
+
+      {!showCalendar &&
+        games.map((game) => {
         const gameRows = attendance.filter((a) => a.game_id === game.id);
         const gameGuestPlayers = guestPlayers.filter((p) => p.game_id === game.id);
         const playing =
@@ -51,15 +97,8 @@ export default function GameSidebar({
             <div>{game.location}</div>
 
             <div className="mini-counts">
-              <span>{playing} playing</span>
               <span>{playerStatusLabel(playing)}</span>
-              <span>
-                {gameRows.filter((a) => a.status === "if_needed").length +
-                  gameGuestPlayers.filter((p) => p.status === "if_needed").length}{" "}
-                if needed
-              </span>
               {status?.statsMissing && <span className="badge-warning">Stats missing</span>}
-              {!!gameGuestPlayers.length && <span>{gameGuestPlayers.length} guests</span>}
             </div>
           </button>
         );

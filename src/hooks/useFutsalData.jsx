@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { isPlayed } from "../utils/game";
 
+const FORCED_GUEST_NAMES = new Set(["bart moyens", "yannick drossaert"]);
+
 function makeGuestId() {
   return `guest-${crypto.randomUUID()}`;
 }
@@ -55,21 +57,41 @@ export function useFutsalData() {
   }
 
   const selectedGame = games.find((g) => g.id === selectedGameId);
-  const fixedPlayers = players.filter((player) => player.fixed);
-  const externalPlayerPool = players.filter((player) => !player.fixed);
+  const playersWithRole = useMemo(
+    () =>
+      players.map((player) => {
+        const forcedGuest = FORCED_GUEST_NAMES.has(player.name.toLowerCase().trim());
+        const isGuest = forcedGuest || !player.fixed;
+        return {
+          ...player,
+          fixed: !isGuest,
+          isGuest,
+        };
+      }),
+    [players]
+  );
+  const fixedPlayers = playersWithRole.filter((player) => player.fixed);
+  const externalPlayerPool = playersWithRole.filter((player) => player.isGuest);
   const gameAttendance = attendance.filter((a) => a.game_id === selectedGameId);
   const gameStats = stats.filter((s) => s.game_id === selectedGameId);
   const selectedGameGuests = guestPlayers.filter((g) => g.game_id === selectedGameId);
+  const adHocGameGuests = selectedGameGuests.filter((g) => !g.source_player_id);
 
   const allGamePlayers = useMemo(
     () => [
-      ...fixedPlayers.map((player) => ({ ...player, type: "roster" })),
-      ...selectedGameGuests.map((player) => ({ ...player, type: "guest" })),
+      ...playersWithRole.map((player) => ({
+        ...player,
+        type: player.isGuest ? "guest" : "fixed",
+      })),
+      ...adHocGameGuests.map((player) => ({ ...player, type: "ad_hoc_guest" })),
     ],
-    [fixedPlayers, selectedGameGuests]
+    [adHocGameGuests, playersWithRole]
   );
 
   const counts = useMemo(() => {
+    const fixedAttendanceCount = gameAttendance.filter((a) =>
+      fixedPlayers.some((player) => player.id === a.player_id)
+    ).length;
     const rosterPlaying = gameAttendance.filter((a) => a.status === "playing").length;
     const rosterCant = gameAttendance.filter((a) => a.status === "cant").length;
     const rosterIfNeeded = gameAttendance.filter((a) => a.status === "if_needed").length;
@@ -81,10 +103,10 @@ export function useFutsalData() {
       playing: rosterPlaying + guestPlaying,
       cant: rosterCant + guestCant,
       if_needed: rosterIfNeeded + guestIfNeeded,
-      missing: Math.max(fixedPlayers.length - gameAttendance.length, 0),
+      missing: Math.max(fixedPlayers.length - fixedAttendanceCount, 0),
       guests: selectedGameGuests.length,
     };
-  }, [fixedPlayers.length, gameAttendance, selectedGameGuests]);
+  }, [fixedPlayers, gameAttendance, selectedGameGuests]);
 
   const gameStatusById = useMemo(() => {
     const statusMap = {};
@@ -188,8 +210,8 @@ export function useFutsalData() {
     const lastName = newGuestLastName.trim();
     if (!firstName || !lastName || !selectedGameId) return;
     const fullName = `${firstName} ${lastName}`.replace(/\s+/g, " ").trim();
-    const existingExternal = externalPlayerPool.find(
-      (entry) => entry.name.toLowerCase() === fullName.toLowerCase()
+    const existingExternal = playersWithRole.find(
+      (entry) => entry.name.toLowerCase().trim() === fullName.toLowerCase()
     );
     const externalId = existingExternal?.id || makeGuestId();
 
@@ -201,14 +223,10 @@ export function useFutsalData() {
       });
     }
 
-    await supabase.from("guest_players").insert({
-      id: makeGuestId(),
+    await supabase.from("attendance").upsert({
       game_id: selectedGameId,
-      name: fullName,
-      source_player_id: externalId,
+      player_id: externalId,
       status: "playing",
-      goals: 0,
-      assists: 0,
       updated_at: new Date().toISOString(),
     });
 
@@ -217,50 +235,15 @@ export function useFutsalData() {
     await loadAll();
   }
 
-  async function addExistingExternalPlayerToGame(playerId) {
-    if (!selectedGameId) return;
-    const player = externalPlayerPool.find((entry) => entry.id === playerId);
-    if (!player) return;
-
-    const alreadyInGame = selectedGameGuests.some(
-      (entry) => entry.source_player_id === player.id
-    );
-    if (alreadyInGame) return;
-
-    await supabase.from("guest_players").insert({
-      id: makeGuestId(),
-      game_id: selectedGameId,
-      name: player.name,
-      source_player_id: player.id,
-      status: "playing",
-      goals: 0,
-      assists: 0,
-      updated_at: new Date().toISOString(),
-    });
-
-    await loadAll();
-  }
-
   async function removeGuestPlayer(playerId) {
     await supabase.from("guest_players").delete().eq("id", playerId);
     await loadAll();
   }
 
-  const seasonLeaders = fixedPlayers
-    .map((player) => {
-      const playerStats = stats.filter((s) => s.player_id === player.id);
-      return {
-        ...player,
-        goals: playerStats.reduce((sum, s) => sum + (s.goals || 0), 0),
-        assists: playerStats.reduce((sum, s) => sum + (s.assists || 0), 0),
-      };
-    })
-    .sort((a, b) => b.goals + b.assists - (a.goals + a.assists));
-
   return {
     games,
     filteredGames,
-    players,
+    players: playersWithRole,
     fixedPlayers,
     externalPlayerPool,
     attendance,
@@ -280,7 +263,6 @@ export function useFutsalData() {
     gameAttendance,
     gameStats,
     counts,
-    seasonLeaders,
     guestPlayers,
     loadAll,
     saveAttendance,
@@ -288,7 +270,6 @@ export function useFutsalData() {
     saveStat,
     saveGuestStat,
     addGuestPlayer,
-    addExistingExternalPlayerToGame,
     removeGuestPlayer,
   };
 }

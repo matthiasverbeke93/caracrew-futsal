@@ -41,9 +41,12 @@ export default function TeamStatsPage({
   );
 
   const rows = useMemo(() => {
+    // Live data hides archived players entirely. Static snapshots can still
+    // reference them because the snapshot is the source of truth.
+    const livePlayers = (players || []).filter((p) => !p.archived);
     const built = staticData
       ? buildStaticTeamSeasonRows(staticData, players)
-      : buildTeamSeasonPlayerRows(games, players, attendance, stats);
+      : buildTeamSeasonPlayerRows(games, livePlayers, attendance, stats);
     return sortTeamSeasonRows(built, sortKey);
   }, [attendance, games, players, sortKey, staticData, stats]);
 

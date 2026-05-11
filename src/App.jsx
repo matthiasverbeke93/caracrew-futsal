@@ -155,6 +155,7 @@ export default function App() {
     submitMotmVote,
     addGuestPlayer,
     removeGuestPlayer,
+    reloadAll,
   } = useFutsalData(seasonSlug, { currentPlayerId: currentPlayer?.id, isAdmin });
 
   const canEditAttendanceFor = useCallback(
@@ -459,6 +460,7 @@ export default function App() {
         onClose={() => setAdminPanelOpen(false)}
         onChanged={() => {
           refreshClaim();
+          reloadAll();
         }}
       />
     </div>

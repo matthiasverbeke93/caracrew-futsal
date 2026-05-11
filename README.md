@@ -64,8 +64,9 @@ Email + password auth via Supabase. Reads stay public; writes are scoped:
    ```sql
    \i supabase/auth_ownership.sql
    \i supabase/auth_claims.sql
+   \i supabase/admin_player_ops.sql
    ```
-   `auth_ownership.sql` adds `players.auth_user_id` + `players.is_admin`, helper functions, and RLS policies. `auth_claims.sql` adds the `player_claims` table, RLS, and admin RPC functions used by the in-app **Admin panel**.
+   `auth_ownership.sql` adds `players.auth_user_id` + `players.is_admin`, helper functions, and RLS policies. `auth_claims.sql` adds the `player_claims` table and approval RPCs used by the **Claims** tab. `admin_player_ops.sql` adds `players.archived_at` and roster management RPCs (add, rename, toggle fixed/guest, archive/restore, hard-delete) used by the **Players** tab.
 
 ### Onboarding a player (self-service)
 
@@ -93,7 +94,7 @@ update players set is_admin = true where lower(name) = lower('matthias verbeke')
 
 The hero shows an **Admin** button for users with `is_admin = true`. It opens a modal with three tabs:
 - **Claims** — pending self-service claims with Approve / Approve + admin / Reject.
-- **Players** — full roster with quick **Make admin / Remove admin / Unlink / Link to account…** actions.
+- **Players** — full roster management: add new players, rename, toggle fixed/guest, make/remove admin, link/unlink accounts, archive (soft delete — keeps history) and restore, or hard-delete (cascades attendance, stats, votes, claims). Archived players are hidden from `fixedPlayers`, the live team stats, and new-game attendance UI, but they remain visible inside historical games where they have a row.
 - **Accounts** — every auth user, highlighting those not linked yet.
 
 ## SQL

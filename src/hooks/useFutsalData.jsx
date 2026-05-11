@@ -136,6 +136,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
           ...player,
           fixed: !isGuest,
           isGuest,
+          archived: !!player.archived_at,
         };
       }),
     [players]
@@ -149,11 +150,11 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     [playersWithRole]
   );
   const fixedPlayers = useMemo(
-    () => playersWithRole.filter((player) => player.fixed),
+    () => playersWithRole.filter((player) => player.fixed && !player.archived),
     [playersWithRole]
   );
   const externalPlayerPool = useMemo(
-    () => playersWithRole.filter((player) => player.isGuest),
+    () => playersWithRole.filter((player) => player.isGuest && !player.archived),
     [playersWithRole]
   );
   const gameAttendance = useMemo(
@@ -180,16 +181,22 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     [selectedGame]
   );
 
-  const allGamePlayers = useMemo(
-    () => [
-      ...sortedPlayersWithRole.map((player) => ({
-        ...player,
-        type: player.isGuest ? "guest" : "fixed",
-      })),
+  const allGamePlayers = useMemo(() => {
+    // Show every active player, plus archived players who still have a row
+    // for the currently-selected game (so past games keep showing them).
+    const playerIdsWithData = new Set();
+    for (const a of gameAttendance) playerIdsWithData.add(a.player_id);
+    for (const s of gameStats) playerIdsWithData.add(s.player_id);
+    return [
+      ...sortedPlayersWithRole
+        .filter((p) => !p.archived || playerIdsWithData.has(p.id))
+        .map((player) => ({
+          ...player,
+          type: player.isGuest ? "guest" : "fixed",
+        })),
       ...adHocGameGuests.map((player) => ({ ...player, type: "ad_hoc_guest" })),
-    ],
-    [adHocGameGuests, sortedPlayersWithRole]
-  );
+    ];
+  }, [adHocGameGuests, gameAttendance, gameStats, sortedPlayersWithRole]);
 
   const counts = useMemo(() => {
     let rosterPlaying = 0;
@@ -546,6 +553,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     loading,
     motmVotes,
     opponentStrengths,
+    reloadAll: loadAll,
     players: playersWithRole,
     fixedPlayers,
     externalPlayerPool,

@@ -13,6 +13,15 @@ function formatTimestamp(iso) {
   });
 }
 
+function slugifyName(name) {
+  return String(name || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export default function AdminPanel({ open, onClose, onChanged }) {
   const [tab, setTab] = useState("claims");
   const [claims, setClaims] = useState([]);
@@ -21,6 +30,13 @@ export default function AdminPanel({ open, onClose, onChanged }) {
   const [loading, setLoading] = useState(false);
   const [busyKey, setBusyKey] = useState(null);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editingName, setEditingName] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newId, setNewId] = useState("");
+  const [newFixed, setNewFixed] = useState(true);
+  const [showArchived, setShowArchived] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -30,7 +46,7 @@ export default function AdminPanel({ open, onClose, onChanged }) {
       supabase.rpc("admin_list_auth_users"),
       supabase
         .from("players")
-        .select("id, name, fixed, is_admin, auth_user_id")
+        .select("id, name, fixed, is_admin, auth_user_id, archived_at")
         .order("name", { ascending: true }),
     ]);
     if (claimsRes.error) setError(claimsRes.error.message);
@@ -67,6 +83,24 @@ export default function AdminPanel({ open, onClose, onChanged }) {
     for (const u of users) m.set(u.id, u);
     return m;
   }, [users]);
+  const playerIds = useMemo(() => new Set(players.map((p) => p.id)), [players]);
+  const activePlayers = useMemo(
+    () => players.filter((p) => !p.archived_at),
+    [players]
+  );
+  const archivedPlayers = useMemo(
+    () => players.filter((p) => !!p.archived_at),
+    [players]
+  );
+
+  const suggestedId = useMemo(() => {
+    const base = slugifyName(newName);
+    if (!base) return "";
+    if (!playerIds.has(base)) return base;
+    let n = 2;
+    while (playerIds.has(`${base}-${n}`)) n += 1;
+    return `${base}-${n}`;
+  }, [newName, playerIds]);
 
   async function run(key, action) {
     setBusyKey(key);
@@ -111,6 +145,225 @@ export default function AdminPanel({ open, onClose, onChanged }) {
   async function linkPlayer(player, userId) {
     await run(`link-${player.id}`, () =>
       supabase.rpc("admin_link_player", { player_id_arg: player.id, user_id_arg: userId })
+    );
+  }
+
+  async function archivePlayer(player) {
+    await run(`archive-${player.id}`, () =>
+      supabase.rpc("admin_archive_player", { player_id_arg: player.id })
+    );
+  }
+
+  async function restorePlayer(player) {
+    await run(`restore-${player.id}`, () =>
+      supabase.rpc("admin_restore_player", { player_id_arg: player.id })
+    );
+  }
+
+  async function hardDeletePlayer(player) {
+    const ok = window.confirm(
+      `Permanently delete ${player.name}?\n\nThis removes ALL their attendance, stats, claims and votes. There is no undo.`
+    );
+    if (!ok) return;
+    await run(`delete-${player.id}`, () =>
+      supabase.rpc("admin_delete_player", { player_id_arg: player.id })
+    );
+  }
+
+  async function toggleFixed(player) {
+    await run(`fixed-${player.id}`, () =>
+      supabase.rpc("admin_update_player", {
+        player_id_arg: player.id,
+        name_arg: null,
+        fixed_arg: !player.fixed,
+      })
+    );
+  }
+
+  function startRename(player) {
+    setEditingId(player.id);
+    setEditingName(player.name);
+  }
+
+  function cancelRename() {
+    setEditingId(null);
+    setEditingName("");
+  }
+
+  async function saveRename(player) {
+    const trimmed = editingName.trim();
+    if (!trimmed || trimmed === player.name) {
+      cancelRename();
+      return;
+    }
+    await run(`rename-${player.id}`, () =>
+      supabase.rpc("admin_update_player", {
+        player_id_arg: player.id,
+        name_arg: trimmed,
+        fixed_arg: null,
+      })
+    );
+    cancelRename();
+  }
+
+  async function createPlayer(e) {
+    e.preventDefault();
+    const finalName = newName.trim();
+    const finalId = (newId.trim() || suggestedId).trim();
+    if (!finalName || !finalId) return;
+    await run("add-player", () =>
+      supabase.rpc("admin_add_player", {
+        player_id_arg: finalId,
+        name_arg: finalName,
+        fixed_arg: newFixed,
+      })
+    );
+    setNewName("");
+    setNewId("");
+    setNewFixed(true);
+    setShowAddForm(false);
+  }
+
+  function renderPlayerRow(p) {
+    const linkedUser = usersById.get(p.auth_user_id);
+    const isEditing = editingId === p.id;
+    const isArchived = !!p.archived_at;
+    return (
+      <li key={p.id} className={`admin-player-row ${isArchived ? "archived" : ""}`}>
+        <div className="admin-player-meta">
+          <div className="admin-player-line">
+            {isEditing ? (
+              <input
+                type="text"
+                className="admin-rename-input"
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveRename(p);
+                  if (e.key === "Escape") cancelRename();
+                }}
+                autoFocus
+              />
+            ) : (
+              <strong>{p.name}</strong>
+            )}
+            {p.is_admin && <span className="admin-pill role-admin">Admin</span>}
+            {!p.fixed && <span className="admin-pill role-guest">Guest</span>}
+            {isArchived && <span className="admin-pill role-archived">Archived</span>}
+          </div>
+          <div className="admin-player-sub">
+            {linkedUser
+              ? `Linked to ${linkedUser.email}`
+              : p.auth_user_id
+                ? `Linked (auth ${p.auth_user_id.slice(0, 8)}…)`
+                : "Not linked"}
+            {isArchived && ` · archived ${formatTimestamp(p.archived_at)}`}
+          </div>
+        </div>
+        <div className="admin-player-actions">
+          {isEditing ? (
+            <>
+              <button
+                type="button"
+                className="admin-btn primary"
+                disabled={busyKey === `rename-${p.id}`}
+                onClick={() => saveRename(p)}
+              >
+                Save
+              </button>
+              <button type="button" className="admin-btn" onClick={cancelRename}>
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="admin-btn"
+                onClick={() => startRename(p)}
+                title="Rename"
+              >
+                Rename
+              </button>
+              <button
+                type="button"
+                className="admin-btn"
+                disabled={busyKey === `fixed-${p.id}`}
+                onClick={() => toggleFixed(p)}
+                title={p.fixed ? "Mark as guest" : "Promote to fixed roster"}
+              >
+                {p.fixed ? "→ Guest" : "→ Fixed"}
+              </button>
+              <button
+                type="button"
+                className="admin-btn"
+                disabled={busyKey === `admin-${p.id}`}
+                onClick={() => setAdmin(p, !p.is_admin)}
+              >
+                {p.is_admin ? "Remove admin" : "Make admin"}
+              </button>
+              {p.auth_user_id ? (
+                <button
+                  type="button"
+                  className="admin-btn"
+                  disabled={busyKey === `unlink-${p.id}`}
+                  onClick={() => unlinkPlayer(p)}
+                >
+                  Unlink
+                </button>
+              ) : (
+                <select
+                  className="admin-link-select"
+                  defaultValue=""
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val) linkPlayer(p, val);
+                  }}
+                  disabled={busyKey === `link-${p.id}` || unlinkedUsers.length === 0}
+                >
+                  <option value="">
+                    {unlinkedUsers.length === 0 ? "No unlinked accounts" : "Link to account…"}
+                  </option>
+                  {unlinkedUsers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.email}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {isArchived ? (
+                <button
+                  type="button"
+                  className="admin-btn primary"
+                  disabled={busyKey === `restore-${p.id}`}
+                  onClick={() => restorePlayer(p)}
+                >
+                  Restore
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="admin-btn"
+                  disabled={busyKey === `archive-${p.id}`}
+                  onClick={() => archivePlayer(p)}
+                  title="Hide from active rosters but keep history"
+                >
+                  Archive
+                </button>
+              )}
+              <button
+                type="button"
+                className="admin-btn danger"
+                disabled={busyKey === `delete-${p.id}`}
+                onClick={() => hardDeletePlayer(p)}
+                title="Permanent delete — removes attendance, stats, votes"
+              >
+                Delete
+              </button>
+            </>
+          )}
+        </div>
+      </li>
     );
   }
 
@@ -250,66 +503,86 @@ export default function AdminPanel({ open, onClose, onChanged }) {
 
         {tab === "players" && !loading && (
           <div className="admin-section">
+            <div className="admin-player-toolbar">
+              <button
+                type="button"
+                className="admin-btn primary"
+                onClick={() => setShowAddForm((v) => !v)}
+              >
+                {showAddForm ? "× Cancel" : "+ Add player"}
+              </button>
+              <label className="admin-toggle">
+                <input
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(e) => setShowArchived(e.target.checked)}
+                />
+                <span>
+                  Show archived {archivedPlayers.length > 0 ? `(${archivedPlayers.length})` : ""}
+                </span>
+              </label>
+            </div>
+
+            {showAddForm && (
+              <form className="admin-add-form" onSubmit={createPlayer}>
+                <label>
+                  <span>Name</span>
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Full name"
+                    autoFocus
+                    required
+                  />
+                </label>
+                <label>
+                  <span>ID</span>
+                  <input
+                    type="text"
+                    value={newId || suggestedId}
+                    onChange={(e) => setNewId(e.target.value)}
+                    placeholder={suggestedId || "auto"}
+                    pattern="[a-z0-9-]+"
+                    title="Lowercase letters, digits and dashes only"
+                    required
+                  />
+                </label>
+                <label className="admin-add-fixed">
+                  <input
+                    type="checkbox"
+                    checked={newFixed}
+                    onChange={(e) => setNewFixed(e.target.checked)}
+                  />
+                  <span>Fixed roster (uncheck for guest)</span>
+                </label>
+                <button
+                  type="submit"
+                  className="admin-btn primary"
+                  disabled={busyKey === "add-player" || !newName.trim()}
+                >
+                  Create
+                </button>
+              </form>
+            )}
+
+            <h3 className="admin-section-title">
+              Active ({activePlayers.length})
+            </h3>
             <ul className="admin-player-list">
-              {players.map((p) => {
-                const linkedUser = usersById.get(p.auth_user_id);
-                return (
-                  <li key={p.id} className="admin-player-row">
-                    <div className="admin-player-meta">
-                      <div className="admin-player-line">
-                        <strong>{p.name}</strong>
-                        {p.is_admin && <span className="admin-pill role-admin">Admin</span>}
-                        {!p.fixed && <span className="admin-pill role-guest">Guest</span>}
-                      </div>
-                      <div className="admin-player-sub">
-                        {linkedUser
-                          ? `Linked to ${linkedUser.email}`
-                          : p.auth_user_id
-                            ? `Linked (auth ${p.auth_user_id.slice(0, 8)}…)`
-                            : "Not linked"}
-                      </div>
-                    </div>
-                    <div className="admin-player-actions">
-                      <button
-                        type="button"
-                        className="admin-btn"
-                        disabled={busyKey === `admin-${p.id}`}
-                        onClick={() => setAdmin(p, !p.is_admin)}
-                      >
-                        {p.is_admin ? "Remove admin" : "Make admin"}
-                      </button>
-                      {p.auth_user_id ? (
-                        <button
-                          type="button"
-                          className="admin-btn danger"
-                          disabled={busyKey === `unlink-${p.id}`}
-                          onClick={() => unlinkPlayer(p)}
-                        >
-                          Unlink
-                        </button>
-                      ) : (
-                        <select
-                          className="admin-link-select"
-                          defaultValue=""
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val) linkPlayer(p, val);
-                          }}
-                          disabled={busyKey === `link-${p.id}`}
-                        >
-                          <option value="">Link to account…</option>
-                          {unlinkedUsers.map((u) => (
-                            <option key={u.id} value={u.id}>
-                              {u.email}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
+              {activePlayers.map((p) => renderPlayerRow(p))}
             </ul>
+
+            {showArchived && archivedPlayers.length > 0 && (
+              <>
+                <h3 className="admin-section-title" style={{ marginTop: 12 }}>
+                  Archived ({archivedPlayers.length})
+                </h3>
+                <ul className="admin-player-list muted">
+                  {archivedPlayers.map((p) => renderPlayerRow(p))}
+                </ul>
+              </>
+            )}
           </div>
         )}
 

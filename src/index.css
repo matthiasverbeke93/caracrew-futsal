@@ -638,6 +638,100 @@ button {
   color: #166534;
 }
 
+.admin-pill.role-archived {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.admin-player-row.archived {
+  opacity: 0.6;
+  background: #f8fafc;
+}
+
+.admin-player-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.admin-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #475569;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-toggle input {
+  accent-color: #1d4ed8;
+}
+
+.admin-add-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  align-items: end;
+}
+
+.admin-add-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.admin-add-form input[type="text"] {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font: inherit;
+  font-size: 13px;
+}
+
+.admin-add-fixed {
+  flex-direction: row !important;
+  align-items: center;
+  font-weight: 600 !important;
+  color: #475569 !important;
+}
+
+.admin-add-fixed input {
+  accent-color: #1d4ed8;
+}
+
+.admin-add-form > button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.admin-rename-input {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border: 1px solid #1d4ed8;
+  border-radius: 8px;
+  min-width: 180px;
+}
+
+@media (max-width: 640px) {
+  .admin-add-form {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .admin-claim-row,
   .admin-player-row {

@@ -72,7 +72,7 @@ export default function App() {
         <div>
           <div className="pill">Season 25-26</div>
           <h1>{TEAM_NAME}</h1>
-          <p>Attendance, goals and assists tracker</p>
+          <p>Attendance, goals and assists tracker 🙂</p>
         </div>
       </header>
 

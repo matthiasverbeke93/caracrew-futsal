@@ -13,12 +13,15 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      # Opt into Node 24 for JS-based actions until v6+ is default everywhere (GitHub deprecation notice).
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "24"
 
       - name: Install runtime deps
         run: npm install --omit=dev --no-audit --no-fund @supabase/supabase-js

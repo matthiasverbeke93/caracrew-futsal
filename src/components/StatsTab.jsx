@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { isPlayed, isStatsEditable } from "../utils/game";
+import { STATS_FREEZE_DAYS, isPlayed, isStatsEditable, isStatsFrozen } from "../utils/game";
 import {
   getMotmLeaderIds,
   getMotmVotingEnd,
@@ -22,7 +22,8 @@ export default function StatsTab({
   canWrite,
 }) {
   const editable = canWrite && isStatsEditable(selectedGame);
-  const lockedForFutureGame = !isStatsEditable(selectedGame);
+  const frozen = isStatsFrozen(selectedGame);
+  const lockedForFutureGame = !isStatsEditable(selectedGame) && !frozen;
   const [goalsInput, setGoalsInput] = useState(() =>
     selectedGameTotals.goals === null || selectedGameTotals.goals === undefined
       ? ""
@@ -103,6 +104,11 @@ export default function StatsTab({
       <h2>Goals and assists</h2>
       {lockedForFutureGame && (
         <div className="warning-box">Stats can only be entered for games played today or earlier.</div>
+      )}
+      {frozen && (
+        <div className="warning-box">
+          Stats are locked. This game was played more than {STATS_FREEZE_DAYS} days ago.
+        </div>
       )}
       {(goalsOverTarget || assistsOverTarget) && (
         <div className="error-box">

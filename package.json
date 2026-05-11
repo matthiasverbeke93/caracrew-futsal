@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sync:lzv": "node scripts/sync-lzv.mjs",
+    "sync:lzv:dryrun": "node scripts/sync-lzv-dryrun.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",

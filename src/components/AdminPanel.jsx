@@ -1,17 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
-
-function formatTimestamp(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { formatShortDateTime } from "../utils/formatMatch";
 
 function slugifyName(name) {
   return String(name || "")
@@ -257,7 +246,7 @@ export default function AdminPanel({ open, onClose, onChanged }) {
               : p.auth_user_id
                 ? `Linked (auth ${p.auth_user_id.slice(0, 8)}…)`
                 : "Not linked"}
-            {isArchived && ` · archived ${formatTimestamp(p.archived_at)}`}
+            {isArchived && ` · archived ${formatShortDateTime(p.archived_at)}`}
           </div>
         </div>
         <div className="admin-player-actions">
@@ -437,7 +426,7 @@ export default function AdminPanel({ open, onClose, onChanged }) {
                           <strong>{c.player_name}</strong>
                         </div>
                         <div className="admin-claim-sub">
-                          Submitted {formatTimestamp(c.created_at)}
+                          Submitted {formatShortDateTime(c.created_at)}
                           {c.message ? ` · "${c.message}"` : ""}
                         </div>
                       </div>
@@ -490,7 +479,7 @@ export default function AdminPanel({ open, onClose, onChanged }) {
                           </span>
                         </div>
                         <div className="admin-claim-sub">
-                          {formatTimestamp(c.decided_at || c.created_at)}
+                          {formatShortDateTime(c.decided_at || c.created_at)}
                         </div>
                       </div>
                     </li>
@@ -602,7 +591,7 @@ export default function AdminPanel({ open, onClose, onChanged }) {
                         <strong>{u.email}</strong>
                       </div>
                       <div className="admin-claim-sub">
-                        Signed up {formatTimestamp(u.created_at)}
+                        Signed up {formatShortDateTime(u.created_at)}
                       </div>
                     </div>
                   </li>
@@ -623,7 +612,7 @@ export default function AdminPanel({ open, onClose, onChanged }) {
                         <span className="admin-pill role-player">{u.linked_player_name}</span>
                       )}
                     </div>
-                    <div className="admin-claim-sub">{formatTimestamp(u.created_at)}</div>
+                    <div className="admin-claim-sub">{formatShortDateTime(u.created_at)}</div>
                   </div>
                 </li>
               ))}

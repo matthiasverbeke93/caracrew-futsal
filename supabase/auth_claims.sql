@@ -4,7 +4,7 @@
 --    an admin approves/rejects.
 -- 2. `admin_approve_claim` / `admin_reject_claim` SECURITY DEFINER fns let
 --    admins resolve claims atomically through PostgREST.
--- 3. `admin_list_unlinked_auth_users()` exposes auth.users emails to admins
+-- 3. `admin_list_auth_users()` exposes auth.users emails to admins
 --    only (PostgREST doesn't allow direct selects on auth.users).
 --
 -- Run this after `auth_ownership.sql`.

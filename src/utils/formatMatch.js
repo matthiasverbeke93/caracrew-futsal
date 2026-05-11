@@ -10,6 +10,19 @@ export function formatMatchDayTime(game) {
   return time ? `${day} ${time}` : day;
 }
 
+/** Short locale string for timestamps (admin lists, claim history). */
+export function formatShortDateTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function buildShareGameUrl(gameId) {
   const url = new URL(window.location.origin + window.location.pathname);
   url.searchParams.set("game", gameId);

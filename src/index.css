@@ -29,8 +29,25 @@ button {
   background: #020617;
   color: white;
   border-radius: 28px;
-  padding: 32px;
+  padding: 28px 36px;
   margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.hero-left {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.hero-right {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .auth-banner {
@@ -108,28 +125,33 @@ button.hero-link-button {
 }
 
 .hero-season-row {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .hero .season-pill {
   display: inline-block;
   border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 12px;
+  padding: 8px 18px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  background: rgba(15, 23, 42, 0.25);
-  color: #e2e8f0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #cbd5e1;
   cursor: pointer;
   font-family: inherit;
+  transition: background 120ms ease, color 120ms ease;
 }
 
 .hero .season-pill:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
 }
 
 .hero .season-pill.active {
@@ -1326,7 +1348,15 @@ input {
   }
 
   .hero {
-    padding: 24px;
+    padding: 22px 22px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .hero-right {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .hero h1 {

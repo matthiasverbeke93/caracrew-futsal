@@ -161,23 +161,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="hero">
-        <div>
-          <div className="hero-season-row" role="navigation" aria-label="Season">
-            {SEASON_OPTIONS.map((opt) => {
-              const isActive = opt.slug === seasonSlug;
-              return (
-                <button
-                  key={opt.slug}
-                  type="button"
-                  className={`season-pill ${isActive ? "active" : ""}`}
-                  aria-pressed={isActive}
-                  onClick={() => selectSeason(opt.slug)}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
+        <div className="hero-left">
           <div className="hero-title-row">
             <h1>{TEAM_NAME}</h1>
             <FormChip games={games} />
@@ -196,6 +180,24 @@ export default function App() {
               View on LZV Cup ↗
             </a>
           </nav>
+        </div>
+        <div className="hero-right">
+          <div className="hero-season-row" role="navigation" aria-label="Season">
+            {SEASON_OPTIONS.map((opt) => {
+              const isActive = opt.slug === seasonSlug;
+              return (
+                <button
+                  key={opt.slug}
+                  type="button"
+                  className={`season-pill ${isActive ? "active" : ""}`}
+                  aria-pressed={isActive}
+                  onClick={() => selectSeason(opt.slug)}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </header>
 

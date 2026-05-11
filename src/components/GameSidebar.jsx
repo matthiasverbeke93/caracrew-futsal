@@ -109,11 +109,6 @@ export default function GameSidebar({
                   const tone = status?.played
                     ? "neutral"
                     : readinessClass(playing).replace("game-card ", "");
-                  const difficulty = getDifficulty(game.opponent);
-                  const hasScore =
-                    status?.played &&
-                    game.home_score != null &&
-                    game.away_score != null;
 
                   return (
                     <button
@@ -125,16 +120,6 @@ export default function GameSidebar({
                         {game.game_date} · {game.game_time || "--:--"}
                       </span>
                       <strong>{cleanOpponentName(game.opponent)}</strong>
-                      {hasScore && (
-                        <span className="result-chip-mini">
-                          {game.home_score}–{game.away_score}
-                        </span>
-                      )}
-                      {difficulty && (
-                        <span className={`difficulty-chip ${difficulty.className}`}>
-                          {difficulty.label} · P{difficulty.position}
-                        </span>
-                      )}
                     </button>
                   );
                 })}

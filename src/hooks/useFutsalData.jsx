@@ -29,6 +29,7 @@ export function useFutsalData() {
   const [tallyError, setTallyError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [motmVotes, setMotmVotes] = useState([]);
+  const [opponentStrengths, setOpponentStrengths] = useState([]);
 
   useEffect(() => {
     loadAll();
@@ -37,15 +38,23 @@ export function useFutsalData() {
   async function loadAll() {
     setLoading(true);
     try {
-      const [gamesRes, playersRes, attendanceRes, statsRes, guestsRes, motmRes] =
-        await Promise.all([
-          supabase.from("games").select("*").order("game_date", { ascending: true }),
-          supabase.from("players").select("*").order("fixed", { ascending: false }),
-          supabase.from("attendance").select("*"),
-          supabase.from("player_stats").select("*"),
-          supabase.from("guest_players").select("*"),
-          supabase.from("motm_votes").select("*"),
-        ]);
+      const [
+        gamesRes,
+        playersRes,
+        attendanceRes,
+        statsRes,
+        guestsRes,
+        motmRes,
+        strengthsRes,
+      ] = await Promise.all([
+        supabase.from("games").select("*").order("game_date", { ascending: true }),
+        supabase.from("players").select("*").order("fixed", { ascending: false }),
+        supabase.from("attendance").select("*"),
+        supabase.from("player_stats").select("*"),
+        supabase.from("guest_players").select("*"),
+        supabase.from("motm_votes").select("*"),
+        supabase.from("opponent_strength").select("*"),
+      ]);
 
       if (gamesRes.error) console.error(gamesRes.error);
       if (playersRes.error) console.error(playersRes.error);
@@ -53,6 +62,7 @@ export function useFutsalData() {
       if (statsRes.error) console.error(statsRes.error);
       if (guestsRes.error) console.error(guestsRes.error);
       if (motmRes.error) console.error(motmRes.error);
+      if (strengthsRes.error) console.error(strengthsRes.error);
 
       setGames(gamesRes.data || []);
       setPlayers(playersRes.data || []);
@@ -60,6 +70,7 @@ export function useFutsalData() {
       setStats(statsRes.data || []);
       setGuestPlayers(guestsRes.data || []);
       setMotmVotes(motmRes.data || []);
+      setOpponentStrengths(strengthsRes.data || []);
 
       const nextGames = gamesRes.data || [];
       const firstUpcoming = nextGames.find((g) => !isPlayed(g));
@@ -455,6 +466,7 @@ export function useFutsalData() {
     filteredGames,
     loading,
     motmVotes,
+    opponentStrengths,
     players: playersWithRole,
     fixedPlayers,
     externalPlayerPool,

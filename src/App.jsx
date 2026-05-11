@@ -47,6 +47,7 @@ export default function App() {
     filteredGames,
     loading,
     motmVotes,
+    opponentStrengths,
     players,
     fixedPlayers,
     attendance,
@@ -143,6 +144,7 @@ export default function App() {
           selectedGameId={selectedGameId}
           onSelectGame={setSelectedGameId}
           loading={loading}
+          opponentStrengths={opponentStrengths}
         />
 
         <section className="content">
@@ -167,6 +169,7 @@ export default function App() {
                 allGames={games}
                 fixedPlayers={fixedPlayers}
                 gameAttendance={gameAttendance}
+                opponentStrengths={opponentStrengths}
                 saveFinalScore={saveFinalScore}
                 canWrite={canWrite}
               />

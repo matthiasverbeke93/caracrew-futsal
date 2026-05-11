@@ -860,6 +860,12 @@ input {
   gap: 4px;
 }
 
+.difficulty-history {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
 .final-score-box {
   margin-top: 14px;
   padding-top: 12px;

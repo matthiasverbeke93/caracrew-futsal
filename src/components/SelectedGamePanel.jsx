@@ -61,12 +61,13 @@ export default function SelectedGamePanel({
   allGames,
   fixedPlayers,
   gameAttendance,
+  opponentStrengths,
   saveFinalScore,
   canWrite,
 }) {
   const [shareFeedback, setShareFeedback] = useState(null);
   const opponentName = cleanOpponentName(selectedGame.opponent);
-  const difficulty = getDifficulty(selectedGame.opponent);
+  const difficulty = getDifficulty(selectedGame.opponent, opponentStrengths);
   const h2h = getHeadToHeadSummary(allGames, selectedGame.opponent);
   const played = isPlayed(selectedGame);
 
@@ -160,9 +161,26 @@ export default function SelectedGamePanel({
 
       {difficulty && (
         <div className="selected-game-difficulty">
-          <span className={`difficulty-chip ${difficulty.className}`}>
-            {difficulty.label} · Position {difficulty.position} · {difficulty.ptnPerMatch} pts/match
+          <span
+            className={`difficulty-chip ${difficulty.className}`}
+            title={
+              difficulty.historyLine
+                ? `Recent seasons: ${difficulty.historyLine}${
+                    difficulty.strengthScore != null
+                      ? ` · Strength ${difficulty.strengthScore}/100`
+                      : ""
+                  }`
+                : undefined
+            }
+          >
+            {difficulty.label} · Position {difficulty.position}
+            {difficulty.ptnPerMatch != null ? ` · ${difficulty.ptnPerMatch} pts/match` : ""}
           </span>
+          {difficulty.historyLine && (
+            <span className="difficulty-history">
+              Last seasons: {difficulty.historyLine}
+            </span>
+          )}
           {h2h && (
             <div className="head-to-head-inline">
               {h2h.lastLine && <span>{h2h.lastLine}</span>}

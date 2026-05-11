@@ -21,6 +21,7 @@ export default function GameSidebar({
   selectedGameId,
   onSelectGame,
   loading,
+  opponentStrengths,
 }) {
   function toggleFilter(filterId) {
     if (filterId === "all") {
@@ -141,7 +142,7 @@ export default function GameSidebar({
 
         const played = status?.played;
         const cardClass = played ? "game-card neutral" : readinessClass(playing);
-        const difficulty = getDifficulty(game.opponent);
+        const difficulty = getDifficulty(game.opponent, opponentStrengths);
         const hasScore =
           played && game.home_score != null && game.away_score != null;
 

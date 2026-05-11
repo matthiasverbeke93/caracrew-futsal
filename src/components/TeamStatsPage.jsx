@@ -59,8 +59,8 @@ export default function TeamStatsPage({
           <p className="team-stats-sub">
             {staticData ? (
               <>
-                {seasonLabelText} snapshot · {denominator} games played · % = GP ÷ games
-                played · sourced from the LZV team page
+                {seasonLabelText} snapshot · {denominator} games this season · % = GP ÷
+                season games · sourced from the LZV team page
               </>
             ) : (
               <>

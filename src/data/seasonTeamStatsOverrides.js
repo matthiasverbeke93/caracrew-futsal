@@ -2,14 +2,15 @@
  *
  * - Keyed by `seasonSlug`.
  * - Names are matched (case-insensitive) against `players.name` to resolve `id` for the link.
- * - `totalGamesPlayed` is the denominator for the "% played" column. Default = max `gamesPlayed`
- *   in the list (i.e. games the team has actually played so far).
+ * - `totalGamesPlayed` is the denominator for the "% played" column (full season schedule,
+ *   e.g. 22 in LZV 5e Klasse Mechelen). Defaults to the max `gamesPlayed` in the list when
+ *   not provided.
  *
  * Remove the season entry once Supabase has authoritative attendance + player_stats for it.
  */
 export const SEASON_TEAM_STATS_OVERRIDES = {
   "2526": {
-    totalGamesPlayed: 20,
+    totalGamesPlayed: 22,
     rows: [
       { name: "Matthias Verbeke", gamesPlayed: 20, goals: 14, assists: 5 },
       { name: "Steven Vits", gamesPlayed: 16, goals: 7, assists: 15 },

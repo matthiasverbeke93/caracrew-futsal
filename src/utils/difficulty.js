@@ -79,6 +79,9 @@ export function getDifficulty(opponent, strengths) {
   if (row && row.current_position != null) {
     const lvl = levelFromPosition(row.current_position);
     const summary = summariseHistory(row.history);
+    const lastSeason = Array.isArray(row.history) && row.history.length > 0
+      ? [...row.history].sort((a, b) => (b.season || "").localeCompare(a.season || ""))[0]
+      : null;
     return {
       ...lvl,
       position: row.current_position,
@@ -87,6 +90,7 @@ export function getDifficulty(opponent, strengths) {
       strengthScore: row.strength_score ?? null,
       historyLine: summary?.text || null,
       historyReeksPrefix: summary?.reeksPrefix || null,
+      lastSeason,
       source: "live",
     };
   }
@@ -102,6 +106,7 @@ export function getDifficulty(opponent, strengths) {
     strengthScore: null,
     historyLine: null,
     historyReeksPrefix: null,
+    lastSeason: null,
     source: "static",
   };
 }

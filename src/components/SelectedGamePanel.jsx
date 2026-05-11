@@ -2,7 +2,7 @@ import { useState } from "react";
 import { MIN_PLAYERS_WARNING, TEAM_NAME } from "../constants";
 import { getDifficulty } from "../utils/difficulty";
 import { isPlayed } from "../utils/game";
-import { buildWhatsAppNudgeUrl, buildWhatsAppShareUrl } from "../utils/formatMatch";
+import { buildWhatsAppNudgeUrl } from "../utils/formatMatch";
 import { getHeadToHeadSummary } from "../utils/headToHead";
 import { cleanOpponentName } from "../utils/opponent";
 
@@ -105,11 +105,6 @@ export default function SelectedGamePanel({
     }
   }
 
-  function handleWhatsApp() {
-    const wa = buildWhatsAppShareUrl(selectedGame);
-    window.open(wa, "_blank", "noopener,noreferrer");
-  }
-
   function handleNudge() {
     const firstNames = missingFixed.map((p) => p.name.split(" ")[0]);
     const wa = buildWhatsAppNudgeUrl(selectedGame, firstNames);
@@ -139,9 +134,6 @@ export default function SelectedGamePanel({
             aria-label="Share link to this game"
           >
             {shareFeedback || "Share"}
-          </button>
-          <button type="button" className="whatsapp-button" onClick={handleWhatsApp}>
-            Send to WhatsApp
           </button>
           {!played && missingFixed.length > 0 && (
             <button
@@ -176,15 +168,15 @@ export default function SelectedGamePanel({
         )}
       </div>
 
-      {(difficulty?.historyLine || h2h) && (
+      {(difficulty?.lastSeason || h2h) && (
         <dl className="meta-list">
-          {difficulty?.historyLine && (
+          {difficulty?.lastSeason && (
             <div>
-              <dt>
-                Recent
-                {difficulty.historyReeksPrefix ? ` (${difficulty.historyReeksPrefix})` : ""}
-              </dt>
-              <dd>{difficulty.historyLine}</dd>
+              <dt>Last year's league standing</dt>
+              <dd>
+                Pos {difficulty.lastSeason.position}
+                {difficulty.lastSeason.reeks ? ` · ${difficulty.lastSeason.reeks}` : ""}
+              </dd>
             </div>
           )}
           {h2h?.lastLine && (

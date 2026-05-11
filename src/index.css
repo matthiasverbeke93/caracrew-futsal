@@ -33,6 +33,16 @@ button {
   margin-bottom: 24px;
 }
 
+.auth-banner {
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fdba74;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-weight: 700;
+}
+
 .hero h1 {
   margin: 8px 0;
   font-size: 42px;
@@ -86,6 +96,27 @@ button {
 .sidebar h2,
 .panel h2 {
   margin: 12px 0 12px;
+}
+
+.game-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.game-filters button {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #0f172a;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.game-filters button.active {
+  background: #020617;
+  color: white;
 }
 
 .game-card {
@@ -155,6 +186,12 @@ button {
   background: rgba(255, 255, 255, 0.75);
   border-radius: 999px;
   padding: 4px 8px;
+}
+
+.badge-warning {
+  background: #ffedd5 !important;
+  color: #9a3412;
+  font-weight: 700;
 }
 
 .content {
@@ -230,14 +267,19 @@ button {
   font-size: 13px;
 }
 
-.guest-controls {
+.guest-add-row {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
-.guest-controls button {
+.guest-add-row input {
+  width: min(180px, 44vw);
+}
+
+.guest-add-row button {
   border-radius: 999px;
   width: 34px;
   height: 34px;
@@ -248,9 +290,24 @@ button {
   line-height: 1;
 }
 
-.guest-controls strong {
-  min-width: 24px;
-  text-align: center;
+.existing-external-list {
+  width: 100%;
+}
+
+.existing-external-grid {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.existing-external-grid button {
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .tabs {
@@ -269,9 +326,14 @@ button {
   color: #0f172a;
 }
 
+.tabs button.active {
+  background: #020617;
+  color: white;
+}
+
 .tabs button:hover,
 .player-card button:hover,
-.guest-controls button:hover {
+.guest-add-row button:hover {
   filter: brightness(0.96);
 }
 
@@ -288,6 +350,18 @@ button {
   padding: 10px;
   display: grid;
   gap: 6px;
+}
+
+.player-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.remove-player-button {
+  font-size: 12px;
+  padding: 6px 10px;
 }
 
 .player-card strong {
@@ -309,6 +383,34 @@ button {
 .player-card button.active {
   background: #020617;
   color: white;
+}
+
+.player-card button:disabled,
+.remove-player-button:disabled,
+.guest-add-row button:disabled,
+input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.guest-badge {
+  margin-left: 8px;
+  background: #e2e8f0;
+  color: #334155;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.fixed-badge {
+  margin-left: 8px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 table {
@@ -376,5 +478,13 @@ input {
   .guest-card {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .guest-add-row {
+    width: 100%;
+  }
+
+  .guest-add-row input {
+    width: 100%;
   }
 }

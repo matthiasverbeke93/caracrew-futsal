@@ -69,7 +69,13 @@ export function useAuthSession() {
 
   const signUp = useCallback(async (email, password) => {
     setError(null);
-    const { error: signUpErr } = await supabase.auth.signUp({ email, password });
+    const emailRedirectTo =
+      typeof window !== "undefined" ? window.location.origin : undefined;
+    const { error: signUpErr } = await supabase.auth.signUp({
+      email,
+      password,
+      options: emailRedirectTo ? { emailRedirectTo } : undefined,
+    });
     if (signUpErr) {
       setError(signUpErr.message);
       return { error: signUpErr.message };

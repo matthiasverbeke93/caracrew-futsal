@@ -813,6 +813,53 @@ input {
   margin: 8px 0 4px;
 }
 
+.vs-prefix {
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.7em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-right: 6px;
+}
+
+.selected-game-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 6px;
+}
+
+.meta-list {
+  margin: 4px 0 12px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 10px;
+  row-gap: 4px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.meta-list > div {
+  display: contents;
+}
+
+.meta-list dt {
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  align-self: center;
+}
+
+.meta-list dd {
+  margin: 0;
+  color: #0f172a;
+  font-weight: 600;
+}
+
 .result-chip {
   display: inline-block;
   background: #020617;
@@ -833,38 +880,7 @@ input {
   font-weight: 800;
 }
 
-.head-to-head-inline {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: #475569;
-  font-weight: 600;
-  margin-top: 8px;
-}
 
-.head-to-head-block.standalone {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 13px;
-  color: #475569;
-  font-weight: 600;
-  margin: 8px 0;
-}
-
-.selected-game-difficulty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-}
-
-.difficulty-history {
-  font-size: 12px;
-  color: #64748b;
-  font-weight: 600;
-}
 
 .final-score-box {
   margin-top: 14px;

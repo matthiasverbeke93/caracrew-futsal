@@ -128,7 +128,9 @@ export default function SelectedGamePanel({
   return (
     <section className="panel selected-game-panel">
       <div className="selected-game-header">
-        <h2>{selectedGame.title || opponentName}</h2>
+        <h2>
+          <span className="vs-prefix">vs</span> {opponentName}
+        </h2>
         <div className="share-actions">
           <button
             type="button"
@@ -157,44 +159,47 @@ export default function SelectedGamePanel({
         {selectedGame.game_date} · {selectedGame.game_time} · {selectedGame.location}
       </p>
 
-      {resultChip && <div className="selected-game-meta-row">{resultChip}</div>}
-
-      {difficulty && (
-        <div className="selected-game-difficulty">
+      <div className="selected-game-context">
+        {resultChip}
+        {difficulty && (
           <span
             className={`difficulty-chip ${difficulty.className}`}
             title={
-              difficulty.historyLine
-                ? `Recent seasons: ${difficulty.historyLine}${
-                    difficulty.strengthScore != null
-                      ? ` · Strength ${difficulty.strengthScore}/100`
-                      : ""
-                  }`
+              difficulty.strengthScore != null
+                ? `Strength ${difficulty.strengthScore}/100`
                 : undefined
             }
           >
-            {difficulty.label} · Position {difficulty.position}
-            {difficulty.ptnPerMatch != null ? ` · ${difficulty.ptnPerMatch} pts/match` : ""}
+            {difficulty.label} · Pos {difficulty.position}
+            {difficulty.ptnPerMatch != null ? ` · ${difficulty.ptnPerMatch} pts/m` : ""}
           </span>
-          {difficulty.historyLine && (
-            <span className="difficulty-history">
-              Last seasons: {difficulty.historyLine}
-            </span>
-          )}
-          {h2h && (
-            <div className="head-to-head-inline">
-              {h2h.lastLine && <span>{h2h.lastLine}</span>}
-              {h2h.seasonLine && <span>{h2h.seasonLine}</span>}
+        )}
+      </div>
+
+      {(difficulty?.historyLine || h2h) && (
+        <dl className="meta-list">
+          {difficulty?.historyLine && (
+            <div>
+              <dt>
+                Recent
+                {difficulty.historyReeksPrefix ? ` (${difficulty.historyReeksPrefix})` : ""}
+              </dt>
+              <dd>{difficulty.historyLine}</dd>
             </div>
           )}
-        </div>
-      )}
-
-      {!difficulty && h2h && (
-        <div className="head-to-head-block standalone">
-          {h2h.lastLine && <span>{h2h.lastLine}</span>}
-          {h2h.seasonLine && <span>{h2h.seasonLine}</span>}
-        </div>
+          {h2h?.lastLine && (
+            <div>
+              <dt>Last meeting</dt>
+              <dd>{h2h.lastLine.replace(/^Last meeting:\s*/, "")}</dd>
+            </div>
+          )}
+          {h2h?.seasonLine && (
+            <div>
+              <dt>Season vs them</dt>
+              <dd>{h2h.seasonLine.replace(/^Season vs them:\s*/, "")}</dd>
+            </div>
+          )}
+        </dl>
       )}
 
       {played && (

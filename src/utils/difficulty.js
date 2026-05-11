@@ -44,12 +44,32 @@ function levelFromPosition(position) {
   return { level: 1, label: "Very easy", className: "diff-very-easy" };
 }
 
+function shortenReeks(reeks) {
+  return String(reeks || "")
+    .replace(/Klasse\s+/i, "")
+    .replace(/Mechelen$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function summariseHistory(history) {
   if (!Array.isArray(history) || history.length === 0) return null;
   const last3 = [...history]
     .sort((a, b) => (b.season || "").localeCompare(a.season || ""))
     .slice(0, 3);
-  return last3.map((s) => `${s.season.slice(2, 4)}-${s.season.slice(-2)} ${s.reeks || ""} pos ${s.position}`).join(" · ");
+
+  const reeksSet = new Set(last3.map((s) => shortenReeks(s.reeks)));
+  const sameReeks = reeksSet.size === 1 && [...reeksSet][0] !== "";
+  const entries = last3.map((s) => {
+    const seasonShort = `${s.season.slice(2, 4)}/${s.season.slice(-2)}`;
+    if (sameReeks) return `${seasonShort} pos ${s.position}`;
+    return `${seasonShort} ${shortenReeks(s.reeks)} pos ${s.position}`;
+  });
+
+  return {
+    text: entries.join(" · "),
+    reeksPrefix: sameReeks ? [...reeksSet][0] : null,
+  };
 }
 
 /** Live-data difficulty using opponent_strength when available, falling back to LEAGUE_STANDINGS. */
@@ -58,14 +78,15 @@ export function getDifficulty(opponent, strengths) {
 
   if (row && row.current_position != null) {
     const lvl = levelFromPosition(row.current_position);
-    const historyLine = summariseHistory(row.history);
+    const summary = summariseHistory(row.history);
     return {
       ...lvl,
       position: row.current_position,
       ptnPerMatch: row.current_ptn_per_match ?? null,
       teamName: row.name,
       strengthScore: row.strength_score ?? null,
-      historyLine,
+      historyLine: summary?.text || null,
+      historyReeksPrefix: summary?.reeksPrefix || null,
       source: "live",
     };
   }
@@ -80,6 +101,7 @@ export function getDifficulty(opponent, strengths) {
     teamName: team.name,
     strengthScore: null,
     historyLine: null,
+    historyReeksPrefix: null,
     source: "static",
   };
 }

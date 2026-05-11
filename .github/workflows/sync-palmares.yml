@@ -1,0 +1,35 @@
+name: Sync opponent palmares
+
+on:
+  schedule:
+    # First day of each month, 06:30 UTC. Palmares only updates between seasons,
+    # so monthly is more than enough.
+    - cron: "30 6 1 * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Install runtime deps
+        run: npm install --omit=dev --no-audit --no-fund @supabase/supabase-js
+
+      - name: Run palmares sync script
+        run: node scripts/sync-palmares.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          LZV_TEAM_URL: ${{ vars.LZV_TEAM_URL || 'https://www.lzvcup.be/teams/overview/742' }}
+          LZV_OUR_TEAM_ID: ${{ vars.LZV_OUR_TEAM_ID || '742' }}

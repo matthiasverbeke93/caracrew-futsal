@@ -61,7 +61,9 @@ export default function GameSidebar({
                     className={`calendar-game-item ${game.id === selectedGameId ? "selected" : ""}`}
                     onClick={() => onSelectGame(game.id)}
                   >
-                    <span>{game.game_date}</span>
+                    <span>
+                      {game.game_date} · {game.game_time || "--:--"}
+                    </span>
                     <strong>{game.opponent}</strong>
                   </button>
                 ))}

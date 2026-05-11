@@ -2,7 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { isPlayed } from "../utils/game";
 
-const FORCED_GUEST_NAMES = new Set(["bart moyens", "yannick drossaert"]);
+const FORCED_GUEST_NAMES = new Set(["bart moyens"]);
+const FORCED_FIXED_NAMES = new Set([
+  "moises godeau",
+  "yannick drossaert",
+  "lennart drossaert",
+  "david goossens",
+]);
 
 function makeGuestId() {
   return `guest-${crypto.randomUUID()}`;
@@ -61,7 +67,8 @@ export function useFutsalData() {
     () =>
       players.map((player) => {
         const forcedGuest = FORCED_GUEST_NAMES.has(player.name.toLowerCase().trim());
-        const isGuest = forcedGuest || !player.fixed;
+        const forcedFixed = FORCED_FIXED_NAMES.has(player.name.toLowerCase().trim());
+        const isGuest = forcedGuest || (!player.fixed && !forcedFixed);
         return {
           ...player,
           fixed: !isGuest,
@@ -76,6 +83,10 @@ export function useFutsalData() {
   const gameStats = stats.filter((s) => s.game_id === selectedGameId);
   const selectedGameGuests = guestPlayers.filter((g) => g.game_id === selectedGameId);
   const adHocGameGuests = selectedGameGuests.filter((g) => !g.source_player_id);
+  const selectedGameTotals = {
+    goals: selectedGame?.expected_goals ?? null,
+    assists: selectedGame?.expected_assists ?? null,
+  };
 
   const allGamePlayers = useMemo(
     () => [
@@ -115,11 +126,23 @@ export function useFutsalData() {
       const gameAttendanceRows = attendance.filter((row) => row.game_id === game.id);
       const gameGuestRows = guestPlayers.filter((row) => row.game_id === game.id);
       const gameStatsRows = stats.filter((row) => row.game_id === game.id);
+      const actualGoals = gameStatsRows.reduce((sum, row) => sum + (row.goals || 0), 0);
+      const actualAssists = gameStatsRows.reduce((sum, row) => sum + (row.assists || 0), 0);
       const playingCount =
         gameAttendanceRows.filter((row) => row.status === "playing").length +
         gameGuestRows.filter((row) => row.status === "playing").length;
       const played = isPlayed(game);
-      const statsMissing = played && playingCount > 0 && gameStatsRows.length < playingCount;
+      const hasTargetTotals =
+        game.expected_goals !== null &&
+        game.expected_goals !== undefined &&
+        game.expected_assists !== null &&
+        game.expected_assists !== undefined;
+      const statsMissing =
+        played &&
+        (gameStatsRows.length < playingCount ||
+          !hasTargetTotals ||
+          actualGoals < game.expected_goals ||
+          actualAssists < game.expected_assists);
 
       let playerReadiness = "players_right";
       if (playingCount <= 5) playerReadiness = "players_not_enough";
@@ -131,6 +154,10 @@ export function useFutsalData() {
         statsMissing,
         playerReadiness,
         playingCount,
+        actualGoals,
+        actualAssists,
+        expectedGoals: game.expected_goals,
+        expectedAssists: game.expected_assists,
       };
     }
 
@@ -235,6 +262,23 @@ export function useFutsalData() {
     await loadAll();
   }
 
+  async function saveGameTally(field, value) {
+    if (!selectedGameId) return;
+
+    const numericValue = value === "" ? null : Number(value);
+    const payload =
+      field === "goals"
+        ? { expected_goals: numericValue }
+        : { expected_assists: numericValue };
+
+    await supabase
+      .from("games")
+      .update(payload)
+      .eq("id", selectedGameId);
+
+    await loadAll();
+  }
+
   async function removeGuestPlayer(playerId) {
     await supabase.from("guest_players").delete().eq("id", playerId);
     await loadAll();
@@ -262,6 +306,7 @@ export function useFutsalData() {
     allGamePlayers,
     gameAttendance,
     gameStats,
+    selectedGameTotals,
     counts,
     guestPlayers,
     loadAll,
@@ -269,6 +314,7 @@ export function useFutsalData() {
     saveGuestAttendance,
     saveStat,
     saveGuestStat,
+    saveGameTally,
     addGuestPlayer,
     removeGuestPlayer,
   };

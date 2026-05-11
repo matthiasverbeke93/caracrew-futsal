@@ -33,11 +33,13 @@ export default function App() {
     allGamePlayers,
     gameAttendance,
     gameStats,
+    selectedGameTotals,
     counts,
     saveAttendance,
     saveGuestAttendance,
     saveStat,
     saveGuestStat,
+    saveGameTally,
     addGuestPlayer,
     removeGuestPlayer,
   } = useFutsalData();
@@ -122,8 +124,10 @@ export default function App() {
                 <StatsTab
                   allGamePlayers={allGamePlayers}
                   gameStats={gameStats}
+                  selectedGameTotals={selectedGameTotals}
                   saveGuestStat={saveGuestStat}
                   saveStat={saveStat}
+                  saveGameTally={saveGameTally}
                   canWrite={canWrite}
                 />
               )}

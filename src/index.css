@@ -147,7 +147,7 @@ button {
 }
 
 .calendar-game-item.selected {
-  border-color: #020617;
+  border-color: #94a3b8;
 }
 
 .game-filters {
@@ -192,7 +192,8 @@ button {
 }
 
 .game-card.selected {
-  border-color: #020617;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .game-card.danger {
@@ -244,6 +245,18 @@ button {
   background: #ffedd5 !important;
   color: #9a3412;
   font-weight: 700;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.badge-ok {
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-weight: 700;
+  font-size: 12px;
 }
 
 .content {
@@ -251,7 +264,7 @@ button {
 }
 
 .selected-game-panel {
-  border-top: 6px solid #020617;
+  border-top: 0;
 }
 
 .selected-game-panel h2 {
@@ -365,6 +378,31 @@ button {
 .guest-player-card {
   border-color: #fde68a;
   background: #fffbeb;
+}
+
+.tally-box {
+  margin-top: 8px;
+  margin-bottom: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px;
+  background: #f8fafc;
+  display: grid;
+  gap: 8px;
+}
+
+.tally-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tally-row label {
+  min-width: 88px;
+  color: #334155;
+  font-weight: 700;
+  font-size: 13px;
 }
 
 .tabs {

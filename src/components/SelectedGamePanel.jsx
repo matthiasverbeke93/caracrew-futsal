@@ -7,7 +7,6 @@ export default function SelectedGamePanel({
 }) {
   return (
     <section className="panel selected-game-panel">
-      <div className="section-label">Selected game</div>
       <h2>{selectedGame.title || selectedGame.opponent}</h2>
       <p>
         {selectedGame.game_date} · {selectedGame.game_time} · {selectedGame.location}

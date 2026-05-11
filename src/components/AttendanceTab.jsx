@@ -16,7 +16,6 @@ export default function AttendanceTab({
 }) {
   return (
     <section className="panel">
-      <div className="section-label">Selected game</div>
       <h2>Attendance</h2>
 
       <div className="player-grid">

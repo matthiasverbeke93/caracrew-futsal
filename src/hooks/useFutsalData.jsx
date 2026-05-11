@@ -122,7 +122,11 @@ export function useFutsalData(seasonSlug) {
     window.history.replaceState({}, "", url);
   }, [selectedGameId, seasonSlug]);
 
-  const selectedGame = games.find((g) => g.id === selectedGameId);
+  const selectedGame = useMemo(
+    () => games.find((g) => g.id === selectedGameId),
+    [games, selectedGameId]
+  );
+
   const playersWithRole = useMemo(
     () =>
       players.map((player) => {
@@ -145,16 +149,37 @@ export function useFutsalData(seasonSlug) {
       }),
     [playersWithRole]
   );
-  const fixedPlayers = playersWithRole.filter((player) => player.fixed);
-  const externalPlayerPool = playersWithRole.filter((player) => player.isGuest);
-  const gameAttendance = attendance.filter((a) => a.game_id === selectedGameId);
-  const gameStats = stats.filter((s) => s.game_id === selectedGameId);
-  const selectedGameGuests = guestPlayers.filter((g) => g.game_id === selectedGameId);
-  const adHocGameGuests = selectedGameGuests.filter((g) => !g.source_player_id);
-  const selectedGameTotals = {
-    goals: selectedGame?.expected_goals ?? null,
-    assists: selectedGame?.expected_assists ?? null,
-  };
+  const fixedPlayers = useMemo(
+    () => playersWithRole.filter((player) => player.fixed),
+    [playersWithRole]
+  );
+  const externalPlayerPool = useMemo(
+    () => playersWithRole.filter((player) => player.isGuest),
+    [playersWithRole]
+  );
+  const gameAttendance = useMemo(
+    () => attendance.filter((a) => a.game_id === selectedGameId),
+    [attendance, selectedGameId]
+  );
+  const gameStats = useMemo(
+    () => stats.filter((s) => s.game_id === selectedGameId),
+    [stats, selectedGameId]
+  );
+  const selectedGameGuests = useMemo(
+    () => guestPlayers.filter((g) => g.game_id === selectedGameId),
+    [guestPlayers, selectedGameId]
+  );
+  const adHocGameGuests = useMemo(
+    () => selectedGameGuests.filter((g) => !g.source_player_id),
+    [selectedGameGuests]
+  );
+  const selectedGameTotals = useMemo(
+    () => ({
+      goals: selectedGame?.expected_goals ?? null,
+      assists: selectedGame?.expected_assists ?? null,
+    }),
+    [selectedGame]
+  );
 
   const allGamePlayers = useMemo(
     () => [
@@ -168,15 +193,26 @@ export function useFutsalData(seasonSlug) {
   );
 
   const counts = useMemo(() => {
-    const fixedAttendanceCount = gameAttendance.filter((a) =>
-      fixedPlayers.some((player) => player.id === a.player_id)
-    ).length;
-    const rosterPlaying = gameAttendance.filter((a) => a.status === "playing").length;
-    const rosterCant = gameAttendance.filter((a) => a.status === "cant").length;
-    const rosterIfNeeded = gameAttendance.filter((a) => a.status === "if_needed").length;
-    const guestPlaying = selectedGameGuests.filter((p) => p.status === "playing").length;
-    const guestCant = selectedGameGuests.filter((p) => p.status === "cant").length;
-    const guestIfNeeded = selectedGameGuests.filter((p) => p.status === "if_needed").length;
+    let rosterPlaying = 0;
+    let rosterCant = 0;
+    let rosterIfNeeded = 0;
+    let fixedAttendanceCount = 0;
+    const fixedIds = new Set(fixedPlayers.map((p) => p.id));
+    for (const a of gameAttendance) {
+      if (fixedIds.has(a.player_id)) fixedAttendanceCount += 1;
+      if (a.status === "playing") rosterPlaying += 1;
+      else if (a.status === "cant") rosterCant += 1;
+      else if (a.status === "if_needed") rosterIfNeeded += 1;
+    }
+
+    let guestPlaying = 0;
+    let guestCant = 0;
+    let guestIfNeeded = 0;
+    for (const g of selectedGameGuests) {
+      if (g.status === "playing") guestPlaying += 1;
+      else if (g.status === "cant") guestCant += 1;
+      else if (g.status === "if_needed") guestIfNeeded += 1;
+    }
 
     return {
       playing: rosterPlaying + guestPlaying,
@@ -519,7 +555,6 @@ export function useFutsalData(seasonSlug) {
     selectedGameTotals,
     counts,
     guestPlayers,
-    loadAll,
     saveAttendance,
     saveGuestAttendance,
     saveStat,

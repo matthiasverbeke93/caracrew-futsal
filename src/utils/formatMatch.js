@@ -16,12 +16,6 @@ export function buildShareGameUrl(gameId) {
   return url.toString();
 }
 
-export function buildWhatsAppShareUrl(game) {
-  const shareUrl = buildShareGameUrl(game.id);
-  const line = `Match ${formatMatchDayTime(game)} vs ${cleanOpponentName(game.opponent)} — confirm here: ${shareUrl}`;
-  return `https://wa.me/?text=${encodeURIComponent(line)}`;
-}
-
 export function buildWhatsAppNudgeUrl(game, missingNames) {
   const shareUrl = buildShareGameUrl(game.id);
   const list = missingNames.join(", ");

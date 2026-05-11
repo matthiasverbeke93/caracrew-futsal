@@ -163,16 +163,20 @@ export default function App() {
       <header className="hero">
         <div>
           <div className="hero-season-row" role="navigation" aria-label="Season">
-            {SEASON_OPTIONS.map((opt) => (
-              <button
-                key={opt.slug}
-                type="button"
-                className={`season-pill ${opt.slug === seasonSlug ? "active" : ""}`}
-                onClick={() => selectSeason(opt.slug)}
-              >
-                {opt.label}
-              </button>
-            ))}
+            {SEASON_OPTIONS.map((opt) => {
+              const isActive = opt.slug === seasonSlug;
+              return (
+                <button
+                  key={opt.slug}
+                  type="button"
+                  className={`season-pill ${isActive ? "active" : ""}`}
+                  aria-pressed={isActive}
+                  onClick={() => selectSeason(opt.slug)}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
           <div className="hero-title-row">
             <h1>{TEAM_NAME}</h1>

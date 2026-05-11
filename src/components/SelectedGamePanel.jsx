@@ -1,4 +1,5 @@
-import { MIN_PLAYERS_WARNING } from "../constants";
+import { useState } from "react";
+import { MIN_PLAYERS_WARNING, TEAM_NAME } from "../constants";
 import { getDifficulty } from "../utils/difficulty";
 import { isPlayed } from "../utils/game";
 
@@ -6,11 +7,52 @@ export default function SelectedGamePanel({
   selectedGame,
   counts,
 }) {
+  const [shareFeedback, setShareFeedback] = useState(null);
   const difficulty = getDifficulty(selectedGame.opponent);
+
+  async function handleShare() {
+    const url = new URL(window.location.href);
+    url.searchParams.set("game", selectedGame.id);
+    const shareUrl = url.toString();
+    const shareData = {
+      title: `${TEAM_NAME} vs ${selectedGame.opponent}`,
+      text: `${selectedGame.game_date} · ${selectedGame.game_time || ""} · ${selectedGame.location || ""}`.trim(),
+      url: shareUrl,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        if (err?.name === "AbortError") return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareFeedback("Link copied");
+      setTimeout(() => setShareFeedback(null), 2000);
+    } catch (err) {
+      console.error("Share failed:", err);
+      setShareFeedback("Copy failed");
+      setTimeout(() => setShareFeedback(null), 2000);
+    }
+  }
 
   return (
     <section className="panel selected-game-panel">
-      <h2>{selectedGame.title || selectedGame.opponent}</h2>
+      <div className="selected-game-header">
+        <h2>{selectedGame.title || selectedGame.opponent}</h2>
+        <button
+          type="button"
+          className="share-button"
+          onClick={handleShare}
+          aria-label="Share link to this game"
+        >
+          {shareFeedback || "Share"}
+        </button>
+      </div>
       <p>
         {selectedGame.game_date} · {selectedGame.game_time} · {selectedGame.location}
       </p>

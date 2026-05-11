@@ -73,6 +73,14 @@ export default function App() {
           <div className="pill">Season 25-26</div>
           <h1>{TEAM_NAME}</h1>
           <p>Attendance, goals and assists tracker</p>
+          <a
+            className="hero-link"
+            href="https://www.lzvcup.be/teams/detail/742"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View on LZV Cup ↗
+          </a>
         </div>
       </header>
 

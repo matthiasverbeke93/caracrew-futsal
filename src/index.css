@@ -53,6 +53,19 @@ button {
   color: #cbd5e1;
 }
 
+.hero-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: #fbbf24;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.hero-link:hover {
+  text-decoration: underline;
+}
+
 .pill,
 .section-label {
   display: inline-block;
@@ -306,6 +319,28 @@ button {
 
 .selected-game-difficulty {
   margin-top: 8px;
+}
+
+.selected-game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.share-button {
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #020617;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.share-button:hover {
+  filter: brightness(1.1);
 }
 
 .calendar-game-item {

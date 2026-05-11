@@ -55,13 +55,24 @@ export function useFutsalData() {
 
     const nextGames = gamesRes.data || [];
     const firstUpcoming = nextGames.find((g) => !isPlayed(g));
+    const urlGameId = new URLSearchParams(window.location.search).get("game");
+    const gameFromUrl = urlGameId && nextGames.find((g) => g.id === urlGameId);
+
     setSelectedGameId((prevSelected) => {
+      if (gameFromUrl) return gameFromUrl.id;
       if (prevSelected && nextGames.some((game) => game.id === prevSelected)) {
         return prevSelected;
       }
       return firstUpcoming?.id || nextGames[0]?.id || null;
     });
   }
+
+  useEffect(() => {
+    if (!selectedGameId) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("game", selectedGameId);
+    window.history.replaceState({}, "", url);
+  }, [selectedGameId]);
 
   const selectedGame = games.find((g) => g.id === selectedGameId);
   const playersWithRole = useMemo(

@@ -5,13 +5,29 @@ export function isPlayed(game) {
   return game.game_date < today;
 }
 
-/** Next upcoming fixtures (still editable for attendance), newest-first order capped at `limit`. */
-export function upcomingGamesForAttendance(allGames, limit = 3) {
+/** Compare kick-off: calendar date then time (strings sort OK for ISO dates / HH:MM:SS). */
+function compareByKickoff(a, b) {
+  const da = a.game_date || "";
+  const db = b.game_date || "";
+  if (da !== db) return da.localeCompare(db);
+  return String(a.game_time || "").localeCompare(String(b.game_time || ""));
+}
+
+/**
+ * Next upcoming fixtures in strict calendar order (date, then time).
+ * Does not depend on attendance / RSVP — only not-yet-played by date.
+ */
+export function nextUpcomingGamesByCalendar(allGames, limit = 3) {
   if (!allGames?.length) return [];
   return [...allGames]
-    .sort((a, b) => (a.game_date || "").localeCompare(b.game_date || ""))
     .filter((g) => !isPlayed(g))
+    .sort(compareByKickoff)
     .slice(0, limit);
+}
+
+/** @deprecated Use {@link nextUpcomingGamesByCalendar} — same behaviour, clearer name. */
+export function upcomingGamesForAttendance(allGames, limit = 3) {
+  return nextUpcomingGamesByCalendar(allGames, limit);
 }
 
 function daysSinceGame(game, nowMs = Date.now()) {

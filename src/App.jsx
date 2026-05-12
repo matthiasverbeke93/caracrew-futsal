@@ -16,7 +16,7 @@ import Tabs from "./components/Tabs";
 import { TEAM_NAME } from "./constants";
 import { useAuthSession } from "./hooks/useAuthSession";
 import { useFutsalData } from "./hooks/useFutsalData";
-import { isPlayed, upcomingGamesForAttendance } from "./utils/game";
+import { nextUpcomingGamesByCalendar } from "./utils/game";
 import {
   DEFAULT_SEASON_SLUG,
   isSeasonSlug,
@@ -173,7 +173,7 @@ export default function App() {
   }, [myClaim, players]);
 
   const nextAttendanceGames = useMemo(
-    () => upcomingGamesForAttendance(games, 3),
+    () => nextUpcomingGamesByCalendar(games, 3),
     [games]
   );
 
@@ -188,7 +188,7 @@ export default function App() {
   }, [nextAttendanceGames, promotedNextGameIds]);
 
   const attendanceHighlightIds = useMemo(() => {
-    const upcoming = upcomingGamesForAttendance(games, 3);
+    const upcoming = nextUpcomingGamesByCalendar(games, 3);
     if (promotedNextGameIds.size === 0) return new Set(upcoming.map((g) => g.id));
     return new Set(upcoming.filter((g) => !promotedNextGameIds.has(g.id)).map((g) => g.id));
   }, [games, promotedNextGameIds]);

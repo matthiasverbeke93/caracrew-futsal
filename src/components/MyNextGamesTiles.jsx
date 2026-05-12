@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { ATTENDANCE_OPTIONS } from "../constants";
-import { upcomingGamesForAttendance } from "../utils/game";
+import { nextUpcomingGamesByCalendar } from "../utils/game";
 import { cleanOpponentName } from "../utils/opponent";
 import { formatMatchDayTime } from "../utils/formatMatch";
 
@@ -20,7 +20,7 @@ export default function MyNextGamesTiles({
   onMarkAttendance,
 }) {
   const upcoming = useMemo(
-    () => upcomingGamesForAttendance(games, 3),
+    () => nextUpcomingGamesByCalendar(games, 3),
     [games]
   );
 

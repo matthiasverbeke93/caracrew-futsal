@@ -1,6 +1,6 @@
 const TABS = [
   { id: "attendance", label: "Attendance", title: "Game attendance and roster" },
-  { id: "stats", label: "Stats", title: "Goals, assists, MotM and match totals" },
+  { id: "stats", label: "Game stats", title: "Goals, assists, MotM and match totals" },
 ];
 
 export default function Tabs({ activeTab, onTabChange }) {

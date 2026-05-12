@@ -67,6 +67,8 @@ export default function SelectedGamePanel({
   seasonSlug,
   saveFinalScore,
   canManageGame,
+  /** When false (e.g. Game stats tab), hide the Playing / If needed / Can't / Missing bar */
+  showAttendanceSummary = true,
 }) {
   const [shareFeedback, setShareFeedback] = useState(null);
   const opponentName = cleanOpponentName(selectedGame.opponent);
@@ -210,24 +212,26 @@ export default function SelectedGamePanel({
         <div className="warning-box">Low player count: only {counts.playing} marked as playing.</div>
       )}
 
-      <div className="count-grid">
-        <div>
-          <strong>{counts.playing}</strong>
-          <span>Playing</span>
+      {showAttendanceSummary && (
+        <div className="count-grid">
+          <div>
+            <strong>{counts.playing}</strong>
+            <span>Playing</span>
+          </div>
+          <div>
+            <strong>{counts.if_needed}</strong>
+            <span>If needed</span>
+          </div>
+          <div>
+            <strong>{counts.cant}</strong>
+            <span>Can't</span>
+          </div>
+          <div>
+            <strong>{counts.missing}</strong>
+            <span>Missing</span>
+          </div>
         </div>
-        <div>
-          <strong>{counts.if_needed}</strong>
-          <span>If needed</span>
-        </div>
-        <div>
-          <strong>{counts.cant}</strong>
-          <span>Can't</span>
-        </div>
-        <div>
-          <strong>{counts.missing}</strong>
-          <span>Missing</span>
-        </div>
-      </div>
+      )}
     </section>
   );
 }

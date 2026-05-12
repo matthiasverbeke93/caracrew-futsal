@@ -1163,9 +1163,24 @@ button.hero-link-button {
 .team-stats-compliance-intro {
   margin: 0 0 16px;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.55;
   color: #64748b;
   max-width: 62ch;
+}
+
+.team-stats-compliance-intro p {
+  margin: 0 0 10px;
+}
+
+.team-stats-compliance-intro ul {
+  margin: 0;
+  padding-left: 1.15em;
+  display: grid;
+  gap: 8px;
+}
+
+.team-stats-compliance-intro li {
+  padding-left: 0.15em;
 }
 
 .team-stats-compliance-intro strong {
@@ -1190,59 +1205,73 @@ button.hero-link-button {
 }
 
 .sidebar-next-fixtures {
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(59, 130, 246, 0.28);
-  background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%);
+  margin-bottom: 14px;
+  padding: 0;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
 }
 
 .sidebar-next-fixtures-title {
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: #1e40af;
-  margin: 0 0 8px;
+  margin: 0;
+  padding: 10px 12px;
+  background: linear-gradient(90deg, #eff6ff 0%, #f8fafc 100%);
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .sidebar-next-fixtures-list {
   margin: 0;
-  padding: 0;
+  padding: 8px;
   list-style: none;
   display: grid;
-  gap: 5px;
+  gap: 6px;
 }
 
 .sidebar-next-fixtures-link {
   width: 100%;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
   text-align: left;
-  padding: 6px 8px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  background: white;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: #f8fafc;
   cursor: pointer;
   font: inherit;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .sidebar-next-fixtures-link:hover {
-  border-color: #3b82f6;
-  background: #f8fafc;
+  border-color: rgba(59, 130, 246, 0.35);
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
 }
 
 .sidebar-next-fixtures-step {
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
+  margin-top: 1px;
   border-radius: 999px;
-  background: #1d4ed8;
+  background: linear-gradient(145deg, #2563eb 0%, #1d4ed8 100%);
   color: white;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
 }
 
 .sidebar-next-fixtures-meta {

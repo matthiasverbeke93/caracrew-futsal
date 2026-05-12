@@ -381,6 +381,7 @@ export default function App() {
                 seasonSlug={seasonSlug}
                 saveFinalScore={saveFinalScore}
                 canManageGame={canManageGame}
+                showAttendanceSummary={tab === "attendance"}
               />
 
               <Tabs activeTab={tab} onTabChange={setTab} />

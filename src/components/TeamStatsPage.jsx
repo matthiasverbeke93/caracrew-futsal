@@ -173,16 +173,35 @@ export default function TeamStatsPage({
 
       {complianceRows.length > 0 && (
         <section className="team-stats-compliance" aria-labelledby="compliance-heading">
-          <h3 id="compliance-heading">Confirmation timing</h3>
-          <p className="team-stats-compliance-intro">
-            {staticData ? (
-              <>
-                From save timestamps in this app (totals above may use the LZV snapshot).{" "}
-              </>
-            ) : null}
-            <strong>RSVP lead</strong>: median before kickoff (late saves excluded).{" "}
-            <strong>Stats lag</strong>: median after kickoff, played matches. Hover cells for detail.
-          </p>
+          <h3 id="compliance-heading">How quickly people respond</h3>
+          <div className="team-stats-compliance-intro">
+            <p>
+              Each value is based on <strong>when someone last saved</strong> their row in this
+              app—not on when the fixture was announced.
+              {staticData ? (
+                <>
+                  {" "}
+                  The main table above can still show <strong>goals and games played</strong> from an{" "}
+                  <strong>LZV import</strong>; that import is unrelated to these timings.
+                </>
+              ) : null}
+            </p>
+            <ul>
+              <li>
+                <strong>RSVP lead</strong> — how far <em>before kickoff</em> people usually save
+                attendance. Only saves made before the match starts count toward the median; the{" "}
+                <strong>Late</strong> column counts saves after kickoff.
+              </li>
+              <li>
+                <strong>Stats lag</strong> — how long <em>after kickoff</em> people usually save
+                goals and assists (played matches only).
+              </li>
+              <li>
+                Short codes in the table expand on <strong>hover</strong> (or focus) for the full
+                wording.
+              </li>
+            </ul>
+          </div>
 
           <div className="team-stats-table-wrap">
             <table className="team-stats-table team-stats-compliance-table">

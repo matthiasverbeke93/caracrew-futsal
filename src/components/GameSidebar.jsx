@@ -177,18 +177,13 @@ export default function GameSidebar({
           >
             <div className="game-top">
               <strong>{cleanOpponentName(game.opponent)}</strong>
-              <span className="game-status-pill">
-                {attendanceNext && !played ? (
-                  <>
-                    <span className="attendance-next-badge">Mark attendance</span>
-                    <span className="game-status-muted">· To be played</span>
-                  </>
-                ) : played ? (
-                  "Played"
-                ) : (
-                  "To be played"
-                )}
-              </span>
+              {attendanceNext && !played ? (
+                <span className="attendance-next-badge">Attendance</span>
+              ) : (
+                <span className="game-status-pill">
+                  {played ? "Played" : "To be played"}
+                </span>
+              )}
             </div>
 
             <div>

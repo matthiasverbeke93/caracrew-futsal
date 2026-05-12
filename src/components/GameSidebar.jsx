@@ -1,7 +1,7 @@
 import { FILTER_CONFLICTS, GAME_FILTERS } from "../constants";
-import PersonalComplianceCard from "./PersonalComplianceCard";
 import { getDifficulty } from "../utils/difficulty";
 import { playerStatusLabel, readinessClass } from "../utils/game";
+import { formatMatchDayTime } from "../utils/formatMatch";
 import { cleanOpponentName } from "../utils/opponent";
 import { useLayoutEffect, useMemo, useState } from "react";
 
@@ -66,7 +66,7 @@ export default function GameSidebar({
   opponentStrengths,
   seasonSlug,
   currentPlayerId,
-  personalCompliance,
+  nextAttendanceGames,
 }) {
   function toggleFilter(filterId) {
     if (filterId === "all") {
@@ -132,10 +132,34 @@ export default function GameSidebar({
           {showCalendar ? "List" : "Calendar"}
         </button>
       </div>
-      {attendanceHighlightIds?.size > 0 && (
-        <p className="sidebar-attendance-hint">
-          Mark attendance for upcoming matches — the next three fixtures are highlighted.
-        </p>
+      {nextAttendanceGames?.length > 0 && (
+        <section className="sidebar-next-fixtures" aria-label="Next three fixtures for attendance">
+          <div className="sidebar-next-fixtures-title">Mark attendance — next {nextAttendanceGames.length}</div>
+          <p className="sidebar-next-fixtures-sub">
+            Numbered <strong>Next 1–{nextAttendanceGames.length}</strong> match the blue-highlighted cards below.
+          </p>
+          <ol className="sidebar-next-fixtures-list">
+            {nextAttendanceGames.map((g, i) => (
+              <li key={g.id}>
+                <button
+                  type="button"
+                  className="sidebar-next-fixtures-link"
+                  onClick={() => onSelectGame(g.id)}
+                >
+                  <span className="sidebar-next-fixtures-step" aria-hidden>
+                    {i + 1}
+                  </span>
+                  <span className="sidebar-next-fixtures-meta">
+                    <span className="sidebar-next-fixtures-opponent">{cleanOpponentName(g.opponent)}</span>
+                    <span className="sidebar-next-fixtures-when">
+                      {formatMatchDayTime(g)} · {g.location || "Venue TBD"}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ol>
+        </section>
       )}
       <div className="game-filters" role="group" aria-label="Filter fixtures">
         {GAME_FILTERS.map((filter) => (
@@ -185,6 +209,8 @@ export default function GameSidebar({
                   const playedCal = gameStatusById[game.id]?.played;
                   const myRowCal =
                     currentPlayerId && myAttendanceByGameId?.get(game.id);
+                  const nextRankCal =
+                    nextAttendanceGames?.findIndex((g) => g.id === game.id) ?? -1;
 
                   return (
                     <button
@@ -200,6 +226,11 @@ export default function GameSidebar({
                         {game.game_date} · {game.game_time || "--:--"}
                       </span>
                       <span className="calendar-game-opponent-wrap">
+                        {attendanceNext && !playedCal && nextRankCal >= 0 && (
+                          <span className="next-fixture-rank-badge next-fixture-rank-badge--compact">
+                            Next {nextRankCal + 1}
+                          </span>
+                        )}
                         <strong>{cleanOpponentName(game.opponent)}</strong>
                         {currentPlayerId && (
                           <MyRsvpChip
@@ -236,6 +267,8 @@ export default function GameSidebar({
         const attendanceNext = attendanceHighlightIds?.has(game.id);
         const myRow =
           currentPlayerId && myAttendanceByGameId?.get(game.id);
+        const nextRank =
+          nextAttendanceGames?.findIndex((g) => g.id === game.id) ?? -1;
 
         return (
           <button
@@ -249,7 +282,11 @@ export default function GameSidebar({
           >
             <div className="game-top">
               <strong>{cleanOpponentName(game.opponent)}</strong>
-              {attendanceNext && !played ? (
+              {attendanceNext && !played && nextRank >= 0 ? (
+                <span className="next-fixture-rank-badge" title="Mark attendance — upcoming priority fixture">
+                  Next {nextRank + 1}
+                </span>
+              ) : attendanceNext && !played ? (
                 <span className="attendance-next-badge">Attendance</span>
               ) : (
                 <span className="game-status-pill">
@@ -284,8 +321,6 @@ export default function GameSidebar({
         );
       })}
       </div>
-
-      {currentPlayerId && <PersonalComplianceCard summary={personalCompliance} />}
     </aside>
   );
 }

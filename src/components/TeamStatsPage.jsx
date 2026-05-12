@@ -1,6 +1,13 @@
 import { useMemo, useState } from "react";
 import { getStaticTeamStatsForSeason } from "../data/seasonTeamStatsOverrides";
 import {
+  computeComplianceForAllPlayers,
+  formatMedianDaysBefore,
+  formatMedianDaysBeforeShort,
+  formatMedianHoursAfter,
+  formatMedianHoursAfterShort,
+} from "../utils/playerCompliance";
+import {
   buildStaticTeamSeasonRows,
   buildTeamSeasonPlayerRows,
   sortTeamSeasonRows,
@@ -23,6 +30,13 @@ const COLUMNS = [
   { key: "involvementPerGame", label: "(G+A)/game" },
 ];
 
+const COMPLIANCE_SORT = [
+  { key: "name", label: "Player" },
+  { key: "rsvpLead", label: "RSVP lead" },
+  { key: "late", label: "Late" },
+  { key: "statsLag", label: "Stats lag" },
+];
+
 export default function TeamStatsPage({
   games,
   players,
@@ -34,6 +48,7 @@ export default function TeamStatsPage({
   onOpenPlayer,
 }) {
   const [sortKey, setSortKey] = useState("gamesPlayed");
+  const [complianceSortKey, setComplianceSortKey] = useState("name");
 
   const staticData = useMemo(
     () => getStaticTeamStatsForSeason(seasonSlug),
@@ -49,6 +64,34 @@ export default function TeamStatsPage({
       : buildTeamSeasonPlayerRows(games, livePlayers, attendance, stats);
     return sortTeamSeasonRows(built, sortKey);
   }, [attendance, games, players, sortKey, staticData, stats]);
+
+  const complianceRowsRaw = useMemo(() => {
+    if (staticData) return [];
+    return computeComplianceForAllPlayers(games, attendance, stats, players);
+  }, [staticData, games, attendance, stats, players]);
+
+  const complianceRows = useMemo(() => {
+    const list = [...complianceRowsRaw];
+    const nullLast = (a, b, cmp) => {
+      if (a == null && b == null) return 0;
+      if (a == null) return 1;
+      if (b == null) return -1;
+      return cmp(a, b);
+    };
+
+    list.sort((a, b) => {
+      if (complianceSortKey === "name") return a.name.localeCompare(b.name);
+      if (complianceSortKey === "late") return (b.attendanceLateCount || 0) - (a.attendanceLateCount || 0);
+      if (complianceSortKey === "rsvpLead") {
+        return nullLast(a.attendanceMedianDaysBefore, b.attendanceMedianDaysBefore, (x, y) => y - x);
+      }
+      if (complianceSortKey === "statsLag") {
+        return nullLast(a.statsMedianHoursAfter, b.statsMedianHoursAfter, (x, y) => x - y);
+      }
+      return 0;
+    });
+    return list;
+  }, [complianceRowsRaw, complianceSortKey]);
 
   const denominator = staticData
     ? rows[0]?.totalSeasonGames ?? 0
@@ -126,6 +169,92 @@ export default function TeamStatsPage({
           </tbody>
         </table>
       </div>
+
+      {!staticData && complianceRows.length > 0 && (
+        <section className="team-stats-compliance" aria-labelledby="compliance-heading">
+          <h3 id="compliance-heading">Confirmation timing</h3>
+          <p className="team-stats-compliance-intro">
+            Based on when each person&apos;s attendance and stats rows were saved in this app.
+            <strong> RSVP lead</strong> is the median time <em>before kickoff</em> (only saves
+            before kickoff count; late saves are listed separately).
+            <strong> Stats lag</strong> is the median time <em>after kickoff</em> when goals and
+            assists were saved (finished matches only). Hover abbreviations for full wording.
+          </p>
+
+          <div className="team-stats-table-wrap">
+            <table className="team-stats-table team-stats-compliance-table">
+              <thead>
+                <tr>
+                  {COMPLIANCE_SORT.map((col) => (
+                    <th key={col.key}>
+                      <button
+                        type="button"
+                        className={`th-sort ${complianceSortKey === col.key ? "active" : ""}`}
+                        onClick={() => setComplianceSortKey(col.key)}
+                      >
+                        {col.label}
+                      </button>
+                    </th>
+                  ))}
+                  <th title="Attendance rows (any save timestamp)">RSVP n</th>
+                  <th title="Played matches with stats row">Stats n</th>
+                </tr>
+              </thead>
+              <tbody>
+                {complianceRows.map((r) => (
+                  <tr key={r.id}>
+                    <td>
+                      <button
+                        type="button"
+                        className="player-link"
+                        onClick={() => onOpenPlayer(r.id)}
+                      >
+                        {r.name}
+                      </button>
+                      {!r.fixed && <span className="guest-badge">Guest</span>}
+                    </td>
+                    <td>
+                      <span
+                        title={
+                          r.attendanceMedianDaysBefore != null
+                            ? formatMedianDaysBefore(r.attendanceMedianDaysBefore)
+                            : r.attendanceLateCount === r.attendanceCount && r.attendanceCount > 0
+                              ? "All saves were after kickoff"
+                              : "No on-time saves yet"
+                        }
+                      >
+                        {r.attendanceMedianDaysBefore != null
+                          ? formatMedianDaysBeforeShort(r.attendanceMedianDaysBefore)
+                          : r.attendanceLateCount === r.attendanceCount && r.attendanceCount > 0
+                            ? "All late"
+                            : "—"}
+                      </span>
+                    </td>
+                    <td>{r.attendanceLateCount}</td>
+                    <td>
+                      <span
+                        title={
+                          r.statsMedianHoursAfter != null
+                            ? formatMedianHoursAfter(r.statsMedianHoursAfter)
+                            : "No stats saved after played matches"
+                        }
+                      >
+                        {formatMedianHoursAfterShort(r.statsMedianHoursAfter)}
+                      </span>
+                    </td>
+                    <td>{r.attendanceCount}</td>
+                    <td>{r.statsCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {!staticData && complianceRows.length === 0 && (
+        <p className="team-stats-compliance-empty">No players loaded for compliance timing.</p>
+      )}
     </section>
   );
 }

@@ -15,7 +15,6 @@ import Tabs from "./components/Tabs";
 import { TEAM_NAME } from "./constants";
 import { useAuthSession } from "./hooks/useAuthSession";
 import { useFutsalData } from "./hooks/useFutsalData";
-import { computePersonalCompliance } from "./utils/playerCompliance";
 import { isPlayed, upcomingGamesForAttendance } from "./utils/game";
 import {
   DEFAULT_SEASON_SLUG,
@@ -183,9 +182,9 @@ export default function App() {
     [games]
   );
 
-  const personalCompliance = useMemo(
-    () => computePersonalCompliance(games, attendance, stats, currentPlayer?.id ?? null),
-    [games, attendance, stats, currentPlayer?.id]
+  const nextAttendanceGames = useMemo(
+    () => upcomingGamesForAttendance(games, 3),
+    [games]
   );
 
   const showNextGameCard =
@@ -328,7 +327,7 @@ export default function App() {
           opponentStrengths={opponentStrengths}
           seasonSlug={seasonSlug}
           currentPlayerId={currentPlayer?.id ?? null}
-          personalCompliance={personalCompliance}
+          nextAttendanceGames={nextAttendanceGames}
         />
 
         <section className="content" id="match-details">

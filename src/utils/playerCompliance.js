@@ -82,3 +82,37 @@ export function formatMedianHoursAfter(hours) {
   const d = hours / 24;
   return `${d >= 10 ? Math.round(d) : d.toFixed(1)} days after kickoff`;
 }
+
+/** Compact table cells */
+export function formatMedianDaysBeforeShort(days) {
+  if (days == null || Number.isNaN(days)) return "—";
+  if (days < 1 / 24) return "<1 h";
+  if (days < 1) return `${Math.round(days * 24)} h`;
+  return `${days >= 10 ? Math.round(days) : days.toFixed(1)} d`;
+}
+
+export function formatMedianHoursAfterShort(hours) {
+  if (hours == null || Number.isNaN(hours)) return "—";
+  if (hours < 1) return `${Math.round(hours * 60)} m`;
+  if (hours < 48) return `${hours >= 10 ? Math.round(hours) : hours.toFixed(1)} h`;
+  const d = hours / 24;
+  return `${d >= 10 ? Math.round(d) : d.toFixed(1)} d`;
+}
+
+/**
+ * Compliance timing for every active (non-archived) player — for team-wide tables.
+ */
+export function computeComplianceForAllPlayers(games, attendance, stats, players) {
+  const active = (players || []).filter((p) => !p.archived);
+  return active
+    .map((p) => {
+      const c = computePersonalCompliance(games, attendance, stats, p.id);
+      return {
+        id: p.id,
+        name: p.name,
+        fixed: p.fixed,
+        ...c,
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}

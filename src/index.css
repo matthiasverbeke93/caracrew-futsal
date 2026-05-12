@@ -1149,6 +1149,39 @@ button.hero-link-button {
   text-decoration-color: #1d4ed8;
 }
 
+.team-stats-compliance {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.team-stats-compliance h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.team-stats-compliance-intro {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #64748b;
+  max-width: 62ch;
+}
+
+.team-stats-compliance-intro strong {
+  color: #334155;
+}
+
+.team-stats-compliance-table {
+  min-width: 640px;
+}
+
+.team-stats-compliance-empty {
+  margin-top: 16px;
+  font-size: 13px;
+  color: #64748b;
+}
+
 .sidebar-header-row {
   display: flex;
   align-items: center;
@@ -1156,11 +1189,87 @@ button.hero-link-button {
   gap: 10px;
 }
 
-.sidebar-attendance-hint {
-  margin: 0 0 12px;
+.sidebar-next-fixtures {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%);
+}
+
+.sidebar-next-fixtures-title {
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #1e40af;
+  margin-bottom: 6px;
+}
+
+.sidebar-next-fixtures-sub {
+  margin: 0 0 10px;
   font-size: 12px;
   line-height: 1.45;
   color: #475569;
+}
+
+.sidebar-next-fixtures-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.sidebar-next-fixtures-link {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  cursor: pointer;
+  font: inherit;
+}
+
+.sidebar-next-fixtures-link:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.sidebar-next-fixtures-step {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #1d4ed8;
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-next-fixtures-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sidebar-next-fixtures-opponent {
+  font-weight: 700;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.sidebar-next-fixtures-when {
+  font-size: 11px;
+  color: #64748b;
 }
 
 .calendar-toggle-button {
@@ -1342,6 +1451,24 @@ button.hero-link-button {
   white-space: nowrap;
 }
 
+.next-fixture-rank-badge {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #1e3a8a;
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  border-radius: 999px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.next-fixture-rank-badge--compact {
+  font-size: 10px;
+  padding: 3px 7px;
+}
+
 .game-top {
   display: flex;
   justify-content: space-between;
@@ -1414,80 +1541,6 @@ button.hero-link-button {
   background: #f1f5f9;
   color: #475569;
   font-weight: 600;
-}
-
-.personal-compliance-card {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
-}
-
-.personal-compliance-title {
-  font-weight: 800;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #64748b;
-  margin-bottom: 8px;
-}
-
-.personal-compliance-intro {
-  margin: 0 0 12px;
-  font-size: 12px;
-  line-height: 1.45;
-  color: #64748b;
-}
-
-.personal-compliance-empty,
-.personal-compliance-muted {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.45;
-  color: #64748b;
-}
-
-.personal-compliance-dl {
-  margin: 0 0 12px;
-}
-
-.personal-compliance-dl:last-child {
-  margin-bottom: 0;
-}
-
-.personal-compliance-dl > div {
-  margin: 0 0 10px;
-}
-
-.personal-compliance-dl dt {
-  font-size: 11px;
-  font-weight: 700;
-  color: #475569;
-  margin-bottom: 4px;
-}
-
-.personal-compliance-dl dd {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.personal-compliance-dl strong {
-  font-size: 14px;
-  color: #0f172a;
-}
-
-.personal-compliance-n {
-  font-size: 11px;
-  font-weight: 600;
-  color: #94a3b8;
-}
-
-.personal-compliance-footnote {
-  margin: 6px 0 0;
-  font-size: 11px;
-  line-height: 1.4;
-  color: #94a3b8;
 }
 
 .badge-warning {

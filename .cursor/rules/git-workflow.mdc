@@ -1,0 +1,8 @@
+---
+description: After implementing a change, commit and push when the tree is dirty
+alwaysApply: true
+---
+
+# Git workflow
+
+When you finish implementing a feature or fix (including after a successful `npm run build` or equivalent check), if there are uncommitted changes, **commit them with a clear message and push to `origin`** on the current branch unless the user has asked not to or the repo has no remote.

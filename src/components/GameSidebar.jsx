@@ -10,7 +10,7 @@ const STATUS_SEGMENT_IDS = ["all", "upcoming", "played"];
 const RSVP_CHIP = {
   playing: { label: "You are marked as playing", short: "In", className: "my-rsvp-in" },
   cant: { label: "You cannot attend", short: "Out", className: "my-rsvp-out" },
-  if_needed: { label: "You marked if needed", short: "Maybe", className: "my-rsvp-maybe" },
+  if_needed: { label: "You marked if needed", short: "if needed", className: "my-rsvp-maybe" },
 };
 
 function MyRsvpChip({ currentPlayerId, played, myRow }) {

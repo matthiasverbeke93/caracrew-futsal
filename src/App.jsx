@@ -6,7 +6,6 @@ import AuthModal from "./components/AuthModal";
 import ClaimPlayerModal from "./components/ClaimPlayerModal";
 import FormChip from "./components/FormChip";
 import GameSidebar from "./components/GameSidebar";
-import MatchFixtureNav from "./components/MatchFixtureNav";
 import MyNextGamesTiles from "./components/MyNextGamesTiles";
 import PlayerProfileModal from "./components/PlayerProfileModal";
 import SelectedGamePanel from "./components/SelectedGamePanel";
@@ -390,12 +389,6 @@ export default function App() {
                 saveFinalScore={saveFinalScore}
                 canManageGame={canManageGame}
                 showAttendanceSummary={tab === "attendance"}
-              />
-
-              <MatchFixtureNav
-                games={sortedFilteredGames}
-                selectedGameId={selectedGameId}
-                onSelectGame={setSelectedGameId}
               />
 
               <Tabs activeTab={tab} onTabChange={setTab} />

@@ -9,7 +9,7 @@ const TILE_EYEBROWS = ["Next", "Then", "After"];
 const TILE_BTN_SHORT = {
   playing: "In",
   cant: "Out",
-  if_needed: "Maybe",
+  if_needed: "if needed",
 };
 
 export default function MyNextGamesTiles({
@@ -113,6 +113,7 @@ function NextGameTile({ game, eyebrow, myStatus, onJumpToGame, onMarkAttendance 
 }
 
 function labelFor(value) {
+  if (value === "if_needed") return "if needed";
   const found = ATTENDANCE_OPTIONS.find((o) => o.value === value);
   return found ? found.label.toLowerCase().replace(/^i'?m\s/i, "") : value;
 }

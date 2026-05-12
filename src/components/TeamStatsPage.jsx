@@ -65,10 +65,11 @@ export default function TeamStatsPage({
     return sortTeamSeasonRows(built, sortKey);
   }, [attendance, games, players, sortKey, staticData, stats]);
 
+  /** Live timing from app saves — show even when main table uses LZV static snapshot for totals. */
   const complianceRowsRaw = useMemo(() => {
-    if (staticData) return [];
+    if (!games?.length) return [];
     return computeComplianceForAllPlayers(games, attendance, stats, players);
-  }, [staticData, games, attendance, stats, players]);
+  }, [games, attendance, stats, players]);
 
   const complianceRows = useMemo(() => {
     const list = [...complianceRowsRaw];
@@ -170,15 +171,17 @@ export default function TeamStatsPage({
         </table>
       </div>
 
-      {!staticData && complianceRows.length > 0 && (
+      {complianceRows.length > 0 && (
         <section className="team-stats-compliance" aria-labelledby="compliance-heading">
           <h3 id="compliance-heading">Confirmation timing</h3>
           <p className="team-stats-compliance-intro">
-            Based on when each person&apos;s attendance and stats rows were saved in this app.
-            <strong> RSVP lead</strong> is the median time <em>before kickoff</em> (only saves
-            before kickoff count; late saves are listed separately).
-            <strong> Stats lag</strong> is the median time <em>after kickoff</em> when goals and
-            assists were saved (finished matches only). Hover abbreviations for full wording.
+            {staticData ? (
+              <>
+                From save timestamps in this app (totals above may use the LZV snapshot).{" "}
+              </>
+            ) : null}
+            <strong>RSVP lead</strong>: median before kickoff (late saves excluded).{" "}
+            <strong>Stats lag</strong>: median after kickoff, played matches. Hover cells for detail.
           </p>
 
           <div className="team-stats-table-wrap">
@@ -252,8 +255,10 @@ export default function TeamStatsPage({
         </section>
       )}
 
-      {!staticData && complianceRows.length === 0 && (
-        <p className="team-stats-compliance-empty">No players loaded for compliance timing.</p>
+      {complianceRows.length === 0 && games?.length > 0 && (
+        <p className="team-stats-compliance-empty">
+          No active players loaded for confirmation timing.
+        </p>
       )}
     </section>
   );

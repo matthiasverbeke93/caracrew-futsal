@@ -133,11 +133,10 @@ export default function GameSidebar({
         </button>
       </div>
       {nextAttendanceGames?.length > 0 && (
-        <section className="sidebar-next-fixtures" aria-label="Next three fixtures for attendance">
-          <div className="sidebar-next-fixtures-title">Mark attendance — next {nextAttendanceGames.length}</div>
-          <p className="sidebar-next-fixtures-sub">
-            Numbered <strong>Next 1–{nextAttendanceGames.length}</strong> match the blue-highlighted cards below.
-          </p>
+        <section className="sidebar-next-fixtures" aria-label="Next fixtures to RSVP">
+          <div className="sidebar-next-fixtures-title">
+            RSVP · next {nextAttendanceGames.length}
+          </div>
           <ol className="sidebar-next-fixtures-list">
             {nextAttendanceGames.map((g, i) => (
               <li key={g.id}>

@@ -1190,27 +1190,18 @@ button.hero-link-button {
 }
 
 .sidebar-next-fixtures {
-  margin-bottom: 14px;
-  padding: 12px 14px;
-  border-radius: 14px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
   border: 1px solid rgba(59, 130, 246, 0.28);
   background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%);
 }
 
 .sidebar-next-fixtures-title {
-  font-weight: 800;
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #1e40af;
-  margin-bottom: 6px;
-}
-
-.sidebar-next-fixtures-sub {
-  margin: 0 0 10px;
+  font-weight: 700;
   font-size: 12px;
-  line-height: 1.45;
-  color: #475569;
+  color: #1e40af;
+  margin: 0 0 8px;
 }
 
 .sidebar-next-fixtures-list {
@@ -1218,17 +1209,17 @@ button.hero-link-button {
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .sidebar-next-fixtures-link {
   width: 100%;
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
   text-align: left;
-  padding: 8px 10px;
-  border-radius: 12px;
+  padding: 6px 8px;
+  border-radius: 10px;
   border: 1px solid #e2e8f0;
   background: white;
   cursor: pointer;

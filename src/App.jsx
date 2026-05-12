@@ -198,30 +198,44 @@ export default function App() {
         Skip to match details
       </a>
       <header className="hero">
-        <div className="hero-left">
-          <div className="hero-title-row">
-            <h1>{TEAM_NAME}</h1>
-            <FormChip games={games} />
-          </div>
-          <p className="hero-tagline">
-            Plan who&apos;s playing, then log goals and assists for each match.
-          </p>
-          <nav className="hero-nav" aria-label="External and team links">
-            <button type="button" className="hero-link hero-link-button" onClick={openTeamStats}>
-              Team stats
-            </button>
-            <a
-              className="hero-link"
-              href="https://www.lzvcup.be/teams/detail/742"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View on LZV Cup ↗
-            </a>
-          </nav>
+        <div className="hero-account-row">
+          <AccountChip
+            user={user}
+            currentPlayer={currentPlayer}
+            isAdmin={isAdmin}
+            authLoading={authLoading}
+            onSignInClick={() => setAuthModalOpen(true)}
+            onSignOut={signOut}
+            onAdminClick={isAdmin ? () => setAdminPanelOpen(true) : null}
+          />
         </div>
-        <div className="hero-right">
-          <div className="hero-season-row" role="navigation" aria-label="Season">
+        <div className="hero-body-row">
+          <div className="hero-left">
+            <div className="hero-title-row">
+              <h1>{TEAM_NAME}</h1>
+              <FormChip games={games} />
+            </div>
+            <p className="hero-tagline">
+              Plan who&apos;s playing, then log goals and assists for each match.
+            </p>
+            <nav className="hero-nav" aria-label="External and team links">
+              <button type="button" className="hero-link hero-link-button" onClick={openTeamStats}>
+                Team stats
+              </button>
+              <a
+                className="hero-link"
+                href="https://www.lzvcup.be/teams/detail/742"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View on LZV Cup ↗
+              </a>
+            </nav>
+          </div>
+        </div>
+        <div className="hero-season-bar" role="navigation" aria-label="Season">
+          <span className="hero-season-label">Season</span>
+          <div className="hero-season-row">
             {SEASON_OPTIONS.map((opt) => {
               const isActive = opt.slug === seasonSlug;
               return (
@@ -237,15 +251,6 @@ export default function App() {
               );
             })}
           </div>
-          <AccountChip
-            user={user}
-            currentPlayer={currentPlayer}
-            isAdmin={isAdmin}
-            authLoading={authLoading}
-            onSignInClick={() => setAuthModalOpen(true)}
-            onSignOut={signOut}
-            onAdminClick={isAdmin ? () => setAdminPanelOpen(true) : null}
-          />
         </div>
       </header>
 
@@ -328,6 +333,7 @@ export default function App() {
           seasonSlug={seasonSlug}
           currentPlayerId={currentPlayer?.id ?? null}
           nextAttendanceGames={nextAttendanceGames}
+          activeMainTab={tab}
         />
 
         <section className="content" id="match-details">

@@ -67,6 +67,7 @@ export default function GameSidebar({
   seasonSlug,
   currentPlayerId,
   nextAttendanceGames,
+  activeMainTab = "attendance",
 }) {
   function toggleFilter(filterId) {
     if (filterId === "all") {
@@ -118,63 +119,71 @@ export default function GameSidebar({
     return m;
   }, [attendance, currentPlayerId]);
 
+  const showSidebarMatchStats = activeMainTab !== "stats";
+
   return (
     <aside className="sidebar" aria-label="Season fixtures and filters">
-      <div className="sidebar-header-row">
-        <h2 id="fixtures-heading">All games</h2>
-        <button
-          className="calendar-toggle-button"
-          type="button"
-          aria-expanded={showCalendar}
-          aria-controls="fixtures-scroll-region"
-          onClick={() => setShowCalendar((prev) => !prev)}
-        >
-          {showCalendar ? "List" : "Calendar"}
-        </button>
-      </div>
-      {nextAttendanceGames?.length > 0 && (
-        <section className="sidebar-next-fixtures" aria-label="Next fixtures to RSVP">
-          <div className="sidebar-next-fixtures-title">
-            RSVP · next {nextAttendanceGames.length}
-          </div>
-          <ol className="sidebar-next-fixtures-list">
-            {nextAttendanceGames.map((g, i) => (
-              <li key={g.id}>
-                <button
-                  type="button"
-                  className="sidebar-next-fixtures-link"
-                  onClick={() => onSelectGame(g.id)}
-                >
-                  <span className="sidebar-next-fixtures-step" aria-hidden>
-                    {i + 1}
-                  </span>
-                  <span className="sidebar-next-fixtures-meta">
-                    <span className="sidebar-next-fixtures-opponent">{cleanOpponentName(g.opponent)}</span>
-                    <span className="sidebar-next-fixtures-when">
-                      {formatMatchDayTime(g)} · {g.location || "Venue TBD"}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
-      <div className="game-filters" role="group" aria-label="Filter fixtures">
-        {GAME_FILTERS.map((filter) => (
+      <div className="sidebar-stack">
+        <div className="sidebar-toolbar">
+          <h2 id="fixtures-heading" className="sidebar-title">
+            Fixtures
+          </h2>
           <button
-            key={filter.id}
+            className="calendar-toggle-button"
             type="button"
-            aria-pressed={isFilterActive(filter.id)}
-            className={isFilterActive(filter.id) ? "active" : ""}
-            onClick={() => toggleFilter(filter.id)}
+            aria-expanded={showCalendar}
+            aria-controls="fixtures-scroll-region"
+            onClick={() => setShowCalendar((prev) => !prev)}
           >
-            {filter.label}
+            {showCalendar ? "List" : "Calendar"}
           </button>
-        ))}
+        </div>
+
+        {nextAttendanceGames?.length > 0 && (
+          <section className="sidebar-next-fixtures" aria-label="Next fixtures to RSVP">
+            <div className="sidebar-next-fixtures-title">
+              RSVP · next {nextAttendanceGames.length}
+            </div>
+            <ol className="sidebar-next-fixtures-list">
+              {nextAttendanceGames.map((g, i) => (
+                <li key={g.id}>
+                  <button
+                    type="button"
+                    className="sidebar-next-fixtures-link"
+                    onClick={() => onSelectGame(g.id)}
+                  >
+                    <span className="sidebar-next-fixtures-step" aria-hidden>
+                      {i + 1}
+                    </span>
+                    <span className="sidebar-next-fixtures-meta">
+                      <span className="sidebar-next-fixtures-opponent">{cleanOpponentName(g.opponent)}</span>
+                      <span className="sidebar-next-fixtures-when">
+                        {formatMatchDayTime(g)} · {g.location || "Venue TBD"}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
+        <div className="game-filters game-filters--scroll" role="group" aria-label="Filter fixtures">
+          {GAME_FILTERS.map((filter) => (
+            <button
+              key={filter.id}
+              type="button"
+              aria-pressed={isFilterActive(filter.id)}
+              className={isFilterActive(filter.id) ? "active" : ""}
+              onClick={() => toggleFilter(filter.id)}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div id="fixtures-scroll-region" aria-labelledby="fixtures-heading">
+      <div id="fixtures-scroll-region" className="sidebar-scroll" aria-labelledby="fixtures-heading">
       {loading && (
         <div className="sidebar-skeleton" aria-hidden>
           {Array.from({ length: 6 }).map((_, i) => (
@@ -200,12 +209,15 @@ export default function GameSidebar({
                     gameRows.filter((a) => a.status === "playing").length +
                     gameGuestRows.filter((p) => p.status === "playing").length;
                   const status = gameStatusById[game.id];
-                  const tone = status?.played
-                    ? "neutral"
-                    : readinessClass(playing).replace("game-card ", "");
+                  const playedCal = status?.played;
+                  const tone =
+                    !showSidebarMatchStats && !playedCal
+                      ? "neutral"
+                      : status?.played
+                        ? "neutral"
+                        : readinessClass(playing).replace("game-card ", "");
 
                   const attendanceNext = attendanceHighlightIds?.has(game.id);
-                  const playedCal = gameStatusById[game.id]?.played;
                   const myRowCal =
                     currentPlayerId && myAttendanceByGameId?.get(game.id);
                   const nextRankCal =
@@ -259,8 +271,14 @@ export default function GameSidebar({
         const status = gameStatusById[game.id];
 
         const played = status?.played;
-        const cardClass = played ? "game-card neutral" : readinessClass(playing);
-        const difficulty = getDifficulty(game.opponent, opponentStrengths, seasonSlug);
+        const cardClass =
+          !showSidebarMatchStats && !played
+            ? "game-card neutral"
+            : played
+              ? "game-card neutral"
+              : readinessClass(playing);
+        const difficulty =
+          showSidebarMatchStats && getDifficulty(game.opponent, opponentStrengths, seasonSlug);
         const hasScore =
           played && game.home_score != null && game.away_score != null;
         const attendanceNext = attendanceHighlightIds?.has(game.id);
@@ -303,18 +321,20 @@ export default function GameSidebar({
               {currentPlayerId && (
                 <MyRsvpChip currentPlayerId={currentPlayerId} played={played} myRow={myRow} />
               )}
-              {!played && <span>{playerStatusLabel(playing)}</span>}
-              {hasScore && (
+              {showSidebarMatchStats && !played && <span>{playerStatusLabel(playing)}</span>}
+              {showSidebarMatchStats && hasScore && (
                 <span className="result-chip-mini" title="Caracrew – opponent">
                   {game.home_score}–{game.away_score}
                 </span>
               )}
-              {difficulty && (
+              {showSidebarMatchStats && difficulty && (
                 <span className={`difficulty-chip ${difficulty.className}`}>
                   {difficulty.label} · P{difficulty.position}
                 </span>
               )}
-              {status?.statsMissing && <span className="badge-warning">Stats missing</span>}
+              {showSidebarMatchStats && status?.statsMissing && (
+                <span className="badge-warning">Stats missing</span>
+              )}
             </div>
           </button>
         );

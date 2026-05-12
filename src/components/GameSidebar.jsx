@@ -1,9 +1,11 @@
-import { FILTER_CONFLICTS, GAME_FILTERS } from "../constants";
+import { FILTER_CONFLICTS, GAME_EXTRA_FILTERS, GAME_FILTERS } from "../constants";
 import { getDifficulty } from "../utils/difficulty";
 import { playerStatusLabel, readinessClass } from "../utils/game";
 import { formatMatchDayTime } from "../utils/formatMatch";
 import { cleanOpponentName } from "../utils/opponent";
 import { useLayoutEffect, useMemo, useState } from "react";
+
+const STATUS_SEGMENT_IDS = ["all", "upcoming", "played"];
 
 const RSVP_CHIP = {
   playing: { label: "You are marked as playing", short: "In", className: "my-rsvp-in" },
@@ -52,6 +54,27 @@ function formatCalendarMonthLabel(yyyyMm) {
   return d.toLocaleString("en-GB", { month: "long", year: "numeric" });
 }
 
+function getStatusSegment(gameFilters) {
+  if (gameFilters.includes("played")) return "played";
+  if (gameFilters.includes("upcoming")) return "upcoming";
+  return "all";
+}
+
+function applyStatusSegment(mode, gameFilters, onFiltersChange) {
+  if (mode === "all") {
+    onFiltersChange(
+      gameFilters.filter((f) => !["upcoming", "played", "stats_missing"].includes(f))
+    );
+    return;
+  }
+  const conflicts = FILTER_CONFLICTS[mode] || [];
+  const withoutTriplet = gameFilters.filter(
+    (f) => !["upcoming", "played", "stats_missing"].includes(f)
+  );
+  const cleaned = withoutTriplet.filter((f) => !conflicts.includes(f));
+  onFiltersChange([...cleaned, mode]);
+}
+
 export default function GameSidebar({
   games,
   attendanceHighlightIds,
@@ -69,26 +92,15 @@ export default function GameSidebar({
   nextAttendanceGames,
   activeMainTab = "attendance",
 }) {
-  function toggleFilter(filterId) {
-    if (filterId === "all") {
-      onFiltersChange([]);
-      return;
-    }
-
+  function toggleExtraFilter(filterId) {
     const isActive = gameFilters.includes(filterId);
     if (isActive) {
       onFiltersChange(gameFilters.filter((f) => f !== filterId));
       return;
     }
-
     const conflicts = FILTER_CONFLICTS[filterId] || [];
     const cleaned = gameFilters.filter((f) => !conflicts.includes(f));
     onFiltersChange([...cleaned, filterId]);
-  }
-
-  function isFilterActive(filterId) {
-    if (filterId === "all") return gameFilters.length === 0;
-    return gameFilters.includes(filterId);
   }
 
   const [showCalendar, setShowCalendar] = useState(false);
@@ -120,29 +132,17 @@ export default function GameSidebar({
   }, [attendance, currentPlayerId]);
 
   const showSidebarMatchStats = activeMainTab !== "stats";
+  const statusSegment = getStatusSegment(gameFilters);
+  const hasExtraFiltersActive = GAME_EXTRA_FILTERS.some((f) => gameFilters.includes(f.id));
 
   return (
     <aside className="sidebar" aria-label="Season fixtures and filters">
-      <div className="sidebar-stack">
-        <div className="sidebar-toolbar">
-          <h2 id="fixtures-heading" className="sidebar-title">
-            Fixtures
-          </h2>
-          <button
-            className="calendar-toggle-button"
-            type="button"
-            aria-expanded={showCalendar}
-            aria-controls="fixtures-scroll-region"
-            onClick={() => setShowCalendar((prev) => !prev)}
-          >
-            {showCalendar ? "List" : "Calendar"}
-          </button>
-        </div>
-
-        {nextAttendanceGames?.length > 0 && (
+      {nextAttendanceGames?.length > 0 && (
+        <div className="sidebar-rsvp-block">
+          <p className="sidebar-section-eyebrow">RSVP soon</p>
           <section className="sidebar-next-fixtures" aria-label="Next fixtures to RSVP">
             <div className="sidebar-next-fixtures-title">
-              RSVP · next {nextAttendanceGames.length}
+              Next {nextAttendanceGames.length} match{nextAttendanceGames.length === 1 ? "" : "es"}
             </div>
             <ol className="sidebar-next-fixtures-list">
               {nextAttendanceGames.map((g, i) => (
@@ -166,179 +166,229 @@ export default function GameSidebar({
               ))}
             </ol>
           </section>
-        )}
-
-        <div className="game-filters game-filters--scroll" role="group" aria-label="Filter fixtures">
-          {GAME_FILTERS.map((filter) => (
-            <button
-              key={filter.id}
-              type="button"
-              aria-pressed={isFilterActive(filter.id)}
-              className={isFilterActive(filter.id) ? "active" : ""}
-              onClick={() => toggleFilter(filter.id)}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div id="fixtures-scroll-region" className="sidebar-scroll" aria-labelledby="fixtures-heading">
-      {loading && (
-        <div className="sidebar-skeleton" aria-hidden>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="skeleton-game-card" />
-          ))}
         </div>
       )}
 
-      {!loading && games.length === 0 && (
-        <p className="sidebar-empty">No games match these filters. Try clearing filters or pick &quot;All&quot;.</p>
-      )}
-
-      {showCalendar && !loading && games.length > 0 && (
-        <div className="calendar-panel">
-          {gamesByMonth.map(([month, monthGames]) => (
-            <section key={month} className="calendar-month">
-              <h3>{formatCalendarMonthLabel(month)}</h3>
-              <div className="calendar-game-list">
-                {monthGames.map((game) => {
-                  const gameRows = attendance.filter((a) => a.game_id === game.id);
-                  const gameGuestRows = guestPlayers.filter((p) => p.game_id === game.id);
-                  const playing =
-                    gameRows.filter((a) => a.status === "playing").length +
-                    gameGuestRows.filter((p) => p.status === "playing").length;
-                  const status = gameStatusById[game.id];
-                  const playedCal = status?.played;
-                  const tone =
-                    !showSidebarMatchStats && !playedCal
-                      ? "neutral"
-                      : status?.played
-                        ? "neutral"
-                        : readinessClass(playing).replace("game-card ", "");
-
-                  const attendanceNext = attendanceHighlightIds?.has(game.id);
-                  const myRowCal =
-                    currentPlayerId && myAttendanceByGameId?.get(game.id);
-                  const nextRankCal =
-                    nextAttendanceGames?.findIndex((g) => g.id === game.id) ?? -1;
-
-                  return (
-                    <button
-                      key={game.id}
-                      id={`sidebar-game-${game.id}`}
-                      type="button"
-                      className={`calendar-game-item ${tone} ${game.id === selectedGameId ? "selected" : ""} ${
-                        attendanceNext ? "attendance-next" : ""
-                      }`}
-                      onClick={() => onSelectGame(game.id)}
-                    >
-                      <span className="calendar-game-datetime">
-                        {game.game_date} · {game.game_time || "--:--"}
-                      </span>
-                      <span className="calendar-game-opponent-wrap">
-                        {attendanceNext && !playedCal && nextRankCal >= 0 && (
-                          <span className="next-fixture-rank-badge next-fixture-rank-badge--compact">
-                            Next {nextRankCal + 1}
-                          </span>
-                        )}
-                        <strong>{cleanOpponentName(game.opponent)}</strong>
-                        {currentPlayerId && (
-                          <MyRsvpChip
-                            currentPlayerId={currentPlayerId}
-                            played={playedCal}
-                            myRow={myRowCal}
-                          />
-                        )}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
-
-      {!showCalendar &&
-        !loading &&
-        games.map((game) => {
-        const gameRows = attendance.filter((a) => a.game_id === game.id);
-        const gameGuestPlayers = guestPlayers.filter((p) => p.game_id === game.id);
-        const playing =
-          gameRows.filter((a) => a.status === "playing").length +
-          gameGuestPlayers.filter((p) => p.status === "playing").length;
-        const status = gameStatusById[game.id];
-
-        const played = status?.played;
-        const cardClass =
-          !showSidebarMatchStats && !played
-            ? "game-card neutral"
-            : played
-              ? "game-card neutral"
-              : readinessClass(playing);
-        const difficulty =
-          showSidebarMatchStats && getDifficulty(game.opponent, opponentStrengths, seasonSlug);
-        const hasScore =
-          played && game.home_score != null && game.away_score != null;
-        const attendanceNext = attendanceHighlightIds?.has(game.id);
-        const myRow =
-          currentPlayerId && myAttendanceByGameId?.get(game.id);
-        const nextRank =
-          nextAttendanceGames?.findIndex((g) => g.id === game.id) ?? -1;
-
-        return (
+      <div className="sidebar-schedule-card">
+        <div className="sidebar-toolbar">
+          <h2 id="fixtures-heading" className="sidebar-title">
+            Schedule
+          </h2>
           <button
-            key={game.id}
-            id={`sidebar-game-${game.id}`}
+            className="calendar-toggle-button"
             type="button"
-            className={`${cardClass} ${game.id === selectedGameId ? "selected" : ""} ${
-              attendanceNext ? "attendance-next" : ""
-            }`}
-            onClick={() => onSelectGame(game.id)}
+            aria-expanded={showCalendar}
+            aria-controls="fixtures-scroll-region"
+            onClick={() => setShowCalendar((prev) => !prev)}
           >
-            <div className="game-top">
-              <strong>{cleanOpponentName(game.opponent)}</strong>
-              {attendanceNext && !played && nextRank >= 0 ? (
-                <span className="next-fixture-rank-badge" title="Mark attendance — upcoming priority fixture">
-                  Next {nextRank + 1}
-                </span>
-              ) : attendanceNext && !played ? (
-                <span className="attendance-next-badge">Attendance</span>
-              ) : (
-                <span className="game-status-pill">
-                  {played ? "Played" : "To be played"}
-                </span>
-              )}
-            </div>
-
-            <div>
-              {game.game_date} · {game.game_time}
-            </div>
-            <div>{game.location}</div>
-
-            <div className="mini-counts">
-              {currentPlayerId && (
-                <MyRsvpChip currentPlayerId={currentPlayerId} played={played} myRow={myRow} />
-              )}
-              {showSidebarMatchStats && !played && <span>{playerStatusLabel(playing)}</span>}
-              {showSidebarMatchStats && hasScore && (
-                <span className="result-chip-mini" title="Caracrew – opponent">
-                  {game.home_score}–{game.away_score}
-                </span>
-              )}
-              {showSidebarMatchStats && difficulty && (
-                <span className={`difficulty-chip ${difficulty.className}`}>
-                  {difficulty.label} · P{difficulty.position}
-                </span>
-              )}
-              {showSidebarMatchStats && status?.statsMissing && (
-                <span className="badge-warning">Stats missing</span>
-              )}
-            </div>
+            {showCalendar ? "List" : "Calendar"}
           </button>
-        );
-      })}
+        </div>
+
+        <div className="filter-status-row" role="group" aria-label="Filter by match status">
+          {STATUS_SEGMENT_IDS.map((id) => {
+            const def = GAME_FILTERS.find((f) => f.id === id);
+            const label = def?.label ?? id;
+            const active = statusSegment === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                className={`filter-status-btn ${active ? "active" : ""}`}
+                aria-pressed={active}
+                onClick={() => applyStatusSegment(id, gameFilters, onFiltersChange)}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        <details className="sidebar-filters-more">
+          <summary className="sidebar-filters-more-summary">
+            More filters
+            {hasExtraFiltersActive ? (
+              <span className="sidebar-filters-more-badge" aria-hidden>
+                On
+              </span>
+            ) : null}
+          </summary>
+          <div className="sidebar-filters-more-chips" role="group" aria-label="Squad and stats filters">
+            {GAME_EXTRA_FILTERS.map((filter) => (
+              <button
+                key={filter.id}
+                type="button"
+                className={`filter-extra-chip ${gameFilters.includes(filter.id) ? "active" : ""}`}
+                aria-pressed={gameFilters.includes(filter.id)}
+                onClick={() => toggleExtraFilter(filter.id)}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </details>
+
+        <div id="fixtures-scroll-region" className="sidebar-scroll" aria-labelledby="fixtures-heading">
+          {loading && (
+            <div className="sidebar-skeleton" aria-hidden>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="skeleton-game-card" />
+              ))}
+            </div>
+          )}
+
+          {!loading && games.length === 0 && (
+            <p className="sidebar-empty">
+              No games match these filters. Try &quot;All&quot; or adjust filters above.
+            </p>
+          )}
+
+          {showCalendar && !loading && games.length > 0 && (
+            <div className="calendar-panel">
+              {gamesByMonth.map(([month, monthGames]) => (
+                <section key={month} className="calendar-month">
+                  <h3>{formatCalendarMonthLabel(month)}</h3>
+                  <div className="calendar-game-list">
+                    {monthGames.map((game) => {
+                      const gameRows = attendance.filter((a) => a.game_id === game.id);
+                      const gameGuestRows = guestPlayers.filter((p) => p.game_id === game.id);
+                      const playing =
+                        gameRows.filter((a) => a.status === "playing").length +
+                        gameGuestRows.filter((p) => p.status === "playing").length;
+                      const status = gameStatusById[game.id];
+                      const playedCal = status?.played;
+                      const tone =
+                        !showSidebarMatchStats && !playedCal
+                          ? "neutral"
+                          : status?.played
+                            ? "neutral"
+                            : readinessClass(playing).replace("game-card ", "");
+
+                      const attendanceNext = attendanceHighlightIds?.has(game.id);
+                      const myRowCal =
+                        currentPlayerId && myAttendanceByGameId?.get(game.id);
+                      const nextRankCal =
+                        nextAttendanceGames?.findIndex((g) => g.id === game.id) ?? -1;
+
+                      return (
+                        <button
+                          key={game.id}
+                          id={`sidebar-game-${game.id}`}
+                          type="button"
+                          className={`calendar-game-item ${tone} ${game.id === selectedGameId ? "selected" : ""} ${
+                            attendanceNext ? "attendance-next" : ""
+                          }`}
+                          onClick={() => onSelectGame(game.id)}
+                        >
+                          <span className="calendar-game-datetime">
+                            {game.game_date} · {game.game_time || "--:--"}
+                          </span>
+                          <span className="calendar-game-opponent-wrap">
+                            {attendanceNext && !playedCal && nextRankCal >= 0 && (
+                              <span className="next-fixture-rank-badge next-fixture-rank-badge--compact">
+                                Next {nextRankCal + 1}
+                              </span>
+                            )}
+                            <strong>{cleanOpponentName(game.opponent)}</strong>
+                            {currentPlayerId && (
+                              <MyRsvpChip
+                                currentPlayerId={currentPlayerId}
+                                played={playedCal}
+                                myRow={myRowCal}
+                              />
+                            )}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+
+          {!showCalendar &&
+            !loading &&
+            games.map((game) => {
+              const gameRows = attendance.filter((a) => a.game_id === game.id);
+              const gameGuestPlayers = guestPlayers.filter((p) => p.game_id === game.id);
+              const playing =
+                gameRows.filter((a) => a.status === "playing").length +
+                gameGuestPlayers.filter((p) => p.status === "playing").length;
+              const status = gameStatusById[game.id];
+
+              const played = status?.played;
+              const cardClass =
+                !showSidebarMatchStats && !played
+                  ? "game-card neutral"
+                  : played
+                    ? "game-card neutral"
+                    : readinessClass(playing);
+              const difficulty =
+                showSidebarMatchStats &&
+                getDifficulty(game.opponent, opponentStrengths, seasonSlug);
+              const hasScore =
+                played && game.home_score != null && game.away_score != null;
+              const attendanceNext = attendanceHighlightIds?.has(game.id);
+              const myRow = currentPlayerId && myAttendanceByGameId?.get(game.id);
+              const nextRank = nextAttendanceGames?.findIndex((g) => g.id === game.id) ?? -1;
+
+              return (
+                <button
+                  key={game.id}
+                  id={`sidebar-game-${game.id}`}
+                  type="button"
+                  className={`${cardClass} ${game.id === selectedGameId ? "selected" : ""} ${
+                    attendanceNext ? "attendance-next" : ""
+                  }`}
+                  onClick={() => onSelectGame(game.id)}
+                >
+                  <div className="game-top">
+                    <strong>{cleanOpponentName(game.opponent)}</strong>
+                    {attendanceNext && !played && nextRank >= 0 ? (
+                      <span
+                        className="next-fixture-rank-badge"
+                        title="Mark attendance — upcoming priority fixture"
+                      >
+                        Next {nextRank + 1}
+                      </span>
+                    ) : attendanceNext && !played ? (
+                      <span className="attendance-next-badge">Attendance</span>
+                    ) : (
+                      <span className="game-status-pill">
+                        {played ? "Played" : "To be played"}
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    {game.game_date} · {game.game_time}
+                  </div>
+                  <div>{game.location}</div>
+
+                  <div className="mini-counts">
+                    {currentPlayerId && (
+                      <MyRsvpChip currentPlayerId={currentPlayerId} played={played} myRow={myRow} />
+                    )}
+                    {showSidebarMatchStats && !played && <span>{playerStatusLabel(playing)}</span>}
+                    {showSidebarMatchStats && hasScore && (
+                      <span className="result-chip-mini" title="Caracrew – opponent">
+                        {game.home_score}–{game.away_score}
+                      </span>
+                    )}
+                    {showSidebarMatchStats && difficulty && (
+                      <span className={`difficulty-chip ${difficulty.className}`}>
+                        {difficulty.label} · P{difficulty.position}
+                      </span>
+                    )}
+                    {showSidebarMatchStats && status?.statsMissing && (
+                      <span className="badge-warning">Stats missing</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+        </div>
       </div>
     </aside>
   );

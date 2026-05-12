@@ -303,14 +303,33 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     });
   }, [gameFilters, gameStatusById, games]);
 
+  /** Upcoming soonest first, then played (most recent first) — for sidebar and prev/next nav */
+  const sortedFilteredGames = useMemo(() => {
+    const byKick = (a, b) => {
+      const da = a.game_date || "";
+      const db = b.game_date || "";
+      if (da !== db) return da.localeCompare(db);
+      return String(a.game_time || "").localeCompare(String(b.game_time || ""));
+    };
+    return [...filteredGames].sort((a, b) => {
+      const sa = gameStatusById[a.id];
+      const sb = gameStatusById[b.id];
+      const aUp = sa && !sa.played;
+      const bUp = sb && !sb.played;
+      if (aUp !== bUp) return aUp ? -1 : 1;
+      if (aUp && bUp) return byKick(a, b);
+      return byKick(b, a);
+    });
+  }, [filteredGames, gameStatusById]);
+
   useEffect(() => {
     if (loading) return;
-    if (!filteredGames.length) return;
-    if (selectedGameId && filteredGames.some((g) => g.id === selectedGameId)) return;
+    if (!sortedFilteredGames.length) return;
+    if (selectedGameId && sortedFilteredGames.some((g) => g.id === selectedGameId)) return;
     const next =
-      filteredGames.find((g) => !isPlayed(g)) ?? filteredGames[0];
+      sortedFilteredGames.find((g) => !isPlayed(g)) ?? sortedFilteredGames[0];
     setSelectedGameId(next?.id ?? null);
-  }, [loading, filteredGames, selectedGameId]);
+  }, [loading, sortedFilteredGames, selectedGameId]);
 
   function canEditAttendanceFor(playerId) {
     return isAdmin || (currentPlayerId && playerId === currentPlayerId);
@@ -569,6 +588,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
   return {
     games,
     filteredGames,
+    sortedFilteredGames,
     loading,
     motmVotes,
     opponentStrengths,

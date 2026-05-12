@@ -26,3 +26,11 @@ export const FILTER_CONFLICTS = {
   players_just_enough: ["players_not_enough", "players_right"],
   players_right: ["players_not_enough", "players_just_enough"],
 };
+
+/** Shown under “More filters” in the fixtures sidebar */
+export const GAME_EXTRA_FILTERS = [
+  { id: "stats_missing", label: "Stats missing" },
+  { id: "players_not_enough", label: "Not enough players" },
+  { id: "players_just_enough", label: "Just enough players" },
+  { id: "players_right", label: "Right amount" },
+];

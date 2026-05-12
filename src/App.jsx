@@ -224,9 +224,6 @@ export default function App() {
               <h1>{TEAM_NAME}</h1>
               <FormChip games={games} />
             </div>
-            <p className="hero-tagline">
-              Plan who&apos;s playing, then log goals and assists for each match.
-            </p>
             <nav className="hero-nav" aria-label="External and team links">
               <button type="button" className="hero-link hero-link-button" onClick={openTeamStats}>
                 Team stats

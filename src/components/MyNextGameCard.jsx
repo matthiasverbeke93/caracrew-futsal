@@ -26,7 +26,10 @@ export default function MyNextGameCard({
 
   if (!currentPlayer || !nextGame) return null;
 
-  const opponent = cleanOpponentName(nextGame.opponent);
+  const rawOpponent = nextGame.opponent ? String(nextGame.opponent).trim() : "";
+  const cleaned = cleanOpponentName(nextGame.opponent);
+  const opponent =
+    (cleaned && cleaned.trim()) || rawOpponent || "Opponent TBD";
   const when = formatMatchDayTime(nextGame);
 
   return (

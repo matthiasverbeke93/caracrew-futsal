@@ -855,114 +855,119 @@ button {
   }
 }
 
-/* ---------- My next game card ---------- */
-.my-next-game-card {
+/* ---------- My next game card (.panel wins later unless chained) ---------- */
+.panel.my-next-game-card {
   margin-bottom: 0;
+  padding: 16px 18px;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   color: #f8fafc;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.my-next-game-card .section-label {
+.panel.my-next-game-card .section-label {
   background: rgba(255, 255, 255, 0.12);
   color: white;
 }
 
-.my-next-game-top {
+.panel.my-next-game-card .my-next-game-top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
-.my-next-game-title {
-  margin: 8px 0 4px;
-  font-size: 24px;
-  color: white;
+.panel.my-next-game-card h2.my-next-game-title {
+  margin: 4px 0 2px;
+  font-size: 22px;
+  line-height: 1.2;
+  color: #f8fafc;
 }
 
-.my-next-game-vs {
+.panel.my-next-game-card .my-next-game-vs {
   color: #94a3b8;
   font-weight: 500;
-  font-size: 16px;
+  font-size: 15px;
 }
 
-.my-next-game-when {
+.panel.my-next-game-card .my-next-game-when {
   margin: 0;
   color: #cbd5e1;
-  font-size: 14px;
+  font-size: 13px;
 }
 
-.my-next-game-jump {
+.panel.my-next-game-card .my-next-game-jump {
   font: inherit;
   font-weight: 700;
   font-size: 12px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
   color: #f8fafc;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 6px 12px;
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.my-next-game-jump:hover {
-  background: rgba(255, 255, 255, 0.16);
+.panel.my-next-game-card .my-next-game-jump:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
-.my-next-game-actions {
+.panel.my-next-game-card .my-next-game-actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
-.my-next-game-btn {
+.panel.my-next-game-card .my-next-game-btn {
   font: inherit;
   font-weight: 700;
-  font-size: 14px;
-  padding: 12px 8px;
+  font-size: 13px;
+  padding: 10px 8px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
   cursor: pointer;
+  line-height: 1.25;
 }
 
-.my-next-game-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+.panel.my-next-game-card .my-next-game-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
 }
 
-.my-next-game-btn.status-playing.active {
+.panel.my-next-game-card .my-next-game-btn.status-playing.active {
   background: #16a34a;
-  border-color: #16a34a;
+  border-color: #22c55e;
   color: white;
 }
 
-.my-next-game-btn.status-if_needed.active {
+.panel.my-next-game-card .my-next-game-btn.status-if_needed.active {
   background: #fbbf24;
   border-color: #fbbf24;
   color: #0f172a;
 }
 
-.my-next-game-btn.status-cant.active {
+.panel.my-next-game-card .my-next-game-btn.status-cant.active {
   background: #b91c1c;
-  border-color: #b91c1c;
+  border-color: #ef4444;
   color: white;
 }
 
-.my-next-game-status {
-  margin: 10px 0 0;
+.panel.my-next-game-card .my-next-game-status {
+  margin: 8px 0 0;
   font-size: 13px;
   color: #cbd5e1;
 }
 
-.my-next-game-status strong {
+.panel.my-next-game-card .my-next-game-status strong {
   color: #fbbf24;
 }
 
 @media (max-width: 540px) {
-  .my-next-game-actions {
+  .panel.my-next-game-card .my-next-game-actions {
     grid-template-columns: 1fr;
   }
 }

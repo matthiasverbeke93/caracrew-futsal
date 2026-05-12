@@ -189,13 +189,18 @@ export default function App() {
 
   return (
     <div className="app">
+      <a href="#match-details" className="skip-link">
+        Skip to match details
+      </a>
       <header className="hero">
         <div className="hero-left">
           <div className="hero-title-row">
             <h1>{TEAM_NAME}</h1>
             <FormChip games={games} />
           </div>
-          <p>Attendance, goals and assists tracker</p>
+          <p className="hero-tagline">
+            Plan who&apos;s playing, then log goals and assists for each match.
+          </p>
           <nav className="hero-nav" aria-label="External and team links">
             <button type="button" className="hero-link hero-link-button" onClick={openTeamStats}>
               Team stats
@@ -318,7 +323,7 @@ export default function App() {
           seasonSlug={seasonSlug}
         />
 
-        <section className="content">
+        <section className="content" id="match-details">
           {loading && (
             <div className="content-skeleton panel" aria-busy="true">
               <div className="skeleton-line lg" />

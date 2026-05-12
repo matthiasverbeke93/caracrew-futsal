@@ -67,12 +67,14 @@ export default function GameSidebar({
   }, [loading, selectedGameId, showCalendar, games]);
 
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" aria-label="Season fixtures and filters">
       <div className="sidebar-header-row">
-        <h2>All games</h2>
+        <h2 id="fixtures-heading">All games</h2>
         <button
           className="calendar-toggle-button"
           type="button"
+          aria-expanded={showCalendar}
+          aria-controls="fixtures-scroll-region"
           onClick={() => setShowCalendar((prev) => !prev)}
         >
           {showCalendar ? "List" : "Calendar"}
@@ -83,10 +85,12 @@ export default function GameSidebar({
           Mark attendance for upcoming matches — the next three fixtures are highlighted.
         </p>
       )}
-      <div className="game-filters">
+      <div className="game-filters" role="group" aria-label="Filter fixtures">
         {GAME_FILTERS.map((filter) => (
           <button
             key={filter.id}
+            type="button"
+            aria-pressed={isFilterActive(filter.id)}
             className={isFilterActive(filter.id) ? "active" : ""}
             onClick={() => toggleFilter(filter.id)}
           >
@@ -95,6 +99,7 @@ export default function GameSidebar({
         ))}
       </div>
 
+      <div id="fixtures-scroll-region" aria-labelledby="fixtures-heading">
       {loading && (
         <div className="sidebar-skeleton" aria-hidden>
           {Array.from({ length: 6 }).map((_, i) => (
@@ -208,6 +213,7 @@ export default function GameSidebar({
           </button>
         );
       })}
+      </div>
     </aside>
   );
 }

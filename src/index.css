@@ -2,11 +2,81 @@
   box-sizing: border-box;
 }
 
+:root {
+  color-scheme: light;
+  --surface-page: #f1f5f9;
+  --surface-panel: #ffffff;
+  --text-primary: #0f172a;
+  --text-muted: #64748b;
+  --accent: #1d4ed8;
+  --accent-ring: rgba(29, 78, 216, 0.35);
+  --radius-panel: 24px;
+  --shadow-panel: 0 1px 3px rgba(15, 23, 42, 0.06), 0 6px 24px rgba(15, 23, 42, 0.06);
+}
+
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f8fafc;
-  color: #0f172a;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  background: var(--surface-page);
+  color: var(--text-primary);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 12px;
+  z-index: 200;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: #020617;
+  color: #f8fafc;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.35);
+}
+
+.skip-link:focus {
+  position: fixed;
+  left: 16px;
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+button:focus-visible,
+.hero-link-button:focus-visible,
+.player-link:focus-visible,
+.calendar-toggle-button:focus-visible,
+.calendar-game-item:focus-visible,
+.game-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.tabs button:focus-visible {
+  outline-offset: 3px;
+}
+
+.game-filters button:focus-visible {
+  outline-offset: 2px;
 }
 
 button,
@@ -765,7 +835,7 @@ button {
 
 /* ---------- My next game card ---------- */
 .my-next-game-card {
-  margin-bottom: 16px;
+  margin-bottom: 0;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   color: #f8fafc;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -885,6 +955,11 @@ button {
   color: #cbd5e1;
 }
 
+.hero-tagline {
+  max-width: 42ch;
+  line-height: 1.5;
+}
+
 .hero-link {
   display: inline-block;
   margin-top: 10px;
@@ -984,10 +1059,10 @@ button.hero-link-button {
 
 .sidebar,
 .panel {
-  background: white;
-  border-radius: 24px;
+  background: var(--surface-panel);
+  border-radius: var(--radius-panel);
   padding: 20px;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-panel);
 }
 
 .sidebar {
@@ -1381,6 +1456,10 @@ button.hero-link-button {
 
 .content {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  scroll-margin-top: 20px;
 }
 
 .selected-game-panel {
@@ -1528,17 +1607,19 @@ button.hero-link-button {
 .tabs {
   display: flex;
   gap: 8px;
-  margin: 16px 0;
+  margin: 0;
   flex-wrap: wrap;
 }
 
-.tabs button,
-.player-card button {
+.tabs button {
   border-radius: 999px;
-  padding: 9px 13px;
+  padding: 10px 16px;
+  min-height: 44px;
   cursor: pointer;
   background: #e2e8f0;
   color: #0f172a;
+  font-weight: 600;
+  font-size: 14px;
 }
 
 .tabs button.active {
@@ -1590,6 +1671,10 @@ button.hero-link-button {
 }
 
 .player-card button {
+  border-radius: 999px;
+  cursor: pointer;
+  background: #e2e8f0;
+  color: #0f172a;
   padding: 7px 10px;
   font-size: 13px;
   text-align: left;
@@ -1968,10 +2053,33 @@ input[type="number"] {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-skeleton .skeleton-game-card,
+  .content-skeleton .skeleton-line,
+  .content-skeleton .skeleton-block {
+    animation: none;
+    background: #e2e8f0;
+  }
+}
+
+.content-empty {
+  text-align: center;
+  padding: 28px 20px;
+}
+
 .content-empty p {
   margin: 0;
-  color: #64748b;
-  line-height: 1.5;
+  color: var(--text-muted);
+  line-height: 1.55;
+  max-width: 40ch;
+  margin-inline: auto;
+}
+
+.content-empty code {
+  font-size: 0.9em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #f1f5f9;
 }
 
 .player-link {
@@ -2220,10 +2328,17 @@ input[type="number"] {
   }
 
   .layout {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .content {
+    order: 1;
   }
 
   .sidebar {
+    order: 2;
     position: static;
     max-height: none;
   }

@@ -1,8 +1,49 @@
 import { FILTER_CONFLICTS, GAME_FILTERS } from "../constants";
+import PersonalComplianceCard from "./PersonalComplianceCard";
 import { getDifficulty } from "../utils/difficulty";
 import { playerStatusLabel, readinessClass } from "../utils/game";
 import { cleanOpponentName } from "../utils/opponent";
 import { useLayoutEffect, useMemo, useState } from "react";
+
+const RSVP_CHIP = {
+  playing: { label: "You are marked as playing", short: "In", className: "my-rsvp-in" },
+  cant: { label: "You cannot attend", short: "Out", className: "my-rsvp-out" },
+  if_needed: { label: "You marked if needed", short: "Maybe", className: "my-rsvp-maybe" },
+};
+
+function MyRsvpChip({ currentPlayerId, played, myRow }) {
+  if (!currentPlayerId) return null;
+
+  if (myRow) {
+    const cfg = RSVP_CHIP[myRow.status];
+    if (cfg) {
+      return (
+        <span className={`my-rsvp-chip ${cfg.className}`} title={cfg.label}>
+          {cfg.short}
+        </span>
+      );
+    }
+    return (
+      <span className="my-rsvp-chip my-rsvp-unknown" title="Your RSVP status">
+        {myRow.status}
+      </span>
+    );
+  }
+
+  if (played) {
+    return (
+      <span className="my-rsvp-chip my-rsvp-none" title="No RSVP saved for you">
+        —
+      </span>
+    );
+  }
+
+  return (
+    <span className="my-rsvp-chip my-rsvp-pending" title={"You have not RSVP'd yet"}>
+      RSVP?
+    </span>
+  );
+}
 
 function formatCalendarMonthLabel(yyyyMm) {
   if (!yyyyMm || yyyyMm.length < 7) return yyyyMm || "";
@@ -24,6 +65,8 @@ export default function GameSidebar({
   loading,
   opponentStrengths,
   seasonSlug,
+  currentPlayerId,
+  personalCompliance,
 }) {
   function toggleFilter(filterId) {
     if (filterId === "all") {
@@ -65,6 +108,15 @@ export default function GameSidebar({
     const el = document.getElementById(`sidebar-game-${selectedGameId}`);
     el?.scrollIntoView({ block: "nearest", behavior: "instant" });
   }, [loading, selectedGameId, showCalendar, games]);
+
+  const myAttendanceByGameId = useMemo(() => {
+    if (!currentPlayerId) return null;
+    const m = new Map();
+    for (const row of attendance) {
+      if (row.player_id === currentPlayerId) m.set(row.game_id, row);
+    }
+    return m;
+  }, [attendance, currentPlayerId]);
 
   return (
     <aside className="sidebar" aria-label="Season fixtures and filters">
@@ -130,6 +182,10 @@ export default function GameSidebar({
                     : readinessClass(playing).replace("game-card ", "");
 
                   const attendanceNext = attendanceHighlightIds?.has(game.id);
+                  const playedCal = gameStatusById[game.id]?.played;
+                  const myRowCal =
+                    currentPlayerId && myAttendanceByGameId?.get(game.id);
+
                   return (
                     <button
                       key={game.id}
@@ -140,10 +196,19 @@ export default function GameSidebar({
                       }`}
                       onClick={() => onSelectGame(game.id)}
                     >
-                      <span>
+                      <span className="calendar-game-datetime">
                         {game.game_date} · {game.game_time || "--:--"}
                       </span>
-                      <strong>{cleanOpponentName(game.opponent)}</strong>
+                      <span className="calendar-game-opponent-wrap">
+                        <strong>{cleanOpponentName(game.opponent)}</strong>
+                        {currentPlayerId && (
+                          <MyRsvpChip
+                            currentPlayerId={currentPlayerId}
+                            played={playedCal}
+                            myRow={myRowCal}
+                          />
+                        )}
+                      </span>
                     </button>
                   );
                 })}
@@ -169,6 +234,8 @@ export default function GameSidebar({
         const hasScore =
           played && game.home_score != null && game.away_score != null;
         const attendanceNext = attendanceHighlightIds?.has(game.id);
+        const myRow =
+          currentPlayerId && myAttendanceByGameId?.get(game.id);
 
         return (
           <button
@@ -197,6 +264,9 @@ export default function GameSidebar({
             <div>{game.location}</div>
 
             <div className="mini-counts">
+              {currentPlayerId && (
+                <MyRsvpChip currentPlayerId={currentPlayerId} played={played} myRow={myRow} />
+              )}
               {!played && <span>{playerStatusLabel(playing)}</span>}
               {hasScore && (
                 <span className="result-chip-mini" title="Caracrew – opponent">
@@ -214,6 +284,8 @@ export default function GameSidebar({
         );
       })}
       </div>
+
+      {currentPlayerId && <PersonalComplianceCard summary={personalCompliance} />}
     </aside>
   );
 }

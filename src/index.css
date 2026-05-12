@@ -1201,7 +1201,32 @@ button.hero-link-button {
   cursor: pointer;
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.calendar-game-datetime {
+  font-size: 12px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.calendar-game-opponent-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+}
+
+.calendar-game-opponent-wrap strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
 }
 
 .calendar-game-item.selected {
@@ -1344,10 +1369,125 @@ button.hero-link-button {
   flex-wrap: wrap;
 }
 
-.mini-counts span {
+.mini-counts span:not(.my-rsvp-chip) {
   background: rgba(255, 255, 255, 0.75);
   border-radius: 999px;
   padding: 4px 8px;
+}
+
+.my-rsvp-chip {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 4px 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.my-rsvp-in {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.my-rsvp-out {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.my-rsvp-maybe {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.my-rsvp-pending {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.my-rsvp-none {
+  background: rgba(148, 163, 184, 0.45);
+  color: #334155;
+  font-weight: 600;
+}
+
+.my-rsvp-unknown {
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+}
+
+.personal-compliance-card {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.personal-compliance-title {
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.personal-compliance-intro {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.personal-compliance-empty,
+.personal-compliance-muted {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.personal-compliance-dl {
+  margin: 0 0 12px;
+}
+
+.personal-compliance-dl:last-child {
+  margin-bottom: 0;
+}
+
+.personal-compliance-dl > div {
+  margin: 0 0 10px;
+}
+
+.personal-compliance-dl dt {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 4px;
+}
+
+.personal-compliance-dl dd {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.personal-compliance-dl strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.personal-compliance-n {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.personal-compliance-footnote {
+  margin: 6px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #94a3b8;
 }
 
 .badge-warning {
@@ -1416,10 +1556,6 @@ button.hero-link-button {
 
 .share-button:hover {
   filter: brightness(1.1);
-}
-
-.calendar-game-item {
-  flex-wrap: wrap;
 }
 
 .badge-ok {

@@ -178,20 +178,28 @@ export default function App() {
     return upcoming[0] ?? null;
   }, [games]);
 
-  const attendanceHighlightIds = useMemo(
-    () => new Set(upcomingGamesForAttendance(games, 3).map((g) => g.id)),
-    [games]
-  );
-
   const nextAttendanceGames = useMemo(
     () => upcomingGamesForAttendance(games, 3),
     [games]
   );
 
-  const showNextGameCard =
-    !!currentPlayer &&
-    !!nextUpcomingGame &&
-    selectedGameId !== nextUpcomingGame.id;
+  const promotedNextGameId =
+    currentPlayer && nextUpcomingGame ? nextUpcomingGame.id : null;
+
+  const sidebarNextAttendanceGames = useMemo(() => {
+    if (!promotedNextGameId) return nextAttendanceGames;
+    return nextAttendanceGames.filter((g) => g.id !== promotedNextGameId);
+  }, [nextAttendanceGames, promotedNextGameId]);
+
+  const attendanceHighlightIds = useMemo(() => {
+    const upcoming = upcomingGamesForAttendance(games, 3);
+    const ids = promotedNextGameId
+      ? upcoming.filter((g) => g.id !== promotedNextGameId).map((g) => g.id)
+      : upcoming.map((g) => g.id);
+    return new Set(ids);
+  }, [games, promotedNextGameId]);
+
+  const showPersistentNextGameCard = !!currentPlayer && !!nextUpcomingGame;
 
   return (
     <div className="app">
@@ -334,7 +342,7 @@ export default function App() {
           opponentStrengths={opponentStrengths}
           seasonSlug={seasonSlug}
           currentPlayerId={currentPlayer?.id ?? null}
-          nextAttendanceGames={nextAttendanceGames}
+          nextAttendanceGames={sidebarNextAttendanceGames}
           activeMainTab={tab}
         />
         )}
@@ -366,16 +374,18 @@ export default function App() {
             />
           )}
 
-          {!loading && !teamStatsOpen && showNextGameCard && (
-            <MyNextGameCard
-              games={games}
-              attendance={attendance}
-              currentPlayer={currentPlayer}
-              onJumpToGame={(id) => setSelectedGameId(id)}
-              onMarkAttendance={(gameId, status) =>
-                saveAttendance(currentPlayer.id, status, gameId)
-              }
-            />
+          {!loading && !teamStatsOpen && showPersistentNextGameCard && (
+            <div className="my-next-game-sticky">
+              <MyNextGameCard
+                games={games}
+                attendance={attendance}
+                currentPlayer={currentPlayer}
+                onJumpToGame={(id) => setSelectedGameId(id)}
+                onMarkAttendance={(gameId, status) =>
+                  saveAttendance(currentPlayer.id, status, gameId)
+                }
+              />
+            </div>
           )}
 
           {!loading && !teamStatsOpen && selectedGame && (

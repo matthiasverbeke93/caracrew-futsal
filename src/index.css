@@ -966,6 +966,14 @@ button {
   color: #fbbf24;
 }
 
+/* Sticky strip for next game (stays under viewport top while scrolling match stack) */
+.my-next-game-sticky {
+  position: sticky;
+  top: 12px;
+  z-index: 15;
+  align-self: stretch;
+}
+
 @media (max-width: 540px) {
   .panel.my-next-game-card .my-next-game-actions {
     grid-template-columns: 1fr;

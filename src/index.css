@@ -97,28 +97,22 @@ button {
 }
 
 .hero {
-  --hero-max: 920px;
-  max-width: var(--hero-max);
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
   background: #020617;
   color: white;
   border-radius: 28px;
-  padding: 22px 32px 26px;
-  margin-bottom: 24px;
+  padding: 14px 28px 16px;
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 0;
-  box-sizing: border-box;
 }
 
 .hero-account-row {
   display: flex;
   justify-content: flex-end;
   width: 100%;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
 }
 
 .hero-body-row {
@@ -127,13 +121,13 @@ button {
 }
 
 .hero-season-bar {
-  margin-top: 22px;
-  padding-top: 18px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 14px;
+  gap: 8px 12px;
 }
 
 .hero-season-label {
@@ -974,8 +968,9 @@ button {
 }
 
 .hero h1 {
-  margin: 8px 0;
-  font-size: 42px;
+  margin: 2px 0 4px;
+  font-size: 38px;
+  line-height: 1.12;
 }
 
 .hero p {
@@ -985,7 +980,8 @@ button {
 
 .hero-tagline {
   max-width: 42ch;
-  line-height: 1.5;
+  line-height: 1.4;
+  font-size: 14px;
 }
 
 .hero-link {
@@ -1001,8 +997,8 @@ button {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 18px;
-  margin-top: 12px;
+  gap: 14px;
+  margin-top: 6px;
 }
 
 .hero-nav .hero-link,
@@ -1057,7 +1053,7 @@ button.hero-link-button {
 .hero .season-pill {
   display: inline-block;
   border-radius: 999px;
-  padding: 8px 18px;
+  padding: 6px 14px;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -2180,7 +2176,7 @@ input[type="number"] {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .form-chip {
@@ -2732,7 +2728,7 @@ input[type="number"] {
   }
 
   .hero {
-    padding: 18px 18px 22px;
+    padding: 12px 16px 14px;
     flex-direction: column;
     align-items: stretch;
     gap: 0;

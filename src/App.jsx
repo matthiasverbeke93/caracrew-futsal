@@ -375,17 +375,15 @@ export default function App() {
           )}
 
           {!loading && !teamStatsOpen && showPersistentNextGameCard && (
-            <div className="my-next-game-sticky">
-              <MyNextGameCard
-                games={games}
-                attendance={attendance}
-                currentPlayer={currentPlayer}
-                onJumpToGame={(id) => setSelectedGameId(id)}
-                onMarkAttendance={(gameId, status) =>
-                  saveAttendance(currentPlayer.id, status, gameId)
-                }
-              />
-            </div>
+            <MyNextGameCard
+              games={games}
+              attendance={attendance}
+              currentPlayer={currentPlayer}
+              onJumpToGame={(id) => setSelectedGameId(id)}
+              onMarkAttendance={(gameId, status) =>
+                saveAttendance(currentPlayer.id, status, gameId)
+              }
+            />
           )}
 
           {!loading && !teamStatsOpen && selectedGame && (

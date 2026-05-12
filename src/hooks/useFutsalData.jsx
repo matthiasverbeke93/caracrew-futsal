@@ -92,11 +92,21 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       const gameFromUrl = urlGameId && nextGames.find((g) => g.id === urlGameId);
 
       setSelectedGameId((prevSelected) => {
-        if (gameFromUrl) return gameFromUrl.id;
-        if (prevSelected && nextGames.some((game) => game.id === prevSelected)) {
-          return prevSelected;
+        const fallbackId = firstUpcoming?.id || nextGames[0]?.id || null;
+
+        if (gameFromUrl) {
+          const urlGame = nextGames.find((g) => g.id === gameFromUrl.id);
+          if (urlGame && isPlayed(urlGame)) return fallbackId;
+          return gameFromUrl.id;
         }
-        return firstUpcoming?.id || nextGames[0]?.id || null;
+
+        if (prevSelected && nextGames.some((game) => game.id === prevSelected)) {
+          const prevGame = nextGames.find((g) => g.id === prevSelected);
+          if (prevGame && !isPlayed(prevGame)) return prevSelected;
+          return fallbackId;
+        }
+
+        return fallbackId;
       });
     } finally {
       setLoading(false);
@@ -292,6 +302,15 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       });
     });
   }, [gameFilters, gameStatusById, games]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!filteredGames.length) return;
+    if (selectedGameId && filteredGames.some((g) => g.id === selectedGameId)) return;
+    const next =
+      filteredGames.find((g) => !isPlayed(g)) ?? filteredGames[0];
+    setSelectedGameId(next?.id ?? null);
+  }, [loading, filteredGames, selectedGameId]);
 
   function canEditAttendanceFor(playerId) {
     return isAdmin || (currentPlayerId && playerId === currentPlayerId);

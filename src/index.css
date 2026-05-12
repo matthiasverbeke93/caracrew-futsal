@@ -1081,6 +1081,13 @@ button.hero-link-button {
   gap: 10px;
 }
 
+.sidebar-attendance-hint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #475569;
+}
+
 .calendar-toggle-button {
   border-radius: 999px;
   padding: 7px 12px;
@@ -1141,6 +1148,11 @@ button.hero-link-button {
 
 .calendar-game-item.neutral {
   background: #f1f5f9;
+}
+
+.calendar-game-item.attendance-next {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .game-filters {
@@ -1205,6 +1217,36 @@ button.hero-link-button {
   background: #f1f5f9;
 }
 
+.game-card.attendance-next {
+  border-color: rgba(59, 130, 246, 0.65);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18);
+}
+
+.game-card.attendance-next.selected {
+  border-color: #020617;
+  box-shadow:
+    0 0 0 2px rgba(59, 130, 246, 0.2),
+    0 0 0 3px rgba(2, 6, 23, 0.12);
+}
+
+.attendance-next-badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #1d4ed8;
+  background: rgba(219, 234, 254, 0.95);
+  border-radius: 999px;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.game-status-muted {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
 .game-top {
   display: flex;
   justify-content: space-between;
@@ -1216,12 +1258,17 @@ button.hero-link-button {
   line-height: 1.2;
 }
 
-.game-top span {
+.game-top .game-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: min(200px, 48%);
   font-size: 12px;
   background: white;
   border-radius: 999px;
   padding: 4px 8px;
-  white-space: nowrap;
 }
 
 .mini-counts {

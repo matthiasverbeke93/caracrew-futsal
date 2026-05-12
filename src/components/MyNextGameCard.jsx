@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { ATTENDANCE_OPTIONS } from "../constants";
-import { isPlayed } from "../utils/game";
+import { upcomingGamesForAttendance } from "../utils/game";
 import { cleanOpponentName } from "../utils/opponent";
 import { formatMatchDayTime } from "../utils/formatMatch";
 
@@ -12,10 +12,8 @@ export default function MyNextGameCard({
   onMarkAttendance,
 }) {
   const nextGame = useMemo(() => {
-    if (!games?.length) return null;
-    return [...games].sort((a, b) => (a.game_date || "").localeCompare(b.game_date || "")).find(
-      (g) => !isPlayed(g)
-    );
+    const upcoming = upcomingGamesForAttendance(games, 1);
+    return upcoming[0] ?? null;
   }, [games]);
 
   const myStatus = useMemo(() => {

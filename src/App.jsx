@@ -15,7 +15,7 @@ import Tabs from "./components/Tabs";
 import { TEAM_NAME } from "./constants";
 import { useAuthSession } from "./hooks/useAuthSession";
 import { useFutsalData } from "./hooks/useFutsalData";
-import { isPlayed } from "./utils/game";
+import { isPlayed, upcomingGamesForAttendance } from "./utils/game";
 import {
   DEFAULT_SEASON_SLUG,
   isSeasonSlug,
@@ -173,10 +173,14 @@ export default function App() {
 
   const nextUpcomingGame = useMemo(() => {
     if (!games?.length) return null;
-    return [...games]
-      .sort((a, b) => (a.game_date || "").localeCompare(b.game_date || ""))
-      .find((g) => !isPlayed(g));
+    const upcoming = upcomingGamesForAttendance(games, 1);
+    return upcoming[0] ?? null;
   }, [games]);
+
+  const attendanceHighlightIds = useMemo(
+    () => new Set(upcomingGamesForAttendance(games, 3).map((g) => g.id)),
+    [games]
+  );
 
   const showNextGameCard =
     !!currentPlayer &&
@@ -301,6 +305,7 @@ export default function App() {
       <main className="layout">
         <GameSidebar
           games={filteredGames}
+          attendanceHighlightIds={attendanceHighlightIds}
           attendance={attendance}
           guestPlayers={guestPlayers}
           gameStatusById={gameStatusById}

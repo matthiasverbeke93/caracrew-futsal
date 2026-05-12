@@ -2,7 +2,7 @@ import { FILTER_CONFLICTS, GAME_FILTERS } from "../constants";
 import { getDifficulty } from "../utils/difficulty";
 import { playerStatusLabel, readinessClass } from "../utils/game";
 import { cleanOpponentName } from "../utils/opponent";
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 
 function formatCalendarMonthLabel(yyyyMm) {
   if (!yyyyMm || yyyyMm.length < 7) return yyyyMm || "";
@@ -13,6 +13,7 @@ function formatCalendarMonthLabel(yyyyMm) {
 
 export default function GameSidebar({
   games,
+  attendanceHighlightIds,
   attendance,
   guestPlayers,
   gameStatusById,
@@ -59,6 +60,12 @@ export default function GameSidebar({
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [games]);
 
+  useLayoutEffect(() => {
+    if (loading || !selectedGameId) return;
+    const el = document.getElementById(`sidebar-game-${selectedGameId}`);
+    el?.scrollIntoView({ block: "nearest", behavior: "instant" });
+  }, [loading, selectedGameId, showCalendar, games]);
+
   return (
     <aside className="sidebar">
       <div className="sidebar-header-row">
@@ -71,6 +78,11 @@ export default function GameSidebar({
           {showCalendar ? "List" : "Calendar"}
         </button>
       </div>
+      {attendanceHighlightIds?.size > 0 && (
+        <p className="sidebar-attendance-hint">
+          Mark attendance for upcoming matches — the next three fixtures are highlighted.
+        </p>
+      )}
       <div className="game-filters">
         {GAME_FILTERS.map((filter) => (
           <button
@@ -112,10 +124,15 @@ export default function GameSidebar({
                     ? "neutral"
                     : readinessClass(playing).replace("game-card ", "");
 
+                  const attendanceNext = attendanceHighlightIds?.has(game.id);
                   return (
                     <button
                       key={game.id}
-                      className={`calendar-game-item ${tone} ${game.id === selectedGameId ? "selected" : ""}`}
+                      id={`sidebar-game-${game.id}`}
+                      type="button"
+                      className={`calendar-game-item ${tone} ${game.id === selectedGameId ? "selected" : ""} ${
+                        attendanceNext ? "attendance-next" : ""
+                      }`}
                       onClick={() => onSelectGame(game.id)}
                     >
                       <span>
@@ -146,16 +163,32 @@ export default function GameSidebar({
         const difficulty = getDifficulty(game.opponent, opponentStrengths, seasonSlug);
         const hasScore =
           played && game.home_score != null && game.away_score != null;
+        const attendanceNext = attendanceHighlightIds?.has(game.id);
 
         return (
           <button
             key={game.id}
-            className={`${cardClass} ${game.id === selectedGameId ? "selected" : ""}`}
+            id={`sidebar-game-${game.id}`}
+            type="button"
+            className={`${cardClass} ${game.id === selectedGameId ? "selected" : ""} ${
+              attendanceNext ? "attendance-next" : ""
+            }`}
             onClick={() => onSelectGame(game.id)}
           >
             <div className="game-top">
               <strong>{cleanOpponentName(game.opponent)}</strong>
-              <span>{played ? "Played" : "To be played"}</span>
+              <span className="game-status-pill">
+                {attendanceNext && !played ? (
+                  <>
+                    <span className="attendance-next-badge">Mark attendance</span>
+                    <span className="game-status-muted">· To be played</span>
+                  </>
+                ) : played ? (
+                  "Played"
+                ) : (
+                  "To be played"
+                )}
+              </span>
             </div>
 
             <div>

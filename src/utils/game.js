@@ -5,6 +5,15 @@ export function isPlayed(game) {
   return game.game_date < today;
 }
 
+/** Next upcoming fixtures (still editable for attendance), newest-first order capped at `limit`. */
+export function upcomingGamesForAttendance(allGames, limit = 3) {
+  if (!allGames?.length) return [];
+  return [...allGames]
+    .sort((a, b) => (a.game_date || "").localeCompare(b.game_date || ""))
+    .filter((g) => !isPlayed(g))
+    .slice(0, limit);
+}
+
 function daysSinceGame(game, nowMs = Date.now()) {
   if (!game?.game_date) return null;
   const gameMs = new Date(`${game.game_date}T00:00:00`).getTime();

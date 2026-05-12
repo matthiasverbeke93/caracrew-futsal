@@ -7,7 +7,7 @@ import ClaimPlayerModal from "./components/ClaimPlayerModal";
 import FormChip from "./components/FormChip";
 import GameSidebar from "./components/GameSidebar";
 import MatchFixtureNav from "./components/MatchFixtureNav";
-import MyNextGameCard from "./components/MyNextGameCard";
+import MyNextGamesTiles from "./components/MyNextGamesTiles";
 import PlayerProfileModal from "./components/PlayerProfileModal";
 import SelectedGamePanel from "./components/SelectedGamePanel";
 import StatsTab from "./components/StatsTab";
@@ -172,34 +172,28 @@ export default function App() {
     return players.find((p) => p.id === myClaim.player_id)?.name || myClaim.player_id;
   }, [myClaim, players]);
 
-  const nextUpcomingGame = useMemo(() => {
-    if (!games?.length) return null;
-    const upcoming = upcomingGamesForAttendance(games, 1);
-    return upcoming[0] ?? null;
-  }, [games]);
-
   const nextAttendanceGames = useMemo(
     () => upcomingGamesForAttendance(games, 3),
     [games]
   );
 
-  const promotedNextGameId =
-    currentPlayer && nextUpcomingGame ? nextUpcomingGame.id : null;
+  const promotedNextGameIds = useMemo(() => {
+    if (!currentPlayer) return new Set();
+    return new Set(nextAttendanceGames.map((g) => g.id));
+  }, [currentPlayer, nextAttendanceGames]);
 
   const sidebarNextAttendanceGames = useMemo(() => {
-    if (!promotedNextGameId) return nextAttendanceGames;
-    return nextAttendanceGames.filter((g) => g.id !== promotedNextGameId);
-  }, [nextAttendanceGames, promotedNextGameId]);
+    if (promotedNextGameIds.size === 0) return nextAttendanceGames;
+    return nextAttendanceGames.filter((g) => !promotedNextGameIds.has(g.id));
+  }, [nextAttendanceGames, promotedNextGameIds]);
 
   const attendanceHighlightIds = useMemo(() => {
     const upcoming = upcomingGamesForAttendance(games, 3);
-    const ids = promotedNextGameId
-      ? upcoming.filter((g) => g.id !== promotedNextGameId).map((g) => g.id)
-      : upcoming.map((g) => g.id);
-    return new Set(ids);
-  }, [games, promotedNextGameId]);
+    if (promotedNextGameIds.size === 0) return new Set(upcoming.map((g) => g.id));
+    return new Set(upcoming.filter((g) => !promotedNextGameIds.has(g.id)).map((g) => g.id));
+  }, [games, promotedNextGameIds]);
 
-  const showPersistentNextGameCard = !!currentPlayer && !!nextUpcomingGame;
+  const showNextGamesTiles = !!currentPlayer && nextAttendanceGames.length > 0;
 
   return (
     <div className="app">
@@ -371,8 +365,8 @@ export default function App() {
             />
           )}
 
-          {!loading && !teamStatsOpen && showPersistentNextGameCard && (
-            <MyNextGameCard
+          {!loading && !teamStatsOpen && showNextGamesTiles && (
+            <MyNextGamesTiles
               games={games}
               attendance={attendance}
               currentPlayer={currentPlayer}

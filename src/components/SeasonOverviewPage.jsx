@@ -4,6 +4,7 @@ import { getStaticTeamStatsForSeason } from "../data/seasonTeamStatsOverrides";
 import {
   RSVP_ON_TIME_DAYS_BEFORE,
   STATS_ON_TIME_DAYS_AFTER,
+  STATS_ZERO_GA_GRACE_DAYS_AFTER,
   computeComplianceForAllPlayers,
   formatComplianceStars,
 } from "../utils/playerCompliance";
@@ -46,12 +47,12 @@ const COMPLIANCE_SORT = [
   {
     key: "rsvpOnTimePct",
     label: "RSVP on time",
-    tooltip: `Share of season games where attendance was saved at least ${RSVP_ON_TIME_DAYS_BEFORE} days before kickoff`,
+    tooltip: `Among games marked Played on Stats, share where attendance was saved at least ${RSVP_ON_TIME_DAYS_BEFORE} days before kickoff`,
   },
   {
     key: "statsOnTimePct",
     label: "Stats on time",
-    tooltip: `Share of played games where goals/assists were saved within ${STATS_ON_TIME_DAYS_AFTER} days after kickoff`,
+    tooltip: `Among the same games: saved within ${STATS_ON_TIME_DAYS_AFTER}d after kickoff, or 0 goals and 0 assists once ${STATS_ZERO_GA_GRACE_DAYS_AFTER}d after kickoff`,
   },
   {
     key: "complianceStars",
@@ -351,20 +352,25 @@ export default function SeasonOverviewPage({
             </p>
             <ul>
               <li>
-                <strong>RSVP on time</strong> — of all scheduled games this season, the share where
-                attendance was saved at least <strong>{RSVP_ON_TIME_DAYS_BEFORE} days before</strong>{" "}
-                kickoff. No row, or saved too late, counts as not on time.
+                <strong>Games counted</strong> — only fixtures where someone is marked{" "}
+                <strong>Played</strong> on the Stats tab for that game (stored on{" "}
+                <code>player_stats.played</code>). Goals and assists alone do not imply played.
               </li>
               <li>
-                <strong>Stats on time</strong> — of <em>played</em> games, the share where goals and
-                assists were saved between kickoff and <strong>{STATS_ON_TIME_DAYS_AFTER} full days
-                (72 hours)</strong> after kickoff. Missing stats after a played match counts as not
-                on time.
+                <strong>RSVP on time</strong> — of those games, the share where attendance was saved
+                at least <strong>{RSVP_ON_TIME_DAYS_BEFORE} days before</strong> kickoff. No attendance
+                row, or saved too late, counts as not on time.
               </li>
               <li>
-                <strong>Score</strong> — <strong>0–5 stars</strong>: average of the two percentages
-                when both apply; if there are no played games yet, only RSVP on time is used. Hover a
-                percentage to see how many games it is based on.
+                <strong>Stats on time</strong> — of the same set: the stats row was saved between kickoff
+                and <strong>{STATS_ON_TIME_DAYS_AFTER} full days (72 hours)</strong> after kickoff,{" "}
+                <em>or</em> the player has <strong>0 goals and 0 assists</strong> and the match was at
+                least <strong>{STATS_ZERO_GA_GRACE_DAYS_AFTER} full days ago</strong> (no need to chase
+                empty lines).
+              </li>
+              <li>
+                <strong>Score</strong> — <strong>0–5 stars</strong>: average of the two percentages.
+                Hover a percentage to see how many games it is based on.
               </li>
             </ul>
           </div>
@@ -403,7 +409,7 @@ export default function SeasonOverviewPage({
                     <td
                       title={
                         r.rsvpGamesDenom > 0
-                          ? `${r.rsvpInTimeGames} of ${r.rsvpGamesDenom} games saved ≥${RSVP_ON_TIME_DAYS_BEFORE}d before kickoff`
+                          ? `${r.rsvpInTimeGames} of ${r.rsvpGamesDenom} played (Stats checkbox) games — attendance saved ≥${RSVP_ON_TIME_DAYS_BEFORE}d before kickoff`
                           : undefined
                       }
                     >
@@ -412,8 +418,8 @@ export default function SeasonOverviewPage({
                     <td
                       title={
                         r.statsGamesDenom > 0
-                          ? `${r.statsInTimeGames} of ${r.statsGamesDenom} played games with stats saved within ${STATS_ON_TIME_DAYS_AFTER}d after kickoff`
-                          : "No played games in this season yet"
+                          ? `${r.statsInTimeGames} of ${r.statsGamesDenom} — within ${STATS_ON_TIME_DAYS_AFTER}d after kickoff, or 0G/0A after ${STATS_ZERO_GA_GRACE_DAYS_AFTER}d`
+                          : "No fixtures marked played on Stats for this season yet"
                       }
                     >
                       {r.statsOnTimePct != null ? `${r.statsOnTimePct}%` : "—"}

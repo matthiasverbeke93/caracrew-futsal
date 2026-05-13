@@ -8,17 +8,10 @@ import {
 } from "../utils/game";
 import { supabase } from "../lib/supabase";
 import { isSeasonVotingLocked } from "../seasons";
-import {
-  countPlayerMotmWins,
-  getMotmLeaderIds,
-  getMotmVotingEnd,
-  getMotmVotingStart,
-  isMotmVotingOpen,
-} from "../utils/motm";
+import { getMotmLeaderIds, getMotmVotingEnd, getMotmVotingStart, isMotmVotingOpen } from "../utils/motm";
 
 export default function StatsTab({
   allGamePlayers,
-  games = [],
   selectedGame,
   gameStats,
   selectedGameTotals,
@@ -115,14 +108,6 @@ export default function StatsTab({
     () => getMotmLeaderIds(selectedGame.id, motmVotes),
     [motmVotes, selectedGame.id]
   );
-
-  const motmSeasonWinsByPlayerId = useMemo(() => {
-    const m = {};
-    for (const p of allGamePlayers) {
-      m[p.id] = countPlayerMotmWins(p.id, games, motmVotes, now);
-    }
-    return m;
-  }, [allGamePlayers, games, motmVotes, now]);
 
   const showMotmBlock = isPlayed(selectedGame) && !!motmEnd;
 
@@ -280,9 +265,10 @@ export default function StatsTab({
               <th scope="col">Player</th>
               <th
                 scope="col"
-                title="Man of the match wins this season (after voting closes; ties count)"
+                className="stats-played-cell"
+                title="Used for season compliance: only checked games count toward RSVP and stats-on-time %"
               >
-                MOTM wins
+                Played
               </th>
               <th scope="col">Goals</th>
               <th scope="col">Assists</th>
@@ -310,10 +296,24 @@ export default function StatsTab({
                     </button>
                     {player.type !== "fixed" && <span className="guest-badge">Guest</span>}
                   </td>
-                  <td className="stats-motm-wins-cell">
-                    <span className="stats-motm-wins" title="Season MOTM wins">
-                      {motmSeasonWinsByPlayerId[player.id] ?? 0}
-                    </span>
+                  <td className="stats-played-cell">
+                    {isAdHoc ? (
+                      <span className="stats-played-na" title="Guests use guest row only">
+                        —
+                      </span>
+                    ) : (
+                      <input
+                        type="checkbox"
+                        checked={!!row && row.played !== false}
+                        disabled={!rowEditable}
+                        title={
+                          !rowEditable
+                            ? disabledTitle
+                            : "Counts this game toward your RSVP / stats compliance scores"
+                        }
+                        onChange={(e) => saveStat(player.id, "played", e.target.checked)}
+                      />
+                    )}
                   </td>
                   <td>
                     <input

@@ -431,13 +431,19 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     if (!gameId) return;
     if (!canEditAttendanceFor(playerId)) return;
     const existing = gameStats.find((s) => s.player_id === playerId);
-    const goals = field === "goals" ? Number(value || 0) : existing?.goals || 0;
-    const assists = field === "assists" ? Number(value || 0) : existing?.assists || 0;
+    const goals = field === "goals" ? Number(value || 0) : existing?.goals ?? 0;
+    const assists = field === "assists" ? Number(value || 0) : existing?.assists ?? 0;
+    const played =
+      field === "played"
+        ? Boolean(value)
+        : existing
+          ? existing.played !== false
+          : true;
     const updated_at = new Date().toISOString();
     const snapshot = stats;
     setStats((prev) => {
       const idx = prev.findIndex((s) => s.game_id === gameId && s.player_id === playerId);
-      const row = { game_id: gameId, player_id: playerId, goals, assists, updated_at };
+      const row = { game_id: gameId, player_id: playerId, goals, assists, played, updated_at };
       if (idx >= 0) {
         const next = [...prev];
         next[idx] = row;
@@ -450,6 +456,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       player_id: playerId,
       goals,
       assists,
+      played,
       updated_at,
     });
     if (error) {

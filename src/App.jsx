@@ -457,7 +457,6 @@ export default function App() {
                   <StatsTab
                     key={selectedGame.id}
                     allGamePlayers={allGamePlayers}
-                    games={games}
                     selectedGame={selectedGame}
                     gameStats={gameStats}
                     selectedGameTotals={selectedGameTotals}

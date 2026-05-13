@@ -3174,9 +3174,14 @@ input[type="number"] {
   width: 38%;
 }
 
-.stats-player-table .stats-motm-wins-cell {
-  width: 5.5rem;
-  text-align: right;
+.stats-player-table .stats-played-cell {
+  width: 4.75rem;
+  text-align: center;
+}
+
+.stats-player-table .stats-played-na {
+  color: #94a3b8;
+  font-size: 14px;
 }
 
 .stats-player-table th:nth-child(3),
@@ -3184,13 +3189,6 @@ input[type="number"] {
 .stats-player-table th:nth-child(4),
 .stats-player-table td:nth-child(4) {
   width: 5.25rem;
-}
-
-.stats-motm-wins {
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  font-size: 14px;
-  color: #0f172a;
 }
 
 @media (max-width: 1000px) {

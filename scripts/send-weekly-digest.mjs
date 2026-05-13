@@ -8,7 +8,7 @@
  *   DIGEST_TO_EMAIL — comma-separated recipients
  *   DIGEST_FROM_EMAIL — optional (default: onboarding@resend.dev until domain verified)
  *   DIGEST_SEASON_SLUG — optional (default: first entry in src/seasons.js default == 2526)
- *   PUBLIC_APP_URL — optional link base for CTA (default https://lzvcup.be teams — override with your deployed app URL)
+ *   PUBLIC_APP_URL — full app URL with scheme, e.g. https://www.caracrew.org (host-only is OK; https is added)
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -27,8 +27,34 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
+/** Email clients require an absolute https URL; env often omits the scheme. */
+function normalizeAppUrl(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return "https://www.lzvcup.be";
+  if (/^https?:\/\//i.test(s)) return s.replace(/\/+$/, "") || "https://www.lzvcup.be";
+  return `https://${s.replace(/^\/+/, "").replace(/\/+$/, "")}`;
+}
+
 function fmtWhen(game) {
   return formatMatchCalendarDateTime(game) || game.game_date || "";
+}
+
+/** Single-column card block — table layout for picky mail clients */
+function emailCard(title, headerBg, headerColor, bodyHtml) {
+  const t = escapeHtml(title);
+  return `
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:16px;overflow:hidden;">
+  <tr>
+    <td style="padding:12px 16px;background:${headerBg};">
+      <p style="margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:12px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:${headerColor};">${t}</p>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:14px 16px 16px;font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:15px;line-height:1.55;color:#0f172a;">
+      ${bodyHtml}
+    </td>
+  </tr>
+</table>`;
 }
 
 async function main() {
@@ -39,10 +65,9 @@ async function main() {
   const toRaw = process.env.DIGEST_TO_EMAIL || "";
   const fromEmail =
     process.env.DIGEST_FROM_EMAIL || "Caracrew digest <onboarding@resend.dev>";
-  const appUrl =
-    process.env.PUBLIC_APP_URL ||
-    process.env.VITE_PUBLIC_APP_URL ||
-    "https://www.lzvcup.be";
+  const appUrl = normalizeAppUrl(
+    process.env.PUBLIC_APP_URL || process.env.VITE_PUBLIC_APP_URL || "https://www.lzvcup.be"
+  );
 
   if (!supabaseUrl || !serviceRoleKey) {
     throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
@@ -99,7 +124,7 @@ async function main() {
   const nextThree = nextUpcomingGamesByCalendar(games || [], 3);
   const nextGame = nextThree[0] ?? null;
 
-  let rsvpSection = "";
+  let rsvpBody = "";
   if (nextGame) {
     const missing = [];
     for (const pl of fixedRoster) {
@@ -110,28 +135,25 @@ async function main() {
     const when = escapeHtml(fmtWhen(nextGame));
     const loc = escapeHtml(nextGame.location || "Venue TBD");
     if (missing.length) {
-      rsvpSection = `
-        <h3 style="margin:24px 0 8px;font-size:16px;">RSVP · next fixture</h3>
+      rsvpBody = `
         <p style="margin:0 0 8px;"><strong>vs ${opp}</strong><br/>${when} · ${loc}</p>
-        <p style="margin:0 0 8px;color:#b45309;"><strong>${
+        <p style="margin:0 0 8px;color:#b45309;font-size:14px;"><strong>${
           missing.length
         }</strong> fixed roster player(s) still need to RSVP:</p>
         <ul style="margin:0;padding-left:20px;">
           ${missing.map((n) => `<li>${escapeHtml(n)}</li>`).join("")}
         </ul>`;
     } else {
-      rsvpSection = `
-        <h3 style="margin:24px 0 8px;font-size:16px;">RSVP · next fixture</h3>
+      rsvpBody = `
         <p style="margin:0;"><strong>vs ${opp}</strong><br/>${when} · ${loc}</p>
-        <p style="margin:8px 0 0;color:#166534;">Everyone on the fixed roster has an RSVP saved for this match.</p>`;
+        <p style="margin:10px 0 0;color:#166534;font-size:14px;">Everyone on the fixed roster has an RSVP saved for this match.</p>`;
     }
   } else {
-    rsvpSection =
-      '<p style="margin:16px 0 0;">No upcoming fixtures left in this season block.</p>';
+    rsvpBody = '<p style="margin:0;">No upcoming fixtures left in this season block.</p>';
   }
 
   const motmOpen = (games || []).filter((g) => isMotmVotingOpen(g));
-  let motmSection = "";
+  let motmBody = "";
   if (motmOpen.length) {
     const blocks = motmOpen.map((g) => {
       const end = getMotmVotingEnd(g);
@@ -151,12 +173,10 @@ async function main() {
         <span style="color:#64748b;font-size:14px;">Votes cast: ${voters}</span>
       </li>`;
     });
-    motmSection = `
-      <h3 style="margin:24px 0 8px;font-size:16px;">MotM voting open</h3>
-      <ul style="margin:0;padding-left:20px;">${blocks.join("")}</ul>`;
+    motmBody = `<ul style="margin:0;padding-left:20px;">${blocks.join("")}</ul>`;
   } else {
-    motmSection =
-      '<p style="margin:16px 0 0;color:#64748b;font-size:14px;">No Man of the Match votes due right now.</p>';
+    motmBody =
+      '<p style="margin:0;color:#64748b;font-size:14px;">No Man of the Match votes due right now.</p>';
   }
 
   const upcomingLines = nextThree.length
@@ -170,23 +190,119 @@ async function main() {
         .join("")
     : "<li>No upcoming games</li>";
 
-  const html = `
-<!DOCTYPE html>
-<html><body style="font-family:system-ui,Segoe UI,sans-serif;line-height:1.5;color:#0f172a;max-width:560px;">
-  <h1 style="font-size:20px;margin:0 0 8px;">${escapeHtml(TEAM_NAME)} · Weekly pulse</h1>
-  <p style="margin:0 0 16px;color:#64748b;font-size:14px;">Season ${escapeHtml(seasonSlug)} · sent automatically</p>
+  const href = escapeHtml(appUrl);
+  const subjectLine = `${TEAM_NAME} · Weekly squad pulse`;
 
-  <h3 style="margin:0 0 8px;font-size:16px;">Upcoming (next ${nextThree.length || 0})</h3>
-  <ul style="margin:0;padding-left:20px;">${upcomingLines}</ul>
+  const rsvpCard = emailCard("RSVP · next fixture", "#fefce8", "#854d0e", rsvpBody);
+  const motmTitle = motmOpen.length ? "Man of the Match · voting open" : "Man of the Match";
+  const motmCard = emailCard(motmTitle, "#eff6ff", "#1d4ed8", motmBody);
 
-  ${rsvpSection}
-  ${motmSection}
+  const upcomingPlain = nextThree.length
+    ? nextThree
+        .map(
+          (g) =>
+            `- ${fmtWhen(g)} · vs ${cleanOpponentName(g.opponent)} · ${g.location || "TBD"}`
+        )
+        .join("\n")
+    : "- (none)";
 
-  <p style="margin:28px 0 0;">
-    <a href="${escapeHtml(appUrl)}" style="display:inline-block;background:#020617;color:#fff;text-decoration:none;padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;">Open squad app</a>
-  </p>
-  <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;">Reply not monitored — use WhatsApp or the app.</p>
-</body></html>`;
+  const textBody = `${TEAM_NAME} · Weekly pulse
+Season ${seasonSlug}
+
+Upcoming (next ${nextThree.length}):
+${upcomingPlain}
+
+RSVP (next fixture):
+${nextGame ? `${cleanOpponentName(nextGame.opponent)} · ${fmtWhen(nextGame)}` : "No upcoming game"}
+
+MotM:
+${motmOpen.length ? `${motmOpen.length} vote window(s) open` : "No votes due right now"}
+
+Open the squad app (tap or copy):
+${appUrl}
+
+Reply not monitored — use WhatsApp or the app.
+`;
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(subjectLine)}</title>
+</head>
+<body style="margin:0;padding:0;background:#e2e8f0;-webkit-text-size-adjust:100%;">
+  <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;">
+    ${escapeHtml(TEAM_NAME)} — fixtures, RSVP, MotM
+  </span>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#e2e8f0;padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(15,23,42,0.08);">
+          <tr>
+            <td style="background:#020617;padding:22px 24px;">
+              <p style="margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:20px;font-weight:800;color:#f8fafc;line-height:1.25;">
+                ${escapeHtml(TEAM_NAME)}
+              </p>
+              <p style="margin:8px 0 0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:13px;color:#94a3b8;line-height:1.45;">
+                Weekly pulse · Season ${escapeHtml(seasonSlug)}
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px;font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:15px;line-height:1.55;color:#0f172a;">
+              <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+                RSVP gaps and MotM voting — sent automatically.
+              </p>
+
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:16px;overflow:hidden;">
+                <tr>
+                  <td style="padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+                    <p style="margin:0;font-size:12px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;">
+                      Upcoming · next ${nextThree.length || 0}
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 16px 16px;">
+                    <ul style="margin:0;padding-left:20px;">${upcomingLines}</ul>
+                  </td>
+                </tr>
+              </table>
+
+              ${rsvpCard}
+              ${motmCard}
+
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 0;">
+                <tr>
+                  <td align="left">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="border-radius:12px;background:#020617;">
+                          <a href="${href}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 24px;font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;line-height:1.2;">Open squad app</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:18px 0 0;font-size:13px;color:#64748b;">
+                Or copy this link into your browser:<br/>
+                <a href="${href}" style="color:#2563eb;word-break:break-all;">${href}</a>
+              </p>
+
+              <p style="margin:22px 0 0;font-size:12px;color:#94a3b8;line-height:1.45;">
+                Reply not monitored — use WhatsApp or the app.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -197,8 +313,9 @@ async function main() {
     body: JSON.stringify({
       from: fromEmail,
       to: toList,
-      subject: `${TEAM_NAME} · Weekly squad pulse`,
+      subject: subjectLine,
       html,
+      text: textBody,
     }),
   });
 

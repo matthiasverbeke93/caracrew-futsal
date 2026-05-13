@@ -7,6 +7,7 @@ import {
   isStatsFrozen,
 } from "../utils/game";
 import { supabase } from "../lib/supabase";
+import { isSeasonVotingLocked } from "../seasons";
 import {
   getMotmLeaderIds,
   getMotmVotingEnd,
@@ -75,6 +76,7 @@ export default function StatsTab({
 
   const motmEnd = getMotmVotingEnd(selectedGame);
   const motmStart = getMotmVotingStart(selectedGame);
+  const motmSeasonLocked = isSeasonVotingLocked(selectedGame?.season_slug);
   const votingOpen = isMotmVotingOpen(selectedGame, now);
   const votingFinished = isPlayed(selectedGame) && motmEnd && now > motmEnd.getTime();
   const votingPending =
@@ -198,7 +200,12 @@ export default function StatsTab({
       {showMotmBlock && (
         <div className="motm-panel">
           <h3>Player of the match</h3>
-          {votingPending && (
+          {motmSeasonLocked && (
+            <p className="motm-hint">
+              MOTM voting is turned off for this preview season (26–27 dummy data).
+            </p>
+          )}
+          {votingPending && !motmSeasonLocked && (
             <p className="motm-hint">
               MOTM voting opens about 2 hours after kickoff, then stays open for 24 hours.
             </p>

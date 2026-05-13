@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { isSeasonVotingLocked } from "../seasons.js";
 import { isAttendanceEditable, isPlayed } from "../utils/game";
 
 const FORCED_GUEST_NAMES = new Set(["bart moyens"]);
@@ -563,6 +564,10 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
   async function submitMotmVote(nomineeId) {
     const gid = selectedGameId;
     if (!gid) return { error: "No game selected" };
+    const gameRow = games.find((g) => g.id === gid);
+    if (isSeasonVotingLocked(gameRow?.season_slug)) {
+      return { error: "Man of the match voting is disabled for this season." };
+    }
     const { data: sessionData } = await supabase.auth.getSession();
     const authedUserId = sessionData?.session?.user?.id;
     if (!authedUserId) return { error: "Sign in to vote" };

@@ -1,3 +1,4 @@
+import { isSeasonVotingLocked } from "../seasons.js";
 import { isPlayed } from "./game.js";
 
 function parseGameStart(game) {
@@ -24,7 +25,7 @@ export function getMotmVotingEnd(game) {
 }
 
 export function isMotmVotingOpen(game, nowMs = Date.now()) {
-  if (!game || !isPlayed(game)) return false;
+  if (!game || isSeasonVotingLocked(game.season_slug) || !isPlayed(game)) return false;
   const openAt = getMotmVotingStart(game);
   const end = getMotmVotingEnd(game);
   if (!openAt || !end) return false;

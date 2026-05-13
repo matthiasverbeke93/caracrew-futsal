@@ -1,16 +1,10 @@
 import { useMemo } from "react";
-import { ATTENDANCE_OPTIONS } from "../constants";
+import { ATTENDANCE_OPTIONS, attendanceLabel } from "../constants";
 import { isAttendanceEditable, nextUpcomingGamesByCalendar } from "../utils/game";
 import { cleanOpponentName } from "../utils/opponent";
 import { formatFixtureTileLine } from "../utils/formatMatch";
 
 const TILE_EYEBROWS = ["Soonest", "Next up", "Later"];
-
-const TILE_BTN_SHORT = {
-  playing: "In",
-  cant: "Out",
-  if_needed: "if needed",
-};
 
 export default function MyNextGamesTiles({
   games,
@@ -72,9 +66,11 @@ function NextGameTile({
   const opponent = (cleaned && cleaned.trim()) || rawOpponent || "Opponent TBD";
   const whenLine = formatFixtureTileLine(game);
 
+  const rsvpMod = myStatus ? `my-next-game-card--rsvp-${myStatus}` : "";
+
   return (
     <section
-      className="panel my-next-game-card my-next-game-card--tile"
+      className={`panel my-next-game-card my-next-game-card--tile ${rsvpMod}`.trim()}
       aria-label={`${eyebrow}: vs ${opponent}`}
     >
       <div className="my-next-game-top">
@@ -111,7 +107,7 @@ function NextGameTile({
             aria-pressed={myStatus === opt.value}
             aria-label={opt.label}
           >
-            {TILE_BTN_SHORT[opt.value] ?? opt.label}
+            {opt.label}
           </button>
         ))}
       </div>
@@ -128,15 +124,9 @@ function NextGameTile({
 
       {myStatus ? (
         <p className="my-next-game-status">
-          Marked <strong>{labelFor(myStatus)}</strong>.
+          Marked <strong>{attendanceLabel(myStatus)}</strong>.
         </p>
       ) : null}
     </section>
   );
-}
-
-function labelFor(value) {
-  if (value === "if_needed") return "if needed";
-  const found = ATTENDANCE_OPTIONS.find((o) => o.value === value);
-  return found ? found.label.toLowerCase().replace(/^i'?m\s/i, "") : value;
 }

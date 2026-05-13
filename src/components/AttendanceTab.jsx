@@ -73,8 +73,13 @@ export default function AttendanceTab({
             attendanceOpen &&
             (isAdHoc ? canManageGame : canEditAttendanceFor(player.id));
 
+          const statusClass = current ? `player-card--status-${current}` : "";
+
           return (
-            <div className={`player-card ${player.type !== "fixed" ? "guest-player-card" : ""}`} key={player.id}>
+            <div
+              className={`player-card ${player.type !== "fixed" ? "guest-player-card" : ""} ${statusClass}`.trim()}
+              key={player.id}
+            >
               <div className="player-card-header">
                 <strong>
                   <button type="button" className="player-link" onClick={() => onOpenPlayer(player.id)}>

@@ -128,7 +128,7 @@ export function buildWhatsAppNudgeUrl(game, missingNames, rosterSnapshot = {}) {
     "Attendance Bot 3000",
     "",
     `Match · ${when} vs ${opp}`,
-    `Roster · ${fixedRoster} fixed · playing ${playing} · if needed ${if_needed} · can't ${cant} · no RSVP ${missing} · guests ${guests}`,
+    `Roster · ${fixedRoster} fixed · In ${playing} · If needed ${if_needed} · Out ${cant} · no RSVP ${missing} · guests ${guests}`,
     "",
     `Still waiting on ${missingNames.length}: ${list}`,
     "",

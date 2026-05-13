@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { isPlayed } from "../utils/game";
 import { countPlayerMotmWins, getMotmLeaderIds, getMotmVotingEnd } from "../utils/motm";
-import { cleanOpponentName } from "../utils/opponent";
+import { attendanceLabel } from "../constants";
 
 function resolveName(playerId, players, guestPlayers) {
   const p = players.find((x) => x.id === playerId);
@@ -194,7 +194,7 @@ export default function PlayerProfileModal({
               </div>
               <div>
                 <strong>{summary.attendancePct != null ? `${summary.attendancePct}%` : "—"}</strong>
-                <span>Playing rate ({summary.playing}/{summary.denom} games)</span>
+                <span>In rate ({summary.playing}/{summary.denom} games)</span>
               </div>
             </div>
 
@@ -210,13 +210,13 @@ export default function PlayerProfileModal({
                 )}
               </div>
               <div>
-                <span className="profile-highlight-label">Longest playing streak</span>
+                <span className="profile-highlight-label">Longest In streak</span>
                 <span className="profile-highlight-value">
                   {summary.longestStreak > 0 ? `${summary.longestStreak} games` : "—"}
                 </span>
               </div>
               <div>
-                <span className="profile-highlight-label">Current playing streak</span>
+                <span className="profile-highlight-label">Current In streak</span>
                 <span className="profile-highlight-value">
                   {summary.currentStreak > 0 ? `${summary.currentStreak} games` : "—"}
                 </span>
@@ -243,7 +243,7 @@ export default function PlayerProfileModal({
                 <li key={game.id}>
                   <span className="profile-last-date">{game.game_date}</span>
                   <span className="profile-last-opponent">{cleanOpponentName(game.opponent)}</span>
-                  <span className={`profile-last-status status-${status}`}>{status.replace("_", " ")}</span>
+                  <span className={`profile-last-status status-${status}`}>{attendanceLabel(status)}</span>
                   {played && (
                     <span className="profile-last-ga">
                       {goals}G {assists}A

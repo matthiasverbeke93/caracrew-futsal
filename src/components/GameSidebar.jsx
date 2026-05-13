@@ -8,9 +8,9 @@ import { useLayoutEffect, useMemo, useState } from "react";
 const STATUS_SEGMENT_IDS = ["all", "upcoming", "played"];
 
 const RSVP_CHIP = {
-  playing: { label: "You are marked as playing", short: "In", className: "my-rsvp-in" },
-  cant: { label: "You cannot attend", short: "Out", className: "my-rsvp-out" },
-  if_needed: { label: "You marked if needed", short: "if needed", className: "my-rsvp-maybe" },
+  playing: { label: "You are marked In", short: "In", className: "my-rsvp-in" },
+  cant: { label: "You are marked Out", short: "Out", className: "my-rsvp-out" },
+  if_needed: { label: "You are marked If needed", short: "If needed", className: "my-rsvp-maybe" },
 };
 
 function MyRsvpChip({ currentPlayerId, played, myRow }) {

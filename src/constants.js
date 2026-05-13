@@ -3,10 +3,17 @@ export const MIN_PLAYERS_WARNING = 6;
 export const JUST_RIGHT_PLAYERS = 7;
 
 export const ATTENDANCE_OPTIONS = [
-  { value: "playing", label: "I'm playing" },
-  { value: "cant", label: "I can't attend" },
-  { value: "if_needed", label: "I'll play if needed" },
+  { value: "playing", label: "In" },
+  { value: "cant", label: "Out" },
+  { value: "if_needed", label: "If needed" },
 ];
+
+/** User-facing label for a stored `attendance.status` value */
+export function attendanceLabel(status) {
+  if (status == null || status === "") return "—";
+  const row = ATTENDANCE_OPTIONS.find((o) => o.value === status);
+  return row?.label ?? String(status);
+}
 
 export const GAME_FILTERS = [
   { id: "all", label: "All" },

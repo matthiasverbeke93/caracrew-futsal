@@ -154,7 +154,7 @@ export default function SeasonOverviewPage({
             ) : (
               <>
                 {denominator} scheduled game{denominator === 1 ? "" : "s"} · GP = games marked{" "}
-                <em>playing</em> · % = GP ÷ season games.
+                <em>In</em> · % = GP ÷ season games.
               </>
             )}
           </p>

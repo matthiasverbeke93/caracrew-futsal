@@ -966,6 +966,18 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+.panel.my-next-game-card.my-next-game-card--rsvp-playing {
+  box-shadow: inset 0 0 0 2px #22c55e;
+}
+
+.panel.my-next-game-card.my-next-game-card--rsvp-if_needed {
+  box-shadow: inset 0 0 0 2px #f59e0b;
+}
+
+.panel.my-next-game-card.my-next-game-card--rsvp-cant {
+  box-shadow: inset 0 0 0 2px #ef4444;
+}
+
 .panel.my-next-game-card .my-next-game-eyebrow {
   display: block;
   font-size: 11px;
@@ -1072,8 +1084,16 @@ button {
   color: #cbd5e1;
 }
 
-.panel.my-next-game-card .my-next-game-status strong {
-  color: #fbbf24;
+.panel.my-next-game-card.my-next-game-card--rsvp-playing .my-next-game-status strong {
+  color: #86efac;
+}
+
+.panel.my-next-game-card.my-next-game-card--rsvp-if_needed .my-next-game-status strong {
+  color: #fcd34d;
+}
+
+.panel.my-next-game-card.my-next-game-card--rsvp-cant .my-next-game-status strong {
+  color: #fca5a5;
 }
 
 .panel.my-next-game-card .my-next-game-clear {
@@ -2392,6 +2412,42 @@ button {
   gap: 6px;
 }
 
+.player-card.player-card--status-playing {
+  border: 1px solid #bbf7d0;
+  border-left: 4px solid #22c55e;
+  background: #f0fdf4;
+}
+
+.player-card.player-card--status-cant {
+  border: 1px solid #fecaca;
+  border-left: 4px solid #ef4444;
+  background: #fef2f2;
+}
+
+.player-card.player-card--status-if_needed {
+  border: 1px solid #fde68a;
+  border-left: 4px solid #f59e0b;
+  background: #fffbeb;
+}
+
+.player-card.guest-player-card.player-card--status-playing {
+  border-color: #bbf7d0;
+  border-left: 4px solid #22c55e;
+  background: #ecfdf5;
+}
+
+.player-card.guest-player-card.player-card--status-cant {
+  border-color: #fecaca;
+  border-left: 4px solid #ef4444;
+  background: #fef2f2;
+}
+
+.player-card.guest-player-card.player-card--status-if_needed {
+  border-color: #fde68a;
+  border-left: 4px solid #f59e0b;
+  background: #fffbeb;
+}
+
 .player-card-header {
   display: flex;
   align-items: center;
@@ -2961,8 +3017,20 @@ input[type="number"] {
 .profile-last-status {
   font-size: 11px;
   font-weight: 700;
-  text-transform: capitalize;
+  text-transform: none;
   color: #64748b;
+}
+
+.profile-last-status.status-playing {
+  color: #166534;
+}
+
+.profile-last-status.status-if_needed {
+  color: #92400e;
+}
+
+.profile-last-status.status-cant {
+  color: #991b1b;
 }
 
 .profile-last-ga {

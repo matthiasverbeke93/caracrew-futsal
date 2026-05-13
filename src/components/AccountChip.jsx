@@ -6,6 +6,7 @@ export default function AccountChip({
   onSignInClick,
   onSignOut,
   onAdminClick,
+  pendingClaimsCount = 0,
 }) {
   if (authLoading) {
     return <div className="account-chip skeleton" aria-hidden="true">…</div>;
@@ -32,14 +33,32 @@ export default function AccountChip({
       </div>
       <div className="account-chip-actions">
         {onAdminClick && (
-          <button
-            type="button"
-            className="account-chip-admin"
-            onClick={onAdminClick}
-            title="Open admin panel"
-          >
-            Admin
-          </button>
+          <span className="account-chip-admin-wrap">
+            <button
+              type="button"
+              className="account-chip-admin"
+              onClick={onAdminClick}
+              title={
+                pendingClaimsCount > 0
+                  ? `Open admin panel · ${pendingClaimsCount} pending player claim${
+                      pendingClaimsCount === 1 ? "" : "s"
+                    }`
+                  : "Open admin panel"
+              }
+              aria-label={
+                pendingClaimsCount > 0
+                  ? `Admin · ${pendingClaimsCount} pending player claim${
+                      pendingClaimsCount === 1 ? "" : "s"
+                    }`
+                  : "Open admin panel"
+              }
+            >
+              Admin
+            </button>
+            {pendingClaimsCount > 0 ? (
+              <span className="account-chip-admin-dot" aria-hidden="true" />
+            ) : null}
+          </span>
         )}
         <button
           type="button"

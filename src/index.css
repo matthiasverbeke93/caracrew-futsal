@@ -538,6 +538,24 @@ button {
   gap: 6px;
 }
 
+.account-chip-admin-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.account-chip-admin-dot {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #dc2626;
+  box-shadow: 0 0 0 2px #020617;
+  pointer-events: none;
+}
+
 .account-chip-admin {
   background: #fbbf24;
   color: #0f172a;

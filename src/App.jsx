@@ -15,6 +15,7 @@ import Tabs from "./components/Tabs";
 import { TEAM_NAME } from "./constants";
 import { useAuthSession } from "./hooks/useAuthSession";
 import { useFutsalData } from "./hooks/useFutsalData";
+import { usePendingClaimsCount } from "./hooks/usePendingClaimsCount";
 import { nextUpcomingGamesByCalendar } from "./utils/game";
 import {
   DEFAULT_SEASON_SLUG,
@@ -39,6 +40,7 @@ export default function App() {
     cancelClaim,
     refreshClaim,
   } = useAuthSession();
+  const [pendingClaimsCount, refreshPendingClaimsCount] = usePendingClaimsCount(isAdmin);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
@@ -217,6 +219,10 @@ export default function App() {
 
   const showNextGamesTiles = !!currentPlayer && nextAttendanceGames.length > 0;
 
+  useEffect(() => {
+    if (adminPanelOpen && isAdmin) refreshPendingClaimsCount();
+  }, [adminPanelOpen, isAdmin, refreshPendingClaimsCount]);
+
   return (
     <div className="app dashboard">
       <a href="#match-details" className="skip-link">
@@ -253,6 +259,7 @@ export default function App() {
               onSignInClick={() => setAuthModalOpen(true)}
               onSignOut={signOut}
               onAdminClick={isAdmin ? () => setAdminPanelOpen(true) : null}
+              pendingClaimsCount={pendingClaimsCount}
             />
           </div>
         </div>
@@ -515,6 +522,7 @@ export default function App() {
         onChanged={() => {
           refreshClaim();
           reloadAll();
+          refreshPendingClaimsCount();
         }}
       />
     </div>

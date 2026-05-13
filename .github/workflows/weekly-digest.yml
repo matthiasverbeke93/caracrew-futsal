@@ -1,0 +1,37 @@
+name: Weekly squad digest
+
+on:
+  schedule:
+    # Friday 16:00 UTC (~17:00 Brussels winter)
+    - cron: "0 16 * * 5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Send weekly digest
+        run: npm run digest:weekly
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DIGEST_TO_EMAIL: ${{ vars.DIGEST_TO_EMAIL }}
+          DIGEST_FROM_EMAIL: ${{ vars.DIGEST_FROM_EMAIL }}
+          DIGEST_SEASON_SLUG: ${{ vars.LZV_SEASON_SLUG }}
+          PUBLIC_APP_URL: ${{ vars.PUBLIC_APP_URL }}

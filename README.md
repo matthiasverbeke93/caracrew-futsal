@@ -5,7 +5,7 @@ Attendance, goals and assists tracker for **K. Caracrew SK** (LZV Cup). React + 
 ## Stack
 - **React 19 + Vite** front-end (single `App` shell + per-tab components in `src/components/`).
 - **Supabase** for `games`, `players`, `attendance`, `player_stats`, `guest_players`, `motm_votes`, `opponent_strength`.
-- **GitHub Actions** sync LZV scores weekly (`sync-lzv.yml`) and opponent palmares monthly (`sync-palmares.yml`).
+- **GitHub Actions** sync LZV scores weekly (`sync-lzv.yml`), opponent palmares monthly (`sync-palmares.yml`), and optional Friday digest email (`weekly-digest.yml`).
 
 ## Local dev
 ```bash
@@ -26,10 +26,21 @@ VITE_SUPABASE_ANON_KEY=...
 - `npm run lint` — ESLint (flat config, React + hooks plugins).
 - `npm run sync:lzv` / `npm run sync:lzv:dryrun` — pull final scores from `lzvcup.be`.
 - `npm run sync:palmares` / `npm run sync:palmares:dryrun` — refresh opponent strength.
+- `npm run seed:2627` — clone 25–26 fixtures into a dummy 26–27 season (+1 year dates, no scores); needs `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (see Seasons).
+- `npm run digest:weekly` — send the squad pulse email via [Resend](https://resend.com); needs service role + `RESEND_API_KEY` + `DIGEST_TO_EMAIL` (see Weekly digest).
+
+## Weekly digest email
+
+Friday schedule (GitHub Actions) runs `scripts/send-weekly-digest.mjs`: upcoming fixtures, fixed-roster RSVP gaps for the next match, and Man of the Match voting status for open polls.
+
+**GitHub:** add secret `RESEND_API_KEY`, repository variable `DIGEST_TO_EMAIL` (comma-separated recipients). Optional: `DIGEST_FROM_EMAIL`, `PUBLIC_APP_URL` (your deployed app link in the CTA). Uses `LZV_SEASON_SLUG` when set (same as sync workflows), else default season from `src/seasons.js`.
+
+**Local test:** copy `.env.example` digest vars into a shell session or `.env` loaded manually, then `npm run digest:weekly`.
 
 ## Seasons
-The app is multi-season. Each `games` row and each `opponent_strength` row carries a `season_slug` (e.g. `2526`, `2627`). The UI exposes a switcher in the hero (`?season=` in the URL). See:
-- `src/seasons.js` — slug definitions + default season.
+The app is multi-season. Each `games` row and each `opponent_strength` row carries a `season_slug` (e.g. `2526`, `2627`). The UI exposes a switcher in the dashboard header (`?season=` in the URL). Use **Insights** for season trends (monthly scoring pace, leader bars, live table) or **Team stats** for the full stats/compliance view (`?insights=1` / `?team_stats=1`).
+
+See also:
 - `src/data/seasonLeagueStandings.js` — optional manual standings per season.
 - `src/data/seasonTeamStatsOverrides.js` — manual per-player snapshot when Supabase doesn't have full data yet.
 
@@ -38,6 +49,8 @@ To start a new season:
 2. Insert that season's fixtures into `games` with the new slug.
 3. Set repo variable `LZV_SEASON_SLUG` (+ `LZV_TEAM_URL`, `LZV_OUR_TEAM_ID`) and run the sync workflows.
 4. Optionally fill `LEAGUE_STANDINGS_BY_SEASON[<slug>]` in `seasonLeagueStandings.js`.
+
+**Dummy 26–27 preview (clone 25–26 calendar with +1 year, no scores):** set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, then run `npm run seed:2627` (add `--dry-run` on the script to preview). Or run `supabase/seed_dummy_2627.sql` in the Supabase SQL Editor if your `games` columns match.
 
 ## Editing windows
 - **Attendance** is editable up to and including the game day; it locks the day after.

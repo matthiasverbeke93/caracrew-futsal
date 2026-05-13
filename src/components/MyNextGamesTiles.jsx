@@ -2,9 +2,9 @@ import { useMemo } from "react";
 import { ATTENDANCE_OPTIONS } from "../constants";
 import { nextUpcomingGamesByCalendar } from "../utils/game";
 import { cleanOpponentName } from "../utils/opponent";
-import { formatMatchDayTime } from "../utils/formatMatch";
+import { formatFixtureTileLine } from "../utils/formatMatch";
 
-const TILE_EYEBROWS = ["Next", "Then", "After"];
+const TILE_EYEBROWS = ["Soonest", "Next up", "Later"];
 
 const TILE_BTN_SHORT = {
   playing: "In",
@@ -45,7 +45,7 @@ export default function MyNextGamesTiles({
         <NextGameTile
           key={game.id}
           game={game}
-          eyebrow={TILE_EYEBROWS[index] ?? `+${index + 1}`}
+          eyebrow={TILE_EYEBROWS[index] ?? `Match ${index + 1}`}
           myStatus={statusByGameId.get(game.id) ?? null}
           onJumpToGame={onJumpToGame}
           onMarkAttendance={onMarkAttendance}
@@ -59,7 +59,7 @@ function NextGameTile({ game, eyebrow, myStatus, onJumpToGame, onMarkAttendance 
   const rawOpponent = game.opponent ? String(game.opponent).trim() : "";
   const cleaned = cleanOpponentName(game.opponent);
   const opponent = (cleaned && cleaned.trim()) || rawOpponent || "Opponent TBD";
-  const when = formatMatchDayTime(game);
+  const whenLine = formatFixtureTileLine(game);
 
   return (
     <section
@@ -68,13 +68,11 @@ function NextGameTile({ game, eyebrow, myStatus, onJumpToGame, onMarkAttendance 
     >
       <div className="my-next-game-top">
         <div>
-          <div className="section-label">{eyebrow}</div>
+          <div className="my-next-game-eyebrow">{eyebrow}</div>
           <h2 className="my-next-game-title">
             <span className="my-next-game-vs">vs</span> {opponent}
           </h2>
-          <p className="my-next-game-when">
-            {when} · {game.location || "Venue TBD"}
-          </p>
+          <p className="my-next-game-when">{whenLine}</p>
         </div>
         <button
           type="button"

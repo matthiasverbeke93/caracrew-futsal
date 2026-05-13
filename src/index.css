@@ -215,11 +215,7 @@ button {
 .dashboard-season-track {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 6px;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  gap: 8px;
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -970,9 +966,17 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.panel.my-next-game-card .section-label {
-  background: rgba(255, 255, 255, 0.12);
-  color: white;
+.panel.my-next-game-card .my-next-game-eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  background: transparent;
+  padding: 0;
+  margin: 0 0 10px;
+  border-radius: 0;
 }
 
 .panel.my-next-game-card .my-next-game-top {
@@ -1106,13 +1110,13 @@ button {
   padding: 5px 10px;
 }
 
-.panel.my-next-game-card--tile .section-label {
+.panel.my-next-game-card--tile .my-next-game-eyebrow {
   font-size: 10px;
-  padding: 5px 10px;
+  margin-bottom: 12px;
 }
 
 .panel.my-next-game-card--tile h2.my-next-game-title {
-  margin: 2px 0 0;
+  margin: 0;
   font-size: 15px;
   line-height: 1.25;
   word-break: break-word;
@@ -1478,6 +1482,212 @@ button {
   margin-top: 16px;
   font-size: 13px;
   color: #64748b;
+}
+
+/* ---------- Season insights ---------- */
+.insights-panel {
+  overflow-x: hidden;
+}
+
+.insights-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 12px 0 8px;
+}
+
+.insights-kpi {
+  background: #f8fafc;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.insights-kpi-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.insights-kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
+.insights-section {
+  margin-top: 28px;
+}
+
+.insights-section h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.insights-section-intro {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #64748b;
+  max-width: 56ch;
+  line-height: 1.5;
+}
+
+.insights-empty {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.insights-month-chart {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.insights-month-row {
+  display: grid;
+  grid-template-columns: 112px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.insights-month-label {
+  font-weight: 700;
+  color: #334155;
+}
+
+.insights-month-bar-wrap {
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.insights-month-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%);
+  border-radius: 999px;
+  min-width: 4px;
+}
+
+.insights-month-meta {
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.insights-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.insights-section-head h3 {
+  margin: 0;
+}
+
+.insights-toggle {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.insights-toggle button {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  color: #475569;
+  font-family: inherit;
+}
+
+.insights-toggle button.active {
+  background: #020617;
+  color: #fff;
+  border-color: #020617;
+}
+
+.insights-leader-bars {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.insights-leader-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 160px) 1fr 52px;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.insights-leader-bar-wrap {
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.insights-leader-bar {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 999px;
+  min-width: 4px;
+}
+
+.insights-leader-val {
+  font-weight: 800;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.insights-leader-link {
+  text-align: left;
+}
+
+.insights-table {
+  min-width: 520px;
+}
+
+@media (max-width: 720px) {
+  .insights-summary-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .insights-month-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .insights-month-meta {
+    justify-self: start;
+  }
+
+  .insights-leader-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .insights-leader-val {
+    justify-self: start;
+    text-align: left;
+  }
 }
 
 .sidebar-next-fixtures {

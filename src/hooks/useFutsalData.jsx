@@ -10,6 +10,13 @@ const FORCED_FIXED_NAMES = new Set([
   "david goossens",
 ]);
 
+/** Hide junk roster rows from UI (remove from DB in Supabase when ready). */
+const HIDDEN_ROSTER_NAMES = new Set(["test test"]);
+
+function isHiddenRosterName(name) {
+  return HIDDEN_ROSTER_NAMES.has(String(name || "").toLowerCase().trim());
+}
+
 function makeGuestId() {
   return `guest-${crypto.randomUUID()}`;
 }
@@ -131,6 +138,16 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     window.history.replaceState({}, "", url);
   }, [selectedGameId, seasonSlug]);
 
+  const visiblePlayers = useMemo(
+    () => players.filter((p) => !isHiddenRosterName(p.name)),
+    [players]
+  );
+
+  const guestPlayersVisible = useMemo(
+    () => guestPlayers.filter((g) => !isHiddenRosterName(g.name)),
+    [guestPlayers]
+  );
+
   const selectedGame = useMemo(
     () => games.find((g) => g.id === selectedGameId),
     [games, selectedGameId]
@@ -138,7 +155,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
 
   const playersWithRole = useMemo(
     () =>
-      players.map((player) => {
+      visiblePlayers.map((player) => {
         const forcedGuest = FORCED_GUEST_NAMES.has(player.name.toLowerCase().trim());
         const forcedFixed = FORCED_FIXED_NAMES.has(player.name.toLowerCase().trim());
         const isGuest = forcedGuest || (!player.fixed && !forcedFixed);
@@ -149,7 +166,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
           archived: !!player.archived_at,
         };
       }),
-    [players]
+    [visiblePlayers]
   );
   const sortedPlayersWithRole = useMemo(
     () =>
@@ -176,8 +193,8 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     [stats, selectedGameId]
   );
   const selectedGameGuests = useMemo(
-    () => guestPlayers.filter((g) => g.game_id === selectedGameId),
-    [guestPlayers, selectedGameId]
+    () => guestPlayersVisible.filter((g) => g.game_id === selectedGameId),
+    [guestPlayersVisible, selectedGameId]
   );
   const adHocGameGuests = useMemo(
     () => selectedGameGuests.filter((g) => !g.source_player_id),
@@ -244,7 +261,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
 
     for (const game of games) {
       const gameAttendanceRows = attendance.filter((row) => row.game_id === game.id);
-      const gameGuestRows = guestPlayers.filter((row) => row.game_id === game.id);
+      const gameGuestRows = guestPlayersVisible.filter((row) => row.game_id === game.id);
       const gameStatsRows = stats.filter((row) => row.game_id === game.id);
       const actualGoals = gameStatsRows.reduce((sum, row) => sum + (row.goals || 0), 0);
       const actualAssists = gameStatsRows.reduce((sum, row) => sum + (row.assists || 0), 0);
@@ -282,7 +299,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     }
 
     return statusMap;
-  }, [attendance, games, guestPlayers, stats]);
+  }, [attendance, games, guestPlayersVisible, stats]);
 
   const filteredGames = useMemo(() => {
     if (!gameFilters.length) return games;
@@ -322,12 +339,14 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     });
   }, [filteredGames, gameStatusById]);
 
+  /** Keep sidebar selection valid when filters/season load or list shrinks. */
   useEffect(() => {
     if (loading) return;
     if (!sortedFilteredGames.length) return;
     if (selectedGameId && sortedFilteredGames.some((g) => g.id === selectedGameId)) return;
     const next =
       sortedFilteredGames.find((g) => !isPlayed(g)) ?? sortedFilteredGames[0];
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional sync when derived lists change
     setSelectedGameId(next?.id ?? null);
   }, [loading, sortedFilteredGames, selectedGameId]);
 
@@ -616,7 +635,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     stats,
     selectedGameTotals,
     counts,
-    guestPlayers,
+    guestPlayers: guestPlayersVisible,
     saveAttendance,
     saveGuestAttendance,
     saveStat,

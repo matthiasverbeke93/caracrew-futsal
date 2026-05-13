@@ -8,6 +8,7 @@ import FormChip from "./components/FormChip";
 import GameSidebar from "./components/GameSidebar";
 import MyNextGamesTiles from "./components/MyNextGamesTiles";
 import PlayerProfileModal from "./components/PlayerProfileModal";
+import SeasonInsightsPage from "./components/SeasonInsightsPage";
 import SelectedGamePanel from "./components/SelectedGamePanel";
 import StatsTab from "./components/StatsTab";
 import TeamStatsPage from "./components/TeamStatsPage";
@@ -51,6 +52,10 @@ export default function App() {
     new URLSearchParams(window.location.search).get("team_stats") === "1"
   );
 
+  const [insightsOpen, setInsightsOpen] = useState(() =>
+    new URLSearchParams(window.location.search).get("insights") === "1"
+  );
+
   const [seasonSlug, setSeasonSlug] = useState(() =>
     readSeasonSlugFromSearch(new URLSearchParams(window.location.search))
   );
@@ -58,8 +63,10 @@ export default function App() {
   const openTeamStats = useCallback(() => {
     const url = new URL(window.location.href);
     url.searchParams.set("team_stats", "1");
+    url.searchParams.delete("insights");
     window.history.pushState({}, "", url);
     setTeamStatsOpen(true);
+    setInsightsOpen(false);
   }, []);
 
   const closeTeamStats = useCallback(() => {
@@ -69,12 +76,30 @@ export default function App() {
     setTeamStatsOpen(false);
   }, []);
 
+  const openInsights = useCallback(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("insights", "1");
+    url.searchParams.delete("team_stats");
+    window.history.pushState({}, "", url);
+    setInsightsOpen(true);
+    setTeamStatsOpen(false);
+  }, []);
+
+  const closeInsights = useCallback(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("insights");
+    window.history.pushState({}, "", url);
+    setInsightsOpen(false);
+  }, []);
+
   const openPlayer = useCallback((id) => {
     if (!id) return;
     const url = new URL(window.location.href);
     const ts = url.searchParams.get("team_stats");
+    const ins = url.searchParams.get("insights");
     url.searchParams.set("player", id);
     if (ts) url.searchParams.set("team_stats", ts);
+    if (ins === "1") url.searchParams.set("insights", "1");
     window.history.pushState({}, "", url);
     setProfilePlayerId(id);
   }, []);
@@ -82,8 +107,10 @@ export default function App() {
   const closePlayer = useCallback(() => {
     const url = new URL(window.location.href);
     const ts = url.searchParams.get("team_stats");
+    const ins = url.searchParams.get("insights");
     url.searchParams.delete("player");
     if (ts) url.searchParams.set("team_stats", ts);
+    if (ins === "1") url.searchParams.set("insights", "1");
     window.history.pushState({}, "", url);
     setProfilePlayerId(null);
   }, []);
@@ -93,6 +120,7 @@ export default function App() {
       const sp = new URLSearchParams(window.location.search);
       setProfilePlayerId(sp.get("player"));
       setTeamStatsOpen(sp.get("team_stats") === "1");
+      setInsightsOpen(sp.get("insights") === "1");
       setSeasonSlug(readSeasonSlugFromSearch(sp));
     };
     window.addEventListener("popstate", onPop);
@@ -209,6 +237,9 @@ export default function App() {
             </div>
           </div>
           <nav className="dashboard-nav" aria-label="Team links">
+            <button type="button" className="dashboard-nav-btn" onClick={openInsights}>
+              Insights
+            </button>
             <button type="button" className="dashboard-nav-btn" onClick={openTeamStats}>
               Team stats
             </button>
@@ -317,8 +348,10 @@ export default function App() {
 
       {tallyError && <section className="auth-banner">{tallyError}</section>}
 
-      <main className={`layout dashboard-layout${teamStatsOpen ? " layout--full" : ""}`}>
-        {!teamStatsOpen && (
+      <main
+        className={`layout dashboard-layout${teamStatsOpen || insightsOpen ? " layout--full" : ""}`}
+      >
+        {!teamStatsOpen && !insightsOpen && (
         <GameSidebar
           games={sortedFilteredGames}
           attendanceHighlightIds={attendanceHighlightIds}
@@ -365,7 +398,19 @@ export default function App() {
             />
           )}
 
-          {!loading && !teamStatsOpen && showNextGamesTiles && (
+          {!loading && insightsOpen && (
+            <SeasonInsightsPage
+              games={games}
+              players={players}
+              attendance={attendance}
+              stats={stats}
+              seasonLabel={seasonLabel(seasonSlug)}
+              onBack={closeInsights}
+              onOpenPlayer={openPlayer}
+            />
+          )}
+
+          {!loading && !teamStatsOpen && !insightsOpen && showNextGamesTiles && (
             <MyNextGamesTiles
               games={games}
               attendance={attendance}
@@ -377,7 +422,7 @@ export default function App() {
             />
           )}
 
-          {!loading && !teamStatsOpen && selectedGame && (
+          {!loading && !teamStatsOpen && !insightsOpen && selectedGame && (
             <>
               <SelectedGamePanel
                 selectedGame={selectedGame}
@@ -439,7 +484,7 @@ export default function App() {
             </>
           )}
 
-          {!loading && !teamStatsOpen && !selectedGame && (
+          {!loading && !teamStatsOpen && !insightsOpen && !selectedGame && (
             <div className="panel content-empty">
               {games.length === 0 ? (
                 <>

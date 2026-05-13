@@ -3132,6 +3132,13 @@ input[type="number"] {
   font-size: 13px;
 }
 
+.compliance-stars {
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: #b45309;
+  white-space: nowrap;
+}
+
 .stats-table-scroll {
   overflow-x: auto;
   max-width: 100%;

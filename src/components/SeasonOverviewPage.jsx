@@ -2,11 +2,10 @@ import { useMemo, useState } from "react";
 import { TEAM_NAME } from "../constants";
 import { getStaticTeamStatsForSeason } from "../data/seasonTeamStatsOverrides";
 import {
+  RSVP_ON_TIME_DAYS_BEFORE,
+  STATS_ON_TIME_DAYS_AFTER,
   computeComplianceForAllPlayers,
-  formatMedianDaysBefore,
-  formatMedianDaysBeforeShort,
-  formatMedianHoursAfter,
-  formatMedianHoursAfterShort,
+  formatComplianceStars,
 } from "../utils/playerCompliance";
 import { buildMonthlyTeamGaSeries, seasonPlayedSummary } from "../utils/seasonInsights";
 import {
@@ -44,9 +43,21 @@ const COLUMNS = [
 
 const COMPLIANCE_SORT = [
   { key: "name", label: "Player" },
-  { key: "rsvpLead", label: "RSVP lead" },
-  { key: "late", label: "Late" },
-  { key: "statsLag", label: "Stats lag" },
+  {
+    key: "rsvpOnTimePct",
+    label: "RSVP on time",
+    tooltip: `Share of season games where attendance was saved at least ${RSVP_ON_TIME_DAYS_BEFORE} days before kickoff`,
+  },
+  {
+    key: "statsOnTimePct",
+    label: "Stats on time",
+    tooltip: `Share of played games where goals/assists were saved within ${STATS_ON_TIME_DAYS_AFTER} days after kickoff`,
+  },
+  {
+    key: "complianceStars",
+    label: "Score",
+    tooltip: "Overall compliance (0–5 stars) from RSVP and stats on-time rates",
+  },
 ];
 
 export default function SeasonOverviewPage({
@@ -62,7 +73,7 @@ export default function SeasonOverviewPage({
 }) {
   const [barMetric, setBarMetric] = useState("involvement");
   const [tableSortKey, setTableSortKey] = useState("gamesPlayed");
-  const [complianceSortKey, setComplianceSortKey] = useState("name");
+  const [complianceSortKey, setComplianceSortKey] = useState("complianceStars");
 
   const staticData = useMemo(
     () => getStaticTeamStatsForSeason(seasonSlug),
@@ -111,21 +122,29 @@ export default function SeasonOverviewPage({
 
   const complianceRows = useMemo(() => {
     const list = [...complianceRowsRaw];
-    const nullLast = (a, b, cmp) => {
-      if (a == null && b == null) return 0;
-      if (a == null) return 1;
-      if (b == null) return -1;
-      return cmp(a, b);
+    const nullLastDesc = (va, vb) => {
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      if (vb !== va) return vb - va;
+      return 0;
     };
 
     list.sort((a, b) => {
       if (complianceSortKey === "name") return a.name.localeCompare(b.name);
-      if (complianceSortKey === "late") return (b.attendanceLateCount || 0) - (a.attendanceLateCount || 0);
-      if (complianceSortKey === "rsvpLead") {
-        return nullLast(a.attendanceMedianDaysBefore, b.attendanceMedianDaysBefore, (x, y) => y - x);
+      if (complianceSortKey === "complianceStars") {
+        if (b.complianceStars !== a.complianceStars) return b.complianceStars - a.complianceStars;
+        return a.name.localeCompare(b.name);
       }
-      if (complianceSortKey === "statsLag") {
-        return nullLast(a.statsMedianHoursAfter, b.statsMedianHoursAfter, (x, y) => x - y);
+      if (complianceSortKey === "rsvpOnTimePct") {
+        const cmp = nullLastDesc(a.rsvpOnTimePct, b.rsvpOnTimePct);
+        if (cmp !== 0) return cmp;
+        return a.name.localeCompare(b.name);
+      }
+      if (complianceSortKey === "statsOnTimePct") {
+        const cmp = nullLastDesc(a.statsOnTimePct, b.statsOnTimePct);
+        if (cmp !== 0) return cmp;
+        return a.name.localeCompare(b.name);
       }
       return 0;
     });
@@ -320,8 +339,8 @@ export default function SeasonOverviewPage({
           <h3 id="compliance-heading">How quickly people respond</h3>
           <div className="team-stats-compliance-intro">
             <p>
-              Each value is based on <strong>when someone last saved</strong> their row in this
-              app—not on when the fixture was announced.
+              Percentages use <strong>when someone last saved</strong> their row in this app (same
+              timestamps as Supabase <code>updated_at</code>).
               {staticData ? (
                 <>
                   {" "}
@@ -332,17 +351,20 @@ export default function SeasonOverviewPage({
             </p>
             <ul>
               <li>
-                <strong>RSVP lead</strong> — how far <em>before kickoff</em> people usually save
-                attendance. Only saves made before the match starts count toward the median; the{" "}
-                <strong>Late</strong> column counts saves after kickoff.
+                <strong>RSVP on time</strong> — of all scheduled games this season, the share where
+                attendance was saved at least <strong>{RSVP_ON_TIME_DAYS_BEFORE} days before</strong>{" "}
+                kickoff. No row, or saved too late, counts as not on time.
               </li>
               <li>
-                <strong>Stats lag</strong> — how long <em>after kickoff</em> people usually save
-                goals and assists (played matches only).
+                <strong>Stats on time</strong> — of <em>played</em> games, the share where goals and
+                assists were saved between kickoff and <strong>{STATS_ON_TIME_DAYS_AFTER} full days
+                (72 hours)</strong> after kickoff. Missing stats after a played match counts as not
+                on time.
               </li>
               <li>
-                Short codes in the table expand on <strong>hover</strong> (or focus) for the full
-                wording.
+                <strong>Score</strong> — <strong>0–5 stars</strong>: average of the two percentages
+                when both apply; if there are no played games yet, only RSVP on time is used. Hover a
+                percentage to see how many games it is based on.
               </li>
             </ul>
           </div>
@@ -356,14 +378,13 @@ export default function SeasonOverviewPage({
                       <button
                         type="button"
                         className={`th-sort ${complianceSortKey === col.key ? "active" : ""}`}
+                        title={col.tooltip}
                         onClick={() => setComplianceSortKey(col.key)}
                       >
                         {col.label}
                       </button>
                     </th>
                   ))}
-                  <th title="Attendance rows (any save timestamp)">RSVP n</th>
-                  <th title="Played matches with stats row">Stats n</th>
                 </tr>
               </thead>
               <tbody>
@@ -379,37 +400,34 @@ export default function SeasonOverviewPage({
                       </button>
                       {!r.fixed && <span className="guest-badge">Guest</span>}
                     </td>
+                    <td
+                      title={
+                        r.rsvpGamesDenom > 0
+                          ? `${r.rsvpInTimeGames} of ${r.rsvpGamesDenom} games saved ≥${RSVP_ON_TIME_DAYS_BEFORE}d before kickoff`
+                          : undefined
+                      }
+                    >
+                      {r.rsvpOnTimePct != null ? `${r.rsvpOnTimePct}%` : "—"}
+                    </td>
+                    <td
+                      title={
+                        r.statsGamesDenom > 0
+                          ? `${r.statsInTimeGames} of ${r.statsGamesDenom} played games with stats saved within ${STATS_ON_TIME_DAYS_AFTER}d after kickoff`
+                          : "No played games in this season yet"
+                      }
+                    >
+                      {r.statsOnTimePct != null ? `${r.statsOnTimePct}%` : "—"}
+                    </td>
                     <td>
                       <span
-                        title={
-                          r.attendanceMedianDaysBefore != null
-                            ? formatMedianDaysBefore(r.attendanceMedianDaysBefore)
-                            : r.attendanceLateCount === r.attendanceCount && r.attendanceCount > 0
-                              ? "All saves were after kickoff"
-                              : "No on-time saves yet"
-                        }
+                        className="compliance-stars"
+                        title={`${r.complianceStars} of 5 — RSVP ${r.rsvpOnTimePct ?? "—"}%${
+                          r.statsOnTimePct != null ? `, stats ${r.statsOnTimePct}%` : ""
+                        }`}
                       >
-                        {r.attendanceMedianDaysBefore != null
-                          ? formatMedianDaysBeforeShort(r.attendanceMedianDaysBefore)
-                          : r.attendanceLateCount === r.attendanceCount && r.attendanceCount > 0
-                            ? "All late"
-                            : "—"}
+                        {formatComplianceStars(r.complianceStars)}
                       </span>
                     </td>
-                    <td>{r.attendanceLateCount}</td>
-                    <td>
-                      <span
-                        title={
-                          r.statsMedianHoursAfter != null
-                            ? formatMedianHoursAfter(r.statsMedianHoursAfter)
-                            : "No stats saved after played matches"
-                        }
-                      >
-                        {formatMedianHoursAfterShort(r.statsMedianHoursAfter)}
-                      </span>
-                    </td>
-                    <td>{r.attendanceCount}</td>
-                    <td>{r.statsCount}</td>
                   </tr>
                 ))}
               </tbody>

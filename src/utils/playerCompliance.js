@@ -1,5 +1,11 @@
 import { isPlayed } from "./game.js";
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+/** RSVP counts as on time if last save is at least this many days before kickoff */
+export const RSVP_ON_TIME_DAYS_BEFORE = 7;
+/** Stats count as on time if last save is within this many days after kickoff (window starts at kickoff) */
+export const STATS_ON_TIME_DAYS_AFTER = 3;
+
 /** @returns {number | null} epoch ms at kickoff (local interpretation of date + time) */
 export function getGameKickoffMs(game) {
   if (!game?.game_date) return null;
@@ -14,99 +20,91 @@ export function getGameKickoffMs(game) {
   return Number.isNaN(ms) ? null : ms;
 }
 
-function median(nums) {
-  if (!nums?.length) return null;
-  const s = [...nums].sort((a, b) => a - b);
-  const mid = Math.floor(s.length / 2);
-  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
-}
-
 /**
- * Personal RSVP / stats timing for one player in the current season dataset.
- * Attendance: days before kickoff when status was last saved (negative = after kickoff).
- * Stats: hours after kickoff when goals/assists row was last saved (played matches only).
+ * Per-player compliance for the season: RSVP on-time %, stats on-time %, overall stars (0–5).
+ *
+ * RSVP on time: share of scheduled games where attendance was last saved ≥7 full days before kickoff.
+ * Stats on time: share of **played** games where player_stats was last saved between kickoff and kickoff+3d.
+ * Stars: average of the two percentages (when both apply); if no played games yet, only RSVP % drives stars.
  */
-export function computePersonalCompliance(games, attendance, stats, playerId) {
+export function computePersonalComplianceScores(games, attendance, stats, playerId) {
   if (!playerId) return null;
 
-  const gameById = new Map((games || []).map((g) => [g.id, g]));
+  let rsvpInTime = 0;
+  let rsvpDenom = 0;
+  let statsInTime = 0;
+  let statsDenom = 0;
 
-  const attendanceSamples = [];
-  for (const row of attendance) {
-    if (row.player_id !== playerId) continue;
-    const g = gameById.get(row.game_id);
-    if (!g || !row.updated_at) continue;
+  for (const g of games || []) {
     const kick = getGameKickoffMs(g);
     if (kick == null) continue;
-    const at = new Date(row.updated_at).getTime();
-    const daysBefore = (kick - at) / (24 * 60 * 60 * 1000);
-    attendanceSamples.push({ daysBefore, late: daysBefore < 0 });
+
+    rsvpDenom += 1;
+    const att = attendance.find((a) => a.game_id === g.id && a.player_id === playerId);
+    if (att?.updated_at && rsvpSavedAtLeastDaysBeforeKickoff(kick, att.updated_at, RSVP_ON_TIME_DAYS_BEFORE)) {
+      rsvpInTime += 1;
+    }
+
+    if (isPlayed(g)) {
+      statsDenom += 1;
+      const st = stats.find((s) => s.game_id === g.id && s.player_id === playerId);
+      if (st?.updated_at && statsSavedWithinDaysAfterKickoff(kick, st.updated_at, STATS_ON_TIME_DAYS_AFTER)) {
+        statsInTime += 1;
+      }
+    }
   }
 
-  const advanceSamples = attendanceSamples.filter((s) => !s.late).map((s) => s.daysBefore);
-  const lateAttendanceCount = attendanceSamples.filter((s) => s.late).length;
+  const rsvpOnTimePct = rsvpDenom > 0 ? Math.round((100 * rsvpInTime) / rsvpDenom) : null;
+  const statsOnTimePct = statsDenom > 0 ? Math.round((100 * statsInTime) / statsDenom) : null;
 
-  const statsSamples = [];
-  for (const row of stats) {
-    if (row.player_id !== playerId) continue;
-    const g = gameById.get(row.game_id);
-    if (!g || !row.updated_at) continue;
-    if (!isPlayed(g)) continue;
-    const kick = getGameKickoffMs(g);
-    if (kick == null) continue;
-    const at = new Date(row.updated_at).getTime();
-    const hoursAfter = (at - kick) / (60 * 60 * 1000);
-    statsSamples.push(hoursAfter);
+  let complianceStars = 0;
+  if (rsvpDenom > 0) {
+    if (statsDenom > 0) {
+      const avg = (rsvpOnTimePct + statsOnTimePct) / 2;
+      complianceStars = Math.max(0, Math.min(5, Math.round((5 * avg) / 100)));
+    } else {
+      complianceStars = Math.max(0, Math.min(5, Math.round((5 * rsvpOnTimePct) / 100)));
+    }
   }
 
   return {
-    attendanceCount: attendanceSamples.length,
-    attendanceMedianDaysBefore: median(advanceSamples),
-    attendanceLateCount: lateAttendanceCount,
-    statsCount: statsSamples.length,
-    statsMedianHoursAfter: median(statsSamples),
+    rsvpOnTimePct,
+    statsOnTimePct,
+    rsvpInTimeGames: rsvpInTime,
+    rsvpGamesDenom: rsvpDenom,
+    statsInTimeGames: statsInTime,
+    statsGamesDenom: statsDenom,
+    complianceStars,
   };
 }
 
-export function formatMedianDaysBefore(days) {
-  if (days == null || Number.isNaN(days)) return "—";
-  if (days < 1 / 24) return "< 1 h before kickoff";
-  if (days < 1) return `${Math.round(days * 24)} h before kickoff`;
-  return `${days >= 10 ? Math.round(days) : days.toFixed(1)} days before kickoff`;
+function rsvpSavedAtLeastDaysBeforeKickoff(kickMs, updatedAtIso, days) {
+  const at = new Date(updatedAtIso).getTime();
+  if (Number.isNaN(at)) return false;
+  return kickMs - at >= days * MS_PER_DAY;
 }
 
-export function formatMedianHoursAfter(hours) {
-  if (hours == null || Number.isNaN(hours)) return "—";
-  if (hours < 1) return `${Math.round(hours * 60)} min after kickoff`;
-  if (hours < 48) return `${hours >= 10 ? Math.round(hours) : hours.toFixed(1)} h after kickoff`;
-  const d = hours / 24;
-  return `${d >= 10 ? Math.round(d) : d.toFixed(1)} days after kickoff`;
+function statsSavedWithinDaysAfterKickoff(kickMs, updatedAtIso, days) {
+  const at = new Date(updatedAtIso).getTime();
+  if (Number.isNaN(at)) return false;
+  const delta = at - kickMs;
+  return delta >= 0 && delta <= days * MS_PER_DAY;
 }
 
-/** Compact table cells */
-export function formatMedianDaysBeforeShort(days) {
-  if (days == null || Number.isNaN(days)) return "—";
-  if (days < 1 / 24) return "<1 h";
-  if (days < 1) return `${Math.round(days * 24)} h`;
-  return `${days >= 10 ? Math.round(days) : days.toFixed(1)} d`;
-}
-
-export function formatMedianHoursAfterShort(hours) {
-  if (hours == null || Number.isNaN(hours)) return "—";
-  if (hours < 1) return `${Math.round(hours * 60)} m`;
-  if (hours < 48) return `${hours >= 10 ? Math.round(hours) : hours.toFixed(1)} h`;
-  const d = hours / 24;
-  return `${d >= 10 ? Math.round(d) : d.toFixed(1)} d`;
+/** Visual 0–5 star rating (filled ★ + empty ☆). */
+export function formatComplianceStars(filled0to5) {
+  const n = Math.max(0, Math.min(5, Math.round(Number(filled0to5) || 0)));
+  return "★".repeat(n) + "☆".repeat(5 - n);
 }
 
 /**
- * Compliance timing for every active (non-archived) player — for team-wide tables.
+ * Compliance scores for every active (non-archived) player — team table on season overview.
  */
 export function computeComplianceForAllPlayers(games, attendance, stats, players) {
   const active = (players || []).filter((p) => !p.archived);
   return active
     .map((p) => {
-      const c = computePersonalCompliance(games, attendance, stats, p.id);
+      const c = computePersonalComplianceScores(games, attendance, stats, p.id);
       return {
         id: p.id,
         name: p.name,

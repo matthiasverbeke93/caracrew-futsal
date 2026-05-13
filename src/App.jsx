@@ -8,10 +8,9 @@ import FormChip from "./components/FormChip";
 import GameSidebar from "./components/GameSidebar";
 import MyNextGamesTiles from "./components/MyNextGamesTiles";
 import PlayerProfileModal from "./components/PlayerProfileModal";
-import SeasonInsightsPage from "./components/SeasonInsightsPage";
+import SeasonOverviewPage from "./components/SeasonOverviewPage";
 import SelectedGamePanel from "./components/SelectedGamePanel";
 import StatsTab from "./components/StatsTab";
-import TeamStatsPage from "./components/TeamStatsPage";
 import Tabs from "./components/Tabs";
 import { TEAM_NAME } from "./constants";
 import { useAuthSession } from "./hooks/useAuthSession";
@@ -48,69 +47,54 @@ export default function App() {
     new URLSearchParams(window.location.search).get("player")
   );
 
-  const [teamStatsOpen, setTeamStatsOpen] = useState(() =>
-    new URLSearchParams(window.location.search).get("team_stats") === "1"
-  );
-
-  const [insightsOpen, setInsightsOpen] = useState(() =>
-    new URLSearchParams(window.location.search).get("insights") === "1"
-  );
+  const [seasonOverviewOpen, setSeasonOverviewOpen] = useState(() => {
+    const sp = new URLSearchParams(window.location.search);
+    return sp.get("team_stats") === "1" || sp.get("insights") === "1";
+  });
 
   const [seasonSlug, setSeasonSlug] = useState(() =>
     readSeasonSlugFromSearch(new URLSearchParams(window.location.search))
   );
 
-  const openTeamStats = useCallback(() => {
+  const openSeasonOverview = useCallback(() => {
     const url = new URL(window.location.href);
     url.searchParams.set("team_stats", "1");
     url.searchParams.delete("insights");
     window.history.pushState({}, "", url);
-    setTeamStatsOpen(true);
-    setInsightsOpen(false);
+    setSeasonOverviewOpen(true);
   }, []);
 
-  const closeTeamStats = useCallback(() => {
+  const closeSeasonOverview = useCallback(() => {
     const url = new URL(window.location.href);
     url.searchParams.delete("team_stats");
-    window.history.pushState({}, "", url);
-    setTeamStatsOpen(false);
-  }, []);
-
-  const openInsights = useCallback(() => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("insights", "1");
-    url.searchParams.delete("team_stats");
-    window.history.pushState({}, "", url);
-    setInsightsOpen(true);
-    setTeamStatsOpen(false);
-  }, []);
-
-  const closeInsights = useCallback(() => {
-    const url = new URL(window.location.href);
     url.searchParams.delete("insights");
     window.history.pushState({}, "", url);
-    setInsightsOpen(false);
+    setSeasonOverviewOpen(false);
   }, []);
 
   const openPlayer = useCallback((id) => {
     if (!id) return;
     const url = new URL(window.location.href);
-    const ts = url.searchParams.get("team_stats");
-    const ins = url.searchParams.get("insights");
+    const hadOverview =
+      url.searchParams.get("team_stats") === "1" || url.searchParams.get("insights") === "1";
     url.searchParams.set("player", id);
-    if (ts) url.searchParams.set("team_stats", ts);
-    if (ins === "1") url.searchParams.set("insights", "1");
+    if (hadOverview) {
+      url.searchParams.set("team_stats", "1");
+      url.searchParams.delete("insights");
+    }
     window.history.pushState({}, "", url);
     setProfilePlayerId(id);
   }, []);
 
   const closePlayer = useCallback(() => {
     const url = new URL(window.location.href);
-    const ts = url.searchParams.get("team_stats");
-    const ins = url.searchParams.get("insights");
+    const hadOverview =
+      url.searchParams.get("team_stats") === "1" || url.searchParams.get("insights") === "1";
     url.searchParams.delete("player");
-    if (ts) url.searchParams.set("team_stats", ts);
-    if (ins === "1") url.searchParams.set("insights", "1");
+    if (hadOverview) {
+      url.searchParams.set("team_stats", "1");
+      url.searchParams.delete("insights");
+    }
     window.history.pushState({}, "", url);
     setProfilePlayerId(null);
   }, []);
@@ -119,8 +103,9 @@ export default function App() {
     const onPop = () => {
       const sp = new URLSearchParams(window.location.search);
       setProfilePlayerId(sp.get("player"));
-      setTeamStatsOpen(sp.get("team_stats") === "1");
-      setInsightsOpen(sp.get("insights") === "1");
+      setSeasonOverviewOpen(
+        sp.get("team_stats") === "1" || sp.get("insights") === "1"
+      );
       setSeasonSlug(readSeasonSlugFromSearch(sp));
     };
     window.addEventListener("popstate", onPop);
@@ -131,6 +116,16 @@ export default function App() {
     const url = new URL(window.location.href);
     if (!url.searchParams.get("season")) {
       url.searchParams.set("season", DEFAULT_SEASON_SLUG);
+      window.history.replaceState({}, "", url);
+    }
+  }, []);
+
+  /** Legacy `?insights=1` opens the same page as team stats — normalize URL once. */
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("insights") === "1" && url.searchParams.get("team_stats") !== "1") {
+      url.searchParams.set("team_stats", "1");
+      url.searchParams.delete("insights");
       window.history.replaceState({}, "", url);
     }
   }, []);
@@ -237,11 +232,8 @@ export default function App() {
             </div>
           </div>
           <nav className="dashboard-nav" aria-label="Team links">
-            <button type="button" className="dashboard-nav-btn" onClick={openInsights}>
-              Insights
-            </button>
-            <button type="button" className="dashboard-nav-btn" onClick={openTeamStats}>
-              Team stats
+            <button type="button" className="dashboard-nav-btn" onClick={openSeasonOverview}>
+              Season overview
             </button>
             <a
               className="dashboard-nav-link"
@@ -349,9 +341,9 @@ export default function App() {
       {tallyError && <section className="auth-banner">{tallyError}</section>}
 
       <main
-        className={`layout dashboard-layout${teamStatsOpen || insightsOpen ? " layout--full" : ""}`}
+        className={`layout dashboard-layout${seasonOverviewOpen ? " layout--full" : ""}`}
       >
-        {!teamStatsOpen && !insightsOpen && (
+        {!seasonOverviewOpen && (
         <GameSidebar
           games={sortedFilteredGames}
           attendanceHighlightIds={attendanceHighlightIds}
@@ -385,32 +377,20 @@ export default function App() {
             </div>
           )}
 
-          {!loading && teamStatsOpen && (
-            <TeamStatsPage
+          {!loading && seasonOverviewOpen && (
+            <SeasonOverviewPage
               games={games}
               players={players}
               attendance={attendance}
               stats={stats}
               seasonSlug={seasonSlug}
               seasonLabel={seasonLabel(seasonSlug)}
-              onBack={closeTeamStats}
+              onBack={closeSeasonOverview}
               onOpenPlayer={openPlayer}
             />
           )}
 
-          {!loading && insightsOpen && (
-            <SeasonInsightsPage
-              games={games}
-              players={players}
-              attendance={attendance}
-              stats={stats}
-              seasonLabel={seasonLabel(seasonSlug)}
-              onBack={closeInsights}
-              onOpenPlayer={openPlayer}
-            />
-          )}
-
-          {!loading && !teamStatsOpen && !insightsOpen && showNextGamesTiles && (
+          {!loading && !seasonOverviewOpen && showNextGamesTiles && (
             <MyNextGamesTiles
               games={games}
               attendance={attendance}
@@ -422,7 +402,7 @@ export default function App() {
             />
           )}
 
-          {!loading && !teamStatsOpen && !insightsOpen && selectedGame && (
+          {!loading && !seasonOverviewOpen && selectedGame && (
             <>
               <SelectedGamePanel
                 selectedGame={selectedGame}
@@ -484,7 +464,7 @@ export default function App() {
             </>
           )}
 
-          {!loading && !teamStatsOpen && !insightsOpen && !selectedGame && (
+          {!loading && !seasonOverviewOpen && !selectedGame && (
             <div className="panel content-empty">
               {games.length === 0 ? (
                 <>

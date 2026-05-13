@@ -132,10 +132,12 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     const url = new URL(window.location.href);
     const player = url.searchParams.get("player");
     const teamStats = url.searchParams.get("team_stats");
+    const insights = url.searchParams.get("insights");
     url.searchParams.set("season", seasonSlug);
     url.searchParams.set("game", selectedGameId);
     if (player) url.searchParams.set("player", player);
     if (teamStats) url.searchParams.set("team_stats", teamStats);
+    if (insights === "1") url.searchParams.set("insights", "1");
     window.history.replaceState({}, "", url);
   }, [selectedGameId, seasonSlug]);
 

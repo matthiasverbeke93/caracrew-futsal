@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { formatAuthError } from "../utils/authErrors";
 import { getAuthEmailRedirectTo } from "../utils/authRedirect";
 
 /** Source of truth for "who am I right now":
@@ -88,7 +89,7 @@ export function useAuthSession() {
   const signIn = useCallback(async (email, password) => {
     const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
     if (signInErr) {
-      return { error: signInErr.message };
+      return { error: formatAuthError(signInErr) };
     }
     return {};
   }, []);
@@ -101,7 +102,7 @@ export function useAuthSession() {
       options: emailRedirectTo ? { emailRedirectTo } : undefined,
     });
     if (signUpErr) {
-      return { error: signUpErr.message };
+      return { error: formatAuthError(signUpErr) };
     }
     return {};
   }, []);

@@ -115,7 +115,14 @@ export default function SelectedGamePanel({
 
   function handleNudge() {
     const firstNames = missingFixed.map((p) => p.name.split(" ")[0]);
-    const wa = buildWhatsAppNudgeUrl(selectedGame, firstNames);
+    const wa = buildWhatsAppNudgeUrl(selectedGame, firstNames, {
+      fixedRoster: fixedPlayers.length,
+      playing: counts.playing,
+      if_needed: counts.if_needed,
+      cant: counts.cant,
+      missing: counts.missing,
+      guests: counts.guests,
+    });
     window.open(wa, "_blank", "noopener,noreferrer");
   }
 

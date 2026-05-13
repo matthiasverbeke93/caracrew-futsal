@@ -103,16 +103,30 @@ export function buildGameWhatsAppShareUrl(game) {
   return `https://wa.me/?text=${encodeURIComponent(message)}`;
 }
 
-export function buildWhatsAppNudgeUrl(game, missingNames) {
+export function buildWhatsAppNudgeUrl(game, missingNames, rosterSnapshot = {}) {
   const shareUrl = buildShareGameUrl(game.id);
   const list = missingNames.join(", ");
   const opp = cleanOpponentName(game.opponent);
   const when = formatMatchDayTime(game);
+  const {
+    fixedRoster = 0,
+    playing = 0,
+    if_needed = 0,
+    cant = 0,
+    missing = 0,
+    guests = 0,
+  } = rosterSnapshot;
   const line = [
     "🤖 ATTENDANCE BOT 3000 — BEEP BOOP",
     "",
     "[SYSTEM NOTICE] RSVP telemetry incomplete.",
     `MATCH_SLOT: ${when} · opponent=${opp}`,
+    "",
+    "[ROSTER_TELEMETRY]",
+    `FIXED_ROSTER_CAPACITY: ${fixedRoster}`,
+    `PLAYING: ${playing} · IF_NEEDED: ${if_needed} · CANT: ${cant} · NO_RSVP_YET: ${missing}`,
+    `GUEST_UNITS_FOR_THIS_MATCH: ${guests}`,
+    "",
     `PENDING_HUMAN_IDS (${missingNames.length}): ${list}`,
     "",
     ">>> REQUIRED_ACTION: confirm match attendance",

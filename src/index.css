@@ -4,27 +4,29 @@
 
 :root {
   color-scheme: light;
-  --surface-page: #f1f5f9;
+  --surface-page: #e8eef5;
   --surface-panel: #ffffff;
+  --surface-elevated: #f8fafc;
+  --border-subtle: rgba(15, 23, 42, 0.08);
   --text-primary: #0f172a;
   --text-muted: #64748b;
-  --accent: #1d4ed8;
-  --accent-ring: rgba(29, 78, 216, 0.35);
-  --radius-panel: 24px;
-  --shadow-panel: 0 1px 3px rgba(15, 23, 42, 0.06), 0 6px 24px rgba(15, 23, 42, 0.06);
+  --accent: #2563eb;
+  --accent-muted: #dbeafe;
+  --accent-ring: rgba(37, 99, 235, 0.35);
+  --radius-panel: 16px;
+  --radius-lg: 20px;
+  --shadow-panel: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 32px rgba(15, 23, 42, 0.06);
+  --shadow-header: 0 18px 48px rgba(15, 23, 42, 0.22);
+  --font-display: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 body {
   margin: 0;
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
-  background: var(--surface-page);
+  font-family: var(--font-display);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(37, 99, 235, 0.09), transparent 55%),
+    radial-gradient(900px 500px at 90% 0%, rgba(245, 158, 11, 0.06), transparent 50%),
+    var(--surface-page);
   color: var(--text-primary);
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
@@ -62,7 +64,7 @@ body {
 }
 
 button:focus-visible,
-.hero-link-button:focus-visible,
+.dashboard-nav-btn:focus-visible,
 .player-link:focus-visible,
 .calendar-toggle-button:focus-visible,
 .calendar-game-item:focus-visible,
@@ -90,47 +92,118 @@ button {
   border: 0;
 }
 
-.app {
-  max-width: 1400px;
+.app.dashboard {
+  max-width: 1540px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 20px 22px 40px;
 }
 
-.hero {
-  background: #020617;
-  color: white;
-  border-radius: 22px;
-  padding: 10px 22px 12px;
-  margin-bottom: 16px;
+.dashboard-header {
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  background: linear-gradient(135deg, #020617 0%, #0f172a 42%, #1e293b 100%);
+  color: #f8fafc;
+  border-radius: var(--radius-lg);
+  padding: 16px 20px 14px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-header);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-header-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px 20px;
+}
+
+.dashboard-brand {
+  min-width: 0;
+}
+
+.dashboard-eyebrow {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.dashboard-title-row {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
 }
 
-.hero-account-row {
+.dashboard-header h1 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.dashboard-nav {
   display: flex;
-  justify-content: flex-end;
-  width: 100%;
-  margin-bottom: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.hero-body-row {
-  width: 100%;
-  flex: 1 1 auto;
+.dashboard-nav-btn {
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  transition: background 120ms ease, border-color 120ms ease;
 }
 
-.hero-season-bar {
-  margin-top: 8px;
-  padding-top: 8px;
+.dashboard-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.dashboard-nav-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: #fbbf24;
+  text-decoration: none;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.08);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.dashboard-nav-link:hover {
+  background: rgba(251, 191, 36, 0.16);
+}
+
+.dashboard-account {
+  justify-self: end;
+}
+
+.dashboard-season {
+  margin-top: 14px;
+  padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 10px;
+  gap: 10px 12px;
 }
 
-.hero-season-label {
+.dashboard-season-label {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -139,9 +212,42 @@ button {
   flex-shrink: 0;
 }
 
-.hero-left {
-  flex: 1 1 320px;
+.dashboard-season-track {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  flex: 1 1 auto;
   min-width: 0;
+}
+
+.dashboard-season .season-pill {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.dashboard-season .season-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+.dashboard-season .season-pill.active {
+  background: #fbbf24;
+  color: #0f172a;
+  border-color: #fbbf24;
 }
 
 .account-chip {
@@ -1053,48 +1159,6 @@ button {
   }
 }
 
-.hero h1 {
-  margin: 0 0 2px;
-  font-size: 34px;
-  line-height: 1.1;
-}
-
-.hero-link {
-  display: inline-block;
-  margin-top: 10px;
-  color: #fbbf24;
-  font-size: 13px;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.hero-nav {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-top: 2px;
-}
-
-.hero-nav .hero-link,
-.hero-nav .hero-link-button {
-  margin-top: 0;
-}
-
-button.hero-link-button {
-  font: inherit;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  padding: 0;
-  text-align: left;
-}
-
-.hero-link:hover,
-.hero-link-button:hover {
-  text-decoration: underline;
-}
-
 .pill,
 .section-label {
   display: inline-block;
@@ -1108,49 +1172,6 @@ button.hero-link-button {
   letter-spacing: 0.03em;
 }
 
-.hero .pill {
-  background: rgba(255, 255, 255, 0.12);
-  color: white;
-}
-
-.hero-season-row {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  flex: 0 1 auto;
-  min-width: 0;
-}
-
-.hero .season-pill {
-  display: inline-block;
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  border: 1px solid transparent;
-  background: transparent;
-  color: #cbd5e1;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 120ms ease, color 120ms ease;
-}
-
-.hero .season-pill:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
-}
-
-.hero .season-pill.active {
-  background: #fbbf24;
-  color: #0f172a;
-  border-color: #fbbf24;
-}
-
 .layout {
   display: grid;
   grid-template-columns: 420px 1fr;
@@ -1162,12 +1183,17 @@ button.hero-link-button {
   grid-template-columns: 1fr;
 }
 
+.dashboard-layout {
+  gap: 22px;
+}
+
 .sidebar,
 .panel {
   background: var(--surface-panel);
   border-radius: var(--radius-panel);
   padding: 20px;
   box-shadow: var(--shadow-panel);
+  border: 1px solid var(--border-subtle);
 }
 
 .sidebar {
@@ -1176,6 +1202,11 @@ button.hero-link-button {
   position: sticky;
   top: 16px;
   padding: 16px 16px 18px;
+}
+
+.dashboard-layout:not(.layout--full) .sidebar {
+  top: 108px;
+  max-height: calc(100vh - 124px);
 }
 
 .sidebar-rsvp-block {
@@ -2039,7 +2070,7 @@ button.hero-link-button {
 
 .tabs {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
   flex-wrap: wrap;
 }
@@ -2058,6 +2089,53 @@ button.hero-link-button {
 .tabs button.active {
   background: #020617;
   color: white;
+}
+
+.match-detail-panel {
+  padding-top: 0;
+}
+
+.match-detail-panel .tabs {
+  margin: 0 -20px;
+  padding: 12px 16px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background: linear-gradient(180deg, var(--surface-elevated) 0%, var(--surface-panel) 100%);
+  gap: 4px;
+}
+
+.match-detail-panel .tabs button {
+  border-radius: 12px 12px 0 0;
+  padding: 12px 20px;
+  min-height: 46px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  border-bottom: none;
+}
+
+.match-detail-panel .tabs button:hover {
+  filter: none;
+  background: rgba(37, 99, 235, 0.06);
+  color: var(--text-primary);
+}
+
+.match-detail-panel .tabs button.active {
+  background: var(--surface-panel);
+  color: var(--accent);
+  border-color: var(--border-subtle);
+  border-bottom-color: var(--surface-panel);
+  margin-bottom: -1px;
+  box-shadow: 0 1px 0 var(--surface-panel);
+}
+
+.match-tab-content {
+  padding: 18px 0 4px;
+}
+
+.match-tab-content > h2 {
+  margin-top: 0;
+  font-size: 18px;
+  letter-spacing: -0.02em;
 }
 
 .tabs button:hover,
@@ -2187,13 +2265,6 @@ input[type="number"] {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-}
-
-.hero-title-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
 }
 
 .form-chip {
@@ -2740,34 +2811,45 @@ input[type="number"] {
 }
 
 @media (max-width: 1000px) {
-  .app {
-    padding: 14px;
+  .app.dashboard {
+    padding: 14px 14px 28px;
   }
 
-  .hero {
-    padding: 10px 14px 12px;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0;
+  .dashboard-header {
+    position: relative;
+    top: 0;
+    padding: 14px 16px 12px;
   }
 
-  .hero-account-row {
-    width: 100%;
+  .dashboard-header-main {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .dashboard-nav {
+    justify-content: flex-start;
+    order: 3;
+  }
+
+  .dashboard-account {
+    justify-self: stretch;
+    display: flex;
     justify-content: flex-end;
   }
 
-  .hero-season-bar {
+  .dashboard-season {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .hero-season-row {
+  .dashboard-season-track {
     width: 100%;
     justify-content: flex-start;
   }
 
-  .hero h1 {
-    font-size: 32px;
+  .dashboard-layout:not(.layout--full) .sidebar {
+    top: 16px;
+    max-height: none;
   }
 
   .layout {

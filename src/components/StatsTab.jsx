@@ -121,7 +121,7 @@ export default function StatsTab({
   }
 
   return (
-    <section className="panel">
+    <div className="match-tab-content">
       <h2>Goals and assists</h2>
       {lockedForFutureGame && (
         <div className="warning-box">Stats can only be entered for games played today or earlier.</div>
@@ -319,6 +319,6 @@ export default function StatsTab({
           })}
         </tbody>
       </table>
-    </section>
+    </div>
   );
 }

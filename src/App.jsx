@@ -195,46 +195,47 @@ export default function App() {
   const showNextGamesTiles = !!currentPlayer && nextAttendanceGames.length > 0;
 
   return (
-    <div className="app">
+    <div className="app dashboard">
       <a href="#match-details" className="skip-link">
         Skip to match details
       </a>
-      <header className="hero">
-        <div className="hero-account-row">
-          <AccountChip
-            user={user}
-            currentPlayer={currentPlayer}
-            isAdmin={isAdmin}
-            authLoading={authLoading}
-            onSignInClick={() => setAuthModalOpen(true)}
-            onSignOut={signOut}
-            onAdminClick={isAdmin ? () => setAdminPanelOpen(true) : null}
-          />
-        </div>
-        <div className="hero-body-row">
-          <div className="hero-left">
-            <div className="hero-title-row">
+      <header className="dashboard-header">
+        <div className="dashboard-header-main">
+          <div className="dashboard-brand">
+            <p className="dashboard-eyebrow">Team dashboard</p>
+            <div className="dashboard-title-row">
               <h1>{TEAM_NAME}</h1>
               <FormChip games={games} />
             </div>
-            <nav className="hero-nav" aria-label="External and team links">
-              <button type="button" className="hero-link hero-link-button" onClick={openTeamStats}>
-                Team stats
-              </button>
-              <a
-                className="hero-link"
-                href="https://www.lzvcup.be/teams/detail/742"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View on LZV Cup ↗
-              </a>
-            </nav>
+          </div>
+          <nav className="dashboard-nav" aria-label="Team links">
+            <button type="button" className="dashboard-nav-btn" onClick={openTeamStats}>
+              Team stats
+            </button>
+            <a
+              className="dashboard-nav-link"
+              href="https://www.lzvcup.be/teams/detail/742"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              LZV Cup ↗
+            </a>
+          </nav>
+          <div className="dashboard-account">
+            <AccountChip
+              user={user}
+              currentPlayer={currentPlayer}
+              isAdmin={isAdmin}
+              authLoading={authLoading}
+              onSignInClick={() => setAuthModalOpen(true)}
+              onSignOut={signOut}
+              onAdminClick={isAdmin ? () => setAdminPanelOpen(true) : null}
+            />
           </div>
         </div>
-        <div className="hero-season-bar" role="navigation" aria-label="Season">
-          <span className="hero-season-label">Season</span>
-          <div className="hero-season-row">
+        <div className="dashboard-season" role="navigation" aria-label="Season">
+          <span className="dashboard-season-label">Season</span>
+          <div className="dashboard-season-track">
             {SEASON_OPTIONS.map((opt) => {
               const isActive = opt.slug === seasonSlug;
               return (
@@ -316,7 +317,7 @@ export default function App() {
 
       {tallyError && <section className="auth-banner">{tallyError}</section>}
 
-      <main className={`layout${teamStatsOpen ? " layout--full" : ""}`}>
+      <main className={`layout dashboard-layout${teamStatsOpen ? " layout--full" : ""}`}>
         {!teamStatsOpen && (
         <GameSidebar
           games={sortedFilteredGames}
@@ -391,48 +392,50 @@ export default function App() {
                 showAttendanceSummary={tab === "attendance"}
               />
 
-              <Tabs activeTab={tab} onTabChange={setTab} />
+              <section className="panel match-detail-panel" aria-label="Match workspace">
+                <Tabs activeTab={tab} onTabChange={setTab} />
 
-              {tab === "attendance" && (
-                <AttendanceTab
-                  allGamePlayers={allGamePlayers}
-                  externalPlayerPool={externalPlayerPool}
-                  newGuestFirstName={newGuestFirstName}
-                  setNewGuestFirstName={setNewGuestFirstName}
-                  newGuestLastName={newGuestLastName}
-                  setNewGuestLastName={setNewGuestLastName}
-                  addGuestPlayer={addGuestPlayer}
-                  gameAttendance={gameAttendance}
-                  saveGuestAttendance={saveGuestAttendance}
-                  saveAttendance={saveAttendance}
-                  removeGuestPlayer={removeGuestPlayer}
-                  onOpenPlayer={openPlayer}
-                  selectedGame={selectedGame}
-                  canEditAttendanceFor={canEditAttendanceFor}
-                  canManageGame={canManageGame}
-                  isSignedIn={isSignedIn}
-                  onRequestSignIn={() => setAuthModalOpen(true)}
-                />
-              )}
+                {tab === "attendance" && (
+                  <AttendanceTab
+                    allGamePlayers={allGamePlayers}
+                    externalPlayerPool={externalPlayerPool}
+                    newGuestFirstName={newGuestFirstName}
+                    setNewGuestFirstName={setNewGuestFirstName}
+                    newGuestLastName={newGuestLastName}
+                    setNewGuestLastName={setNewGuestLastName}
+                    addGuestPlayer={addGuestPlayer}
+                    gameAttendance={gameAttendance}
+                    saveGuestAttendance={saveGuestAttendance}
+                    saveAttendance={saveAttendance}
+                    removeGuestPlayer={removeGuestPlayer}
+                    onOpenPlayer={openPlayer}
+                    selectedGame={selectedGame}
+                    canEditAttendanceFor={canEditAttendanceFor}
+                    canManageGame={canManageGame}
+                    isSignedIn={isSignedIn}
+                    onRequestSignIn={() => setAuthModalOpen(true)}
+                  />
+                )}
 
-              {tab === "stats" && (
-                <StatsTab
-                  key={selectedGame.id}
-                  allGamePlayers={allGamePlayers}
-                  selectedGame={selectedGame}
-                  gameStats={gameStats}
-                  selectedGameTotals={selectedGameTotals}
-                  saveGuestStat={saveGuestStat}
-                  saveStat={saveStat}
-                  saveGameTally={saveGameTally}
-                  motmVotes={motmVotes}
-                  submitMotmVote={submitMotmVote}
-                  onOpenPlayer={openPlayer}
-                  canEditStatsFor={canEditStatsFor}
-                  canManageGame={canManageGame}
-                  canVote={canVote}
-                />
-              )}
+                {tab === "stats" && (
+                  <StatsTab
+                    key={selectedGame.id}
+                    allGamePlayers={allGamePlayers}
+                    selectedGame={selectedGame}
+                    gameStats={gameStats}
+                    selectedGameTotals={selectedGameTotals}
+                    saveGuestStat={saveGuestStat}
+                    saveStat={saveStat}
+                    saveGameTally={saveGameTally}
+                    motmVotes={motmVotes}
+                    submitMotmVote={submitMotmVote}
+                    onOpenPlayer={openPlayer}
+                    canEditStatsFor={canEditStatsFor}
+                    canManageGame={canManageGame}
+                    canVote={canVote}
+                  />
+                )}
+              </section>
             </>
           )}
 

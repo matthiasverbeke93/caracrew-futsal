@@ -30,7 +30,7 @@ export default function AttendanceTab({
   }
 
   return (
-    <section className="panel">
+    <div className="match-tab-content">
       <h2>Attendance</h2>
 
       {lockedBecausePlayed && (
@@ -139,6 +139,6 @@ export default function AttendanceTab({
           </button>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

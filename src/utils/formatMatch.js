@@ -117,22 +117,14 @@ export function buildWhatsAppNudgeUrl(game, missingNames, rosterSnapshot = {}) {
     guests = 0,
   } = rosterSnapshot;
   const line = [
-    "🤖 ATTENDANCE BOT 3000 — BEEP BOOP",
+    "Attendance Bot 3000",
     "",
-    "[SYSTEM NOTICE] RSVP telemetry incomplete.",
-    `MATCH_SLOT: ${when} · opponent=${opp}`,
+    `Match · ${when} vs ${opp}`,
+    `Roster · ${fixedRoster} fixed · playing ${playing} · if needed ${if_needed} · can't ${cant} · no RSVP ${missing} · guests ${guests}`,
     "",
-    "[ROSTER_TELEMETRY]",
-    `FIXED_ROSTER_CAPACITY: ${fixedRoster}`,
-    `PLAYING: ${playing} · IF_NEEDED: ${if_needed} · CANT: ${cant} · NO_RSVP_YET: ${missing}`,
-    `GUEST_UNITS_FOR_THIS_MATCH: ${guests}`,
+    `Still waiting on ${missingNames.length}: ${list}`,
     "",
-    `PENDING_HUMAN_IDS (${missingNames.length}): ${list}`,
-    "",
-    ">>> REQUIRED_ACTION: confirm match attendance",
-    `>>> HANDSHAKE_LINK: ${shareUrl}`,
-    "",
-    "// END TRANSMISSION — BOT 3000 OUT",
+    `Confirm attendance:\n${shareUrl}`,
   ].join("\n");
   return `https://wa.me/?text=${encodeURIComponent(line)}`;
 }

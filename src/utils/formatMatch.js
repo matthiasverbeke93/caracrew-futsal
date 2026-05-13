@@ -1,4 +1,4 @@
-import { cleanOpponentName } from "./opponent";
+import { cleanOpponentName } from "./opponent.js";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 

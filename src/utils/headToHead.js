@@ -1,5 +1,5 @@
-import { isPlayed } from "./game";
-import { cleanOpponentName } from "./opponent";
+import { isPlayed } from "./game.js";
+import { cleanOpponentName } from "./opponent.js";
 
 function normalizeOpponent(name) {
   return cleanOpponentName(name)

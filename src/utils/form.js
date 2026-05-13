@@ -1,4 +1,4 @@
-import { isPlayed } from "./game";
+import { isPlayed } from "./game.js";
 
 /** Returns the last `n` played games' outcomes from Caracrew's perspective.
  * Each entry is { result: 'W' | 'D' | 'L' | '?', game }, most recent first.

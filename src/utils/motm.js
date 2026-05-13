@@ -1,4 +1,4 @@
-import { isPlayed } from "./game";
+import { isPlayed } from "./game.js";
 
 function parseGameStart(game) {
   const date = game.game_date;

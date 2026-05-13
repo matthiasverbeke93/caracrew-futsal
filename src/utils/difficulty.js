@@ -1,6 +1,6 @@
 import { OUR_TEAM_NAME } from "../data/leagueStandings";
 import { getLeagueStandingsForSeason } from "../data/seasonLeagueStandings";
-import { cleanOpponentName } from "./opponent";
+import { cleanOpponentName } from "./opponent.js";
 
 function normalize(name) {
   return cleanOpponentName(name)

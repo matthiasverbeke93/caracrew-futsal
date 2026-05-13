@@ -1,4 +1,4 @@
-import { isPlayed } from "./game";
+import { isPlayed } from "./game.js";
 
 /** @returns {number | null} epoch ms at kickoff (local interpretation of date + time) */
 export function getGameKickoffMs(game) {

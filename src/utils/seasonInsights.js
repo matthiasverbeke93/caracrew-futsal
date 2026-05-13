@@ -1,4 +1,4 @@
-import { isPlayed } from "./game";
+import { isPlayed } from "./game.js";
 
 /**
  * Per calendar month (YYYY-MM): played games count + sum of goals/assists in those games.

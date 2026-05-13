@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { attendanceLabel } from "../constants";
 import { isPlayed } from "../utils/game";
 import { countPlayerMotmWins, getMotmLeaderIds, getMotmVotingEnd } from "../utils/motm";
-import { attendanceLabel } from "../constants";
+import { cleanOpponentName } from "../utils/opponent";
 
 function resolveName(playerId, players, guestPlayers) {
   const p = players.find((x) => x.id === playerId);

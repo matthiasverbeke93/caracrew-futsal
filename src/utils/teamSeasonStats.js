@@ -1,9 +1,18 @@
+import { countPlayerMotmWins } from "./motm.js";
+
 /**
  * Season totals per roster player (players table: fixed + pool guests).
  * "Games played" = games with attendance status `playing`.
  * Denominator for % = all games in `games` (scheduled season games).
  */
-export function buildTeamSeasonPlayerRows(games, playersWithRole, attendance, stats) {
+export function buildTeamSeasonPlayerRows(
+  games,
+  playersWithRole,
+  attendance,
+  stats,
+  motmVotes = [],
+  nowMs = Date.now()
+) {
   const totalSeasonGames = games?.length ?? 0;
 
   return (playersWithRole || []).map((player) => {
@@ -30,6 +39,7 @@ export function buildTeamSeasonPlayerRows(games, playersWithRole, attendance, st
     const goalsPerGame = gamesPlayed > 0 ? goals / gamesPlayed : 0;
     const assistsPerGame = gamesPlayed > 0 ? assists / gamesPlayed : 0;
     const involvementPerGame = gamesPlayed > 0 ? involvement / gamesPlayed : 0;
+    const motmWins = countPlayerMotmWins(player.id, games, motmVotes, nowMs);
 
     return {
       id: player.id,
@@ -45,6 +55,7 @@ export function buildTeamSeasonPlayerRows(games, playersWithRole, attendance, st
       assistsPerGame,
       involvement,
       involvementPerGame,
+      motmWins,
     };
   });
 }
@@ -95,6 +106,7 @@ export function buildStaticTeamSeasonRows(staticData, playersWithRole) {
       assistsPerGame: gamesPlayed > 0 ? assists / gamesPlayed : 0,
       involvement,
       involvementPerGame: gamesPlayed > 0 ? involvement / gamesPlayed : 0,
+      motmWins: 0,
     };
   });
 }

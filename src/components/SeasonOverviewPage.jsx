@@ -31,6 +31,11 @@ const COLUMNS = [
   { key: "pctPlayed", label: "% played" },
   { key: "goals", label: "G" },
   { key: "assists", label: "A" },
+  {
+    key: "motmWins",
+    label: "MOTM",
+    tooltip: "Man of the match wins this season (after voting closes; ties count)",
+  },
   { key: "goalsPerGame", label: "G/game" },
   { key: "assistsPerGame", label: "A/game" },
   { key: "involvement", label: "G+A" },
@@ -49,6 +54,7 @@ export default function SeasonOverviewPage({
   players,
   attendance,
   stats,
+  motmVotes = [],
   seasonSlug,
   seasonLabel: seasonLabelText,
   onBack,
@@ -68,9 +74,9 @@ export default function SeasonOverviewPage({
   const tableRows = useMemo(() => {
     const built = staticData
       ? buildStaticTeamSeasonRows(staticData, players)
-      : buildTeamSeasonPlayerRows(games, livePlayers, attendance, stats);
+      : buildTeamSeasonPlayerRows(games, livePlayers, attendance, stats, motmVotes);
     return sortTeamSeasonRows(built, tableSortKey);
-  }, [attendance, games, livePlayers, players, staticData, stats, tableSortKey]);
+  }, [attendance, games, livePlayers, motmVotes, players, staticData, stats, tableSortKey]);
 
   const barRows = useMemo(() => {
     const sorted = sortTeamSeasonRows([...tableRows], barMetric);
@@ -267,6 +273,7 @@ export default function SeasonOverviewPage({
                     <button
                       type="button"
                       className={`th-sort ${tableSortKey === col.key ? "active" : ""}`}
+                      title={col.tooltip}
                       onClick={() => setTableSortKey(col.key)}
                     >
                       {col.label}
@@ -296,6 +303,7 @@ export default function SeasonOverviewPage({
                   <td>{r.pctPlayed}%</td>
                   <td>{r.goals}</td>
                   <td>{r.assists}</td>
+                  <td>{r.motmWins ?? 0}</td>
                   <td>{fmtPer(r.goalsPerGame)}</td>
                   <td>{fmtPer(r.assistsPerGame)}</td>
                   <td>{r.involvement}</td>

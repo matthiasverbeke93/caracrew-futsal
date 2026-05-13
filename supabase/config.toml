@@ -1,5 +1,0 @@
-# Used by Supabase CLI (`supabase functions serve|deploy`). Run `supabase link` to set your project.
-project_id = "local-only"
-
-[functions.send-weekly-digest]
-verify_jwt = true

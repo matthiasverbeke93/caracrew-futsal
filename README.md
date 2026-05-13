@@ -37,8 +37,6 @@ Friday schedule (GitHub Actions) runs `scripts/send-weekly-digest.mjs`: upcoming
 
 **Local test:** copy `.env.example` digest vars into a shell session or `.env` loaded manually, then `npm run digest:weekly`.
 
-**Admin (on demand):** deploy the Edge Function `send-weekly-digest` from `supabase/functions/send-weekly-digest/` (`supabase link` then `supabase functions deploy send-weekly-digest`). In the Supabase dashboard, set function secrets `RESEND_API_KEY`, `DIGEST_TO_EMAIL`, and optionally `DIGEST_FROM_EMAIL`, `DIGEST_SEASON_SLUG`, `PUBLIC_APP_URL` (same meaning as in GitHub Actions / `npm run digest:weekly`). Signed-in admins can send the digest from the Admin panel **Digest** tab; it uses the season currently selected in the app header.
-
 ## Seasons
 The app is multi-season. Each `games` row and each `opponent_strength` row carries a `season_slug` (e.g. `2526`, `2627`). The UI exposes a switcher in the dashboard header (`?season=` in the URL). Use **Insights** for season trends (monthly scoring pace, leader bars, live table) or **Team stats** for the full stats/compliance view (`?insights=1` / `?team_stats=1`).
 

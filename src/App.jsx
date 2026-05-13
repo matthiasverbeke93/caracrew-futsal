@@ -522,7 +522,6 @@ export default function App() {
       <AdminPanel
         open={adminPanelOpen}
         onClose={() => setAdminPanelOpen(false)}
-        digestSeasonSlug={seasonSlug}
         onChanged={() => {
           refreshClaim();
           reloadAll();

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { formatShortDateTime } from "../utils/formatMatch";
-import { DEFAULT_SEASON_SLUG, seasonLabel } from "../seasons";
 
 function slugifyName(name) {
   return String(name || "")
@@ -12,12 +11,7 @@ function slugifyName(name) {
     .replace(/^-+|-+$/g, "");
 }
 
-export default function AdminPanel({
-  open,
-  onClose,
-  onChanged,
-  digestSeasonSlug = DEFAULT_SEASON_SLUG,
-}) {
+export default function AdminPanel({ open, onClose, onChanged }) {
   const [tab, setTab] = useState("claims");
   const [claims, setClaims] = useState([]);
   const [users, setUsers] = useState([]);
@@ -32,10 +26,8 @@ export default function AdminPanel({
   const [newId, setNewId] = useState("");
   const [newFixed, setNewFixed] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
-  const [digestSuccess, setDigestSuccess] = useState(null);
 
   const load = useCallback(async () => {
-    setDigestSuccess(null);
     setLoading(true);
     setError(null);
     const [claimsRes, usersRes, playersRes] = await Promise.all([
@@ -201,27 +193,6 @@ export default function AdminPanel({
       })
     );
     cancelRename();
-  }
-
-  async function sendWeeklyDigestNow() {
-    setBusyKey("digest");
-    setError(null);
-    setDigestSuccess(null);
-    const { data, error: fnError } = await supabase.functions.invoke("send-weekly-digest", {
-      body: { season_slug: digestSeasonSlug },
-    });
-    setBusyKey(null);
-    const serverMsg =
-      data && typeof data === "object" && typeof data.error === "string" ? data.error : null;
-    if (fnError) {
-      setError(serverMsg || fnError.message || "Could not reach digest function");
-      return;
-    }
-    if (data?.ok === true) {
-      setDigestSuccess(`Weekly digest sent for season ${seasonLabel(digestSeasonSlug)}.`);
-      return;
-    }
-    setError(serverMsg || "Digest failed");
   }
 
   async function createPlayer(e) {
@@ -431,17 +402,9 @@ export default function AdminPanel({
               <span className="admin-tab-badge muted">{unlinkedUsers.length}</span>
             )}
           </button>
-          <button
-            type="button"
-            className={tab === "digest" ? "active" : ""}
-            onClick={() => setTab("digest")}
-          >
-            Digest
-          </button>
         </div>
 
         {error && <div className="auth-error admin-error">{error}</div>}
-        {digestSuccess && <div className="admin-digest-success">{digestSuccess}</div>}
         {loading && <p className="admin-loading">Loading…</p>}
 
         {tab === "claims" && !loading && (
@@ -654,30 +617,6 @@ export default function AdminPanel({
                 </li>
               ))}
             </ul>
-          </div>
-        )}
-
-        {tab === "digest" && !loading && (
-          <div className="admin-section">
-            <h3 className="admin-section-title">Weekly squad pulse email</h3>
-            <p className="admin-digest-help">
-              Sends the same digest as the scheduled Friday job (fixtures, RSVP gaps for the next
-              match, MotM status). Recipients and Resend settings come from the{" "}
-              <code>send-weekly-digest</code> Edge Function secrets — same idea as{" "}
-              <code>DIGEST_TO_EMAIL</code> / <code>RESEND_API_KEY</code> in GitHub Actions.
-            </p>
-            <p className="admin-digest-help">
-              Uses the dashboard season you have selected:{" "}
-              <strong>{seasonLabel(digestSeasonSlug)}</strong> ({digestSeasonSlug}).
-            </p>
-            <button
-              type="button"
-              className="admin-btn primary"
-              disabled={busyKey === "digest"}
-              onClick={() => sendWeeklyDigestNow()}
-            >
-              {busyKey === "digest" ? "Sending…" : "Send digest now"}
-            </button>
           </div>
         )}
       </div>

@@ -73,11 +73,9 @@ export default function AttendanceTab({
             attendanceOpen &&
             (isAdHoc ? canManageGame : canEditAttendanceFor(player.id));
 
-          const statusClass = current ? `player-card--status-${current}` : "";
-
           return (
             <div
-              className={`player-card ${player.type !== "fixed" ? "guest-player-card" : ""} ${statusClass}`.trim()}
+              className={`player-card ${player.type !== "fixed" ? "guest-player-card" : ""}`}
               key={player.id}
             >
               <div className="player-card-header">
@@ -104,7 +102,10 @@ export default function AttendanceTab({
               {ATTENDANCE_OPTIONS.map((option) => (
                 <button
                   key={option.value}
-                  className={current === option.value ? "active" : ""}
+                  type="button"
+                  className={`attendance-opt attendance-opt--${option.value}${
+                    current === option.value ? " active" : ""
+                  }`}
                   disabled={!rowEditable}
                   title={!rowEditable ? disabledTitle(player) : undefined}
                   onClick={() =>

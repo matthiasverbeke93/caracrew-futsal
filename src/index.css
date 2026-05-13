@@ -3132,6 +3132,44 @@ input[type="number"] {
   font-size: 13px;
 }
 
+.stats-player-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 18px;
+}
+
+.stats-player-table th,
+.stats-player-table td {
+  padding: 8px 10px;
+  vertical-align: middle;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.stats-player-table th {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.stats-player-table td:nth-child(2),
+.stats-player-table td:nth-child(3) {
+  width: 5rem;
+}
+
+.stats-motm-wins-cell {
+  text-align: right;
+  width: 4rem;
+}
+
+.stats-motm-wins {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 14px;
+  color: #0f172a;
+}
+
 @media (max-width: 1000px) {
   .app.dashboard {
     padding: 14px 14px 28px;

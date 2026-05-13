@@ -9,6 +9,7 @@ import {
 import { supabase } from "../lib/supabase";
 import { isSeasonVotingLocked } from "../seasons";
 import {
+  countPlayerMotmWins,
   getMotmLeaderIds,
   getMotmVotingEnd,
   getMotmVotingStart,
@@ -17,6 +18,7 @@ import {
 
 export default function StatsTab({
   allGamePlayers,
+  games = [],
   selectedGame,
   gameStats,
   selectedGameTotals,
@@ -113,6 +115,14 @@ export default function StatsTab({
     () => getMotmLeaderIds(selectedGame.id, motmVotes),
     [motmVotes, selectedGame.id]
   );
+
+  const motmSeasonWinsByPlayerId = useMemo(() => {
+    const m = {};
+    for (const p of allGamePlayers) {
+      m[p.id] = countPlayerMotmWins(p.id, games, motmVotes, now);
+    }
+    return m;
+  }, [allGamePlayers, games, motmVotes, now]);
 
   const showMotmBlock = isPlayed(selectedGame) && !!motmEnd;
 
@@ -263,12 +273,15 @@ export default function StatsTab({
         </div>
       )}
 
-      <table>
+      <table className="stats-player-table">
         <thead>
           <tr>
             <th>Player</th>
             <th>Goals</th>
             <th>Assists</th>
+            <th title="Man of the match wins this season (final after voting closes; ties count)">
+              MOTM
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -320,6 +333,11 @@ export default function StatsTab({
                         : saveStat(player.id, "assists", e.target.value)
                     }
                   />
+                </td>
+                <td className="stats-motm-wins-cell">
+                  <span className="stats-motm-wins" title="Season MOTM wins">
+                    {motmSeasonWinsByPlayerId[player.id] ?? 0}
+                  </span>
                 </td>
               </tr>
             );

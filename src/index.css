@@ -3132,10 +3132,19 @@ input[type="number"] {
   font-size: 13px;
 }
 
+.stats-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  margin-top: 18px;
+  -webkit-overflow-scrolling: touch;
+}
+
 .stats-player-table {
   width: 100%;
+  min-width: 26rem;
+  table-layout: fixed;
   border-collapse: collapse;
-  margin-top: 18px;
+  margin-top: 0;
 }
 
 .stats-player-table th,
@@ -3153,14 +3162,21 @@ input[type="number"] {
   color: #64748b;
 }
 
-.stats-player-table td:nth-child(2),
-.stats-player-table td:nth-child(3) {
-  width: 5rem;
+.stats-player-table th:nth-child(1),
+.stats-player-table td:nth-child(1) {
+  width: 38%;
 }
 
-.stats-motm-wins-cell {
+.stats-player-table .stats-motm-wins-cell {
+  width: 5.5rem;
   text-align: right;
-  width: 4rem;
+}
+
+.stats-player-table th:nth-child(3),
+.stats-player-table td:nth-child(3),
+.stats-player-table th:nth-child(4),
+.stats-player-table td:nth-child(4) {
+  width: 5.25rem;
 }
 
 .stats-motm-wins {

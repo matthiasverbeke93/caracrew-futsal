@@ -273,77 +273,82 @@ export default function StatsTab({
         </div>
       )}
 
-      <table className="stats-player-table">
-        <thead>
-          <tr>
-            <th>Player</th>
-            <th>Goals</th>
-            <th>Assists</th>
-            <th title="Man of the match wins this season (final after voting closes; ties count)">
-              MOTM
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {allGamePlayers.map((player) => {
-            const isAdHoc = player.type === "ad_hoc_guest";
-            const row = isAdHoc
-              ? player
-              : gameStats.find((s) => s.player_id === player.id);
-            const rowEditable =
-              statsWindowOpen && (isAdHoc ? canManageGame : canEditStatsFor(player.id));
-            const disabledTitle = !statsWindowOpen
-              ? undefined
-              : isAdHoc
-                ? "Admin only"
-                : `Only ${player.name} or an admin can edit this`;
+      <div className="stats-table-scroll">
+        <table className="stats-player-table">
+          <thead>
+            <tr>
+              <th scope="col">Player</th>
+              <th
+                scope="col"
+                title="Man of the match wins this season (after voting closes; ties count)"
+              >
+                MOTM wins
+              </th>
+              <th scope="col">Goals</th>
+              <th scope="col">Assists</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allGamePlayers.map((player) => {
+              const isAdHoc = player.type === "ad_hoc_guest";
+              const row = isAdHoc
+                ? player
+                : gameStats.find((s) => s.player_id === player.id);
+              const rowEditable =
+                statsWindowOpen && (isAdHoc ? canManageGame : canEditStatsFor(player.id));
+              const disabledTitle = !statsWindowOpen
+                ? undefined
+                : isAdHoc
+                  ? "Admin only"
+                  : `Only ${player.name} or an admin can edit this`;
 
-            return (
-              <tr key={player.id}>
-                <td>
-                  <button type="button" className="player-link" onClick={() => onOpenPlayer(player.id)}>
-                    {player.name}
-                  </button>
-                  {player.type !== "fixed" && <span className="guest-badge">Guest</span>}
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    min="0"
-                    value={row?.goals || 0}
-                    disabled={!rowEditable}
-                    title={!rowEditable ? disabledTitle : undefined}
-                    onChange={(e) =>
-                      isAdHoc
-                        ? saveGuestStat(player.id, "goals", e.target.value)
-                        : saveStat(player.id, "goals", e.target.value)
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    min="0"
-                    value={row?.assists || 0}
-                    disabled={!rowEditable}
-                    title={!rowEditable ? disabledTitle : undefined}
-                    onChange={(e) =>
-                      isAdHoc
-                        ? saveGuestStat(player.id, "assists", e.target.value)
-                        : saveStat(player.id, "assists", e.target.value)
-                    }
-                  />
-                </td>
-                <td className="stats-motm-wins-cell">
-                  <span className="stats-motm-wins" title="Season MOTM wins">
-                    {motmSeasonWinsByPlayerId[player.id] ?? 0}
-                  </span>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+              return (
+                <tr key={player.id}>
+                  <td>
+                    <button type="button" className="player-link" onClick={() => onOpenPlayer(player.id)}>
+                      {player.name}
+                    </button>
+                    {player.type !== "fixed" && <span className="guest-badge">Guest</span>}
+                  </td>
+                  <td className="stats-motm-wins-cell">
+                    <span className="stats-motm-wins" title="Season MOTM wins">
+                      {motmSeasonWinsByPlayerId[player.id] ?? 0}
+                    </span>
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      value={row?.goals || 0}
+                      disabled={!rowEditable}
+                      title={!rowEditable ? disabledTitle : undefined}
+                      onChange={(e) =>
+                        isAdHoc
+                          ? saveGuestStat(player.id, "goals", e.target.value)
+                          : saveStat(player.id, "goals", e.target.value)
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      value={row?.assists || 0}
+                      disabled={!rowEditable}
+                      title={!rowEditable ? disabledTitle : undefined}
+                      onChange={(e) =>
+                        isAdHoc
+                          ? saveGuestStat(player.id, "assists", e.target.value)
+                          : saveStat(player.id, "assists", e.target.value)
+                      }
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

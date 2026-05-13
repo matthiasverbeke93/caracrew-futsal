@@ -2042,7 +2042,7 @@ button {
   flex-wrap: wrap;
 }
 
-.mini-counts span:not(.my-rsvp-chip) {
+.mini-counts span:not(.my-rsvp-chip):not(.result-chip-mini) {
   background: rgba(255, 255, 255, 0.75);
   border-radius: 999px;
   padding: 4px 8px;
@@ -2087,6 +2087,12 @@ button {
   background: #f1f5f9;
   color: #475569;
   font-weight: 600;
+}
+
+.my-rsvp-vote-missing {
+  background: #ffedd5;
+  color: #9a3412;
+  border: 1px solid rgba(234, 88, 12, 0.35);
 }
 
 .badge-warning {
@@ -2770,10 +2776,10 @@ input[type="number"] {
 .result-chip-mini {
   display: inline-block;
   background: #0f172a;
-  color: #e2e8f0;
-  border-radius: 8px;
-  padding: 2px 8px;
-  font-size: 11px;
+  color: #f8fafc;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
   font-weight: 800;
 }
 

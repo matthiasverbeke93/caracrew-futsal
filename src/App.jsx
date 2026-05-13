@@ -367,6 +367,8 @@ export default function App() {
           currentPlayerId={currentPlayer?.id ?? null}
           nextAttendanceGames={sidebarNextAttendanceGames}
           activeMainTab={tab}
+          motmVotes={motmVotes}
+          voterUserId={user?.id ?? null}
         />
         )}
 

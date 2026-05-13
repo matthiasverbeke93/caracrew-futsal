@@ -1,6 +1,7 @@
 import { FILTER_CONFLICTS, GAME_EXTRA_FILTERS, GAME_FILTERS } from "../constants";
 import { getDifficulty } from "../utils/difficulty";
 import { playerStatusLabel, readinessClass } from "../utils/game";
+import { isMotmVotingOpen } from "../utils/motm";
 import { formatMatchDayTime } from "../utils/formatMatch";
 import { cleanOpponentName } from "../utils/opponent";
 import { useLayoutEffect, useMemo, useState } from "react";
@@ -13,10 +14,15 @@ const RSVP_CHIP = {
   if_needed: { label: "You are marked If needed", short: "If needed", className: "my-rsvp-maybe" },
 };
 
-function MyRsvpChip({ currentPlayerId, played, myRow }) {
-  if (!currentPlayerId) return null;
+function userHasMotmVoteForGame(gameId, motmVotes, voterUserId) {
+  if (!voterUserId || !motmVotes?.length) return false;
+  return motmVotes.some((v) => v.game_id === gameId && v.voter_key === voterUserId);
+}
 
-  if (myRow) {
+function MyRsvpChip({ game, currentPlayerId, played, myRow, motmVotes, voterUserId }) {
+  if (!currentPlayerId && !voterUserId) return null;
+
+  if (currentPlayerId && myRow) {
     const cfg = RSVP_CHIP[myRow.status];
     if (cfg) {
       return (
@@ -31,6 +37,25 @@ function MyRsvpChip({ currentPlayerId, played, myRow }) {
       </span>
     );
   }
+
+  const voteMissing =
+    voterUserId &&
+    played &&
+    isMotmVotingOpen(game) &&
+    !userHasMotmVoteForGame(game.id, motmVotes, voterUserId);
+
+  if (voteMissing) {
+    return (
+      <span
+        className="my-rsvp-chip my-rsvp-vote-missing"
+        title="Man of the Match vote not cast yet (voting window is open)"
+      >
+        Vote missing
+      </span>
+    );
+  }
+
+  if (!currentPlayerId) return null;
 
   if (played) {
     return (
@@ -91,6 +116,8 @@ export default function GameSidebar({
   currentPlayerId,
   nextAttendanceGames,
   activeMainTab = "attendance",
+  motmVotes = [],
+  voterUserId = null,
 }) {
   function toggleExtraFilter(filterId) {
     const isActive = gameFilters.includes(filterId);
@@ -290,13 +317,16 @@ export default function GameSidebar({
                               </span>
                             )}
                             <strong>{cleanOpponentName(game.opponent)}</strong>
-                            {currentPlayerId && (
+                            {currentPlayerId || voterUserId ? (
                               <MyRsvpChip
+                                game={game}
                                 currentPlayerId={currentPlayerId}
                                 played={playedCal}
                                 myRow={myRowCal}
+                                motmVotes={motmVotes}
+                                voterUserId={voterUserId}
                               />
-                            )}
+                            ) : null}
                           </span>
                         </button>
                       );
@@ -367,9 +397,16 @@ export default function GameSidebar({
                   <div>{game.location}</div>
 
                   <div className="mini-counts">
-                    {currentPlayerId && (
-                      <MyRsvpChip currentPlayerId={currentPlayerId} played={played} myRow={myRow} />
-                    )}
+                    {currentPlayerId || voterUserId ? (
+                      <MyRsvpChip
+                        game={game}
+                        currentPlayerId={currentPlayerId}
+                        played={played}
+                        myRow={myRow}
+                        motmVotes={motmVotes}
+                        voterUserId={voterUserId}
+                      />
+                    ) : null}
                     {showSidebarMatchStats && !played && <span>{playerStatusLabel(playing)}</span>}
                     {showSidebarMatchStats && hasScore && (
                       <span className="result-chip-mini" title="Caracrew – opponent">

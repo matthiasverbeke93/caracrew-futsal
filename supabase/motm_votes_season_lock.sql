@@ -1,5 +1,5 @@
 -- Blocks MOTM inserts/updates for dummy preview season 2627 (keep in sync with
--- SEASON_SLUGS_WITH_VOTING_LOCKED in src/seasons.js).
+-- SEASON_SLUGS_PREVIEW_LOCKED in src/seasons.js).
 -- Run after motm_votes.sql.
 
 drop policy if exists "motm_votes_public_insert" on motm_votes;

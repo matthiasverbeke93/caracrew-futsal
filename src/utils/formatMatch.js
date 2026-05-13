@@ -1,5 +1,5 @@
-import { DEFAULT_SEASON_SLUG } from "../seasons.js";
 import { TEAM_NAME } from "../constants.js";
+import { DEFAULT_SEASON_SLUG } from "../seasons.js";
 import { cleanOpponentName } from "./opponent.js";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -77,10 +77,11 @@ export function formatShortDateTime(iso) {
   });
 }
 
-export function buildShareGameUrl(gameId) {
-  const url = new URL(window.location.origin + window.location.pathname);
-  url.searchParams.set("game", gameId);
-  return url.toString();
+function resolveSeasonForShare(seasonSlug, searchParams) {
+  if (seasonSlug != null && String(seasonSlug).trim() !== "") {
+    return String(seasonSlug).trim();
+  }
+  return searchParams?.get("season") || DEFAULT_SEASON_SLUG;
 }
 
 /**
@@ -88,15 +89,14 @@ export function buildShareGameUrl(gameId) {
  * Strips URL hash so shared links stay clean.
  */
 export function buildCurrentPageGameShareUrl(gameId, seasonSlug) {
-  if (typeof window === "undefined") return buildShareGameUrl(gameId);
+  if (typeof window === "undefined") {
+    const season = resolveSeasonForShare(seasonSlug, null);
+    return `?game=${encodeURIComponent(gameId)}&season=${encodeURIComponent(season)}`;
+  }
   const url = new URL(window.location.href);
   url.hash = "";
   url.searchParams.set("game", gameId);
-  const slug =
-    seasonSlug != null && String(seasonSlug).trim() !== ""
-      ? String(seasonSlug).trim()
-      : url.searchParams.get("season") || DEFAULT_SEASON_SLUG;
-  url.searchParams.set("season", slug);
+  url.searchParams.set("season", resolveSeasonForShare(seasonSlug, url.searchParams));
   return url.toString();
 }
 

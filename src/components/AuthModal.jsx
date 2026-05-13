@@ -60,9 +60,7 @@ export default function AuthModal({ open, onClose, signIn, signUp }) {
       return;
     }
     if (mode === "sign_up") {
-      setInfo(
-        "Account created. If email confirmation is enabled in Supabase, check your inbox before signing in."
-      );
+      setInfo("Account created. You can sign in right away with the same email and password.");
       return;
     }
     onClose();

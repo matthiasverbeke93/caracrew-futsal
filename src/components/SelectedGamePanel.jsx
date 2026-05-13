@@ -81,7 +81,7 @@ export default function SelectedGamePanel({
   );
 
   async function handleShare() {
-    const shareUrl = buildCurrentPageGameShareUrl(selectedGame.id);
+    const shareUrl = buildCurrentPageGameShareUrl(selectedGame.id, selectedGame.season_slug);
     const shareData = {
       title: `${TEAM_NAME} vs ${opponentName}`,
       text: `${selectedGame.game_date} · ${selectedGame.game_time || ""} · ${selectedGame.location || ""}`.trim(),

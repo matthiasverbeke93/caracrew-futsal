@@ -1,3 +1,4 @@
+import { DEFAULT_SEASON_SLUG } from "../seasons.js";
 import { TEAM_NAME } from "../constants.js";
 import { cleanOpponentName } from "./opponent.js";
 
@@ -83,12 +84,19 @@ export function buildShareGameUrl(gameId) {
 }
 
 /**
- * Full current URL with `game` set — keeps `season` and other query params (unlike {@link buildShareGameUrl}).
+ * Deep-link to a fixture. Always sets `season` so `?game=` resolves after load (same slug as DB row).
+ * Strips URL hash so shared links stay clean.
  */
-export function buildCurrentPageGameShareUrl(gameId) {
+export function buildCurrentPageGameShareUrl(gameId, seasonSlug) {
   if (typeof window === "undefined") return buildShareGameUrl(gameId);
   const url = new URL(window.location.href);
+  url.hash = "";
   url.searchParams.set("game", gameId);
+  const slug =
+    seasonSlug != null && String(seasonSlug).trim() !== ""
+      ? String(seasonSlug).trim()
+      : url.searchParams.get("season") || DEFAULT_SEASON_SLUG;
+  url.searchParams.set("season", slug);
   return url.toString();
 }
 
@@ -96,7 +104,7 @@ export function buildCurrentPageGameShareUrl(gameId) {
  * Prefilled WhatsApp (app or web) — works on macOS where the system Share sheet often omits WhatsApp.
  */
 export function buildGameWhatsAppShareUrl(game) {
-  const shareUrl = buildCurrentPageGameShareUrl(game.id);
+  const shareUrl = buildCurrentPageGameShareUrl(game.id, game.season_slug);
   const opp = cleanOpponentName(game.opponent);
   const meta = `${game.game_date} · ${game.game_time || ""} · ${game.location || ""}`.trim();
   const message = `${TEAM_NAME} vs ${opp}\n${meta}\n${shareUrl}`;
@@ -104,7 +112,7 @@ export function buildGameWhatsAppShareUrl(game) {
 }
 
 export function buildWhatsAppNudgeUrl(game, missingNames, rosterSnapshot = {}) {
-  const shareUrl = buildShareGameUrl(game.id);
+  const shareUrl = buildCurrentPageGameShareUrl(game.id, game.season_slug);
   const list = missingNames.join(", ");
   const opp = cleanOpponentName(game.opponent);
   const when = formatMatchDayTime(game);

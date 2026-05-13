@@ -1,5 +1,9 @@
 import { ATTENDANCE_OPTIONS } from "../constants";
-import { isAttendanceEditable } from "../utils/game";
+import {
+  isAttendanceEditable,
+  isAttendanceEditableByCalendar,
+} from "../utils/game";
+import { isSeasonAttendanceLocked } from "../seasons";
 
 export default function AttendanceTab({
   allGamePlayers,
@@ -20,11 +24,14 @@ export default function AttendanceTab({
   isSignedIn,
   onRequestSignIn,
 }) {
+  const lockedBecausePreview = isSeasonAttendanceLocked(selectedGame?.season_slug);
+  const lockedBecausePlayed =
+    !lockedBecausePreview && !isAttendanceEditableByCalendar(selectedGame);
   const attendanceOpen = isAttendanceEditable(selectedGame);
-  const lockedBecausePlayed = !attendanceOpen;
 
   function disabledTitle(player) {
     if (!isSignedIn) return "Sign in to mark attendance";
+    if (lockedBecausePreview) return "RSVP is read-only for this preview season";
     if (lockedBecausePlayed) return "Attendance is locked — match already played";
     return `Only ${player.name} or an admin can edit this`;
   }
@@ -33,13 +40,19 @@ export default function AttendanceTab({
     <div className="match-tab-content">
       <h2>Attendance</h2>
 
+      {lockedBecausePreview && (
+        <div className="warning-box">
+          RSVP is read-only for this preview season (26–27 dummy data), including for admins.
+        </div>
+      )}
+
       {lockedBecausePlayed && (
         <div className="warning-box">
           Attendance is locked — this match was played on {selectedGame.game_date}.
         </div>
       )}
 
-      {!isSignedIn && !lockedBecausePlayed && (
+      {!isSignedIn && !lockedBecausePlayed && !lockedBecausePreview && (
         <div className="info-banner">
           <button type="button" className="player-link" onClick={onRequestSignIn}>
             Sign in
@@ -57,7 +70,7 @@ export default function AttendanceTab({
 
           const isAdHoc = player.type === "ad_hoc_guest";
           const rowEditable =
-            !lockedBecausePlayed &&
+            attendanceOpen &&
             (isAdHoc ? canManageGame : canEditAttendanceFor(player.id));
 
           return (
@@ -75,7 +88,7 @@ export default function AttendanceTab({
                   <button
                     className="remove-player-button"
                     onClick={() => removeGuestPlayer(player.id)}
-                    disabled={!canManageGame || lockedBecausePlayed}
+                    disabled={!canManageGame || !attendanceOpen}
                     title={!canManageGame ? "Admin only" : ""}
                   >
                     Remove
@@ -98,6 +111,15 @@ export default function AttendanceTab({
                   {option.label}
                 </button>
               ))}
+              {!isAdHoc && rowEditable && current && (
+                <button
+                  type="button"
+                  className="attendance-clear-rsvp"
+                  onClick={() => saveAttendance(player.id, null)}
+                >
+                  Clear RSVP
+                </button>
+              )}
             </div>
           );
         })}
@@ -119,7 +141,7 @@ export default function AttendanceTab({
               if (e.key === "Enter") addGuestPlayer();
             }}
             placeholder="First name"
-            disabled={!canManageGame || lockedBecausePlayed}
+            disabled={!canManageGame || !attendanceOpen}
           />
           <input
             value={newGuestLastName}
@@ -128,11 +150,11 @@ export default function AttendanceTab({
               if (e.key === "Enter") addGuestPlayer();
             }}
             placeholder="Last name"
-            disabled={!canManageGame || lockedBecausePlayed}
+            disabled={!canManageGame || !attendanceOpen}
           />
           <button
             onClick={addGuestPlayer}
-            disabled={!canManageGame || lockedBecausePlayed}
+            disabled={!canManageGame || !attendanceOpen}
             title={!canManageGame ? "Admin only" : ""}
           >
             +

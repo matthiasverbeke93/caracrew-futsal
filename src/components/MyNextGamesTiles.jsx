@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { ATTENDANCE_OPTIONS } from "../constants";
-import { nextUpcomingGamesByCalendar } from "../utils/game";
+import { isAttendanceEditable, nextUpcomingGamesByCalendar } from "../utils/game";
 import { cleanOpponentName } from "../utils/opponent";
 import { formatFixtureTileLine } from "../utils/formatMatch";
 
@@ -47,6 +47,7 @@ export default function MyNextGamesTiles({
           game={game}
           eyebrow={TILE_EYEBROWS[index] ?? `Match ${index + 1}`}
           myStatus={statusByGameId.get(game.id) ?? null}
+          editable={isAttendanceEditable(game)}
           onJumpToGame={onJumpToGame}
           onMarkAttendance={onMarkAttendance}
         />
@@ -55,7 +56,7 @@ export default function MyNextGamesTiles({
   );
 }
 
-function NextGameTile({ game, eyebrow, myStatus, onJumpToGame, onMarkAttendance }) {
+function NextGameTile({ game, eyebrow, myStatus, editable, onJumpToGame, onMarkAttendance }) {
   const rawOpponent = game.opponent ? String(game.opponent).trim() : "";
   const cleaned = cleanOpponentName(game.opponent);
   const opponent = (cleaned && cleaned.trim()) || rawOpponent || "Opponent TBD";
@@ -93,6 +94,8 @@ function NextGameTile({ game, eyebrow, myStatus, onJumpToGame, onMarkAttendance 
               myStatus === opt.value ? "active" : ""
             }`}
             onClick={() => onMarkAttendance(game.id, opt.value)}
+            disabled={!editable}
+            title={!editable ? "RSVP not editable for this fixture" : undefined}
             aria-pressed={myStatus === opt.value}
             aria-label={opt.label}
           >
@@ -100,6 +103,16 @@ function NextGameTile({ game, eyebrow, myStatus, onJumpToGame, onMarkAttendance 
           </button>
         ))}
       </div>
+
+      {editable && myStatus ? (
+        <button
+          type="button"
+          className="my-next-game-clear"
+          onClick={() => onMarkAttendance(game.id, null)}
+        >
+          Clear RSVP
+        </button>
+      ) : null}
 
       {myStatus ? (
         <p className="my-next-game-status">

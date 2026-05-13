@@ -361,6 +361,25 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     const game = gameIdArg ? games.find((g) => g.id === gameIdArg) : selectedGame;
     if (!isAttendanceEditable(game)) return;
     if (!canEditAttendanceFor(playerId)) return;
+
+    if (status === null || status === undefined) {
+      const snapshot = attendance;
+      setAttendance((prev) =>
+        prev.filter((a) => !(a.game_id === gameId && a.player_id === playerId))
+      );
+      const { error } = await supabase
+        .from("attendance")
+        .delete()
+        .eq("game_id", gameId)
+        .eq("player_id", playerId);
+      if (error) {
+        console.error(error);
+        setAttendance(snapshot);
+        loadAll();
+      }
+      return;
+    }
+
     const updated_at = new Date().toISOString();
     const snapshot = attendance;
     setAttendance((prev) => {

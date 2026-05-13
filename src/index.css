@@ -1076,6 +1076,29 @@ button {
   color: #fbbf24;
 }
 
+.panel.my-next-game-card .my-next-game-clear {
+  margin-top: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.panel.my-next-game-card .my-next-game-clear:hover {
+  color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.panel.my-next-game-card .my-next-game-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* Row of up to three compact next-fixture tiles */
 .my-next-games-row {
   display: grid;
@@ -2412,6 +2435,22 @@ button {
 input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.player-card button.attendance-clear-rsvp {
+  margin-top: 8px;
+  width: 100%;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px dashed #94a3b8;
+  color: #64748b;
+}
+
+.player-card button.attendance-clear-rsvp:hover:not(:disabled) {
+  color: #0f172a;
+  border-color: #64748b;
 }
 
 .guest-badge {

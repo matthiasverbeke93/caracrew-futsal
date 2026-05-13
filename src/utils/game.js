@@ -1,3 +1,5 @@
+import { isSeasonAttendanceLocked } from "../seasons.js";
+
 export const STATS_FREEZE_DAYS = 10;
 
 export function isPlayed(game) {
@@ -49,11 +51,18 @@ export function isStatsEditable(game, nowMs = Date.now()) {
   return !isStatsFrozen(game, nowMs);
 }
 
-/** Attendance locks the day after the match: editable up to and including the game day. */
-export function isAttendanceEditable(game) {
+/** Upcoming or today by calendar — ignores preview-season locks (see {@link isAttendanceEditable}). */
+export function isAttendanceEditableByCalendar(game) {
   if (!game?.game_date) return false;
   const today = new Date().toISOString().slice(0, 10);
   return game.game_date >= today;
+}
+
+/** Attendance locks the day after the match: editable up to and including the game day. Preview seasons are read-only. */
+export function isAttendanceEditable(game) {
+  if (!game?.game_date) return false;
+  if (isSeasonAttendanceLocked(game.season_slug)) return false;
+  return isAttendanceEditableByCalendar(game);
 }
 
 /** Days remaining before stats freeze; null if not played yet or already frozen. */

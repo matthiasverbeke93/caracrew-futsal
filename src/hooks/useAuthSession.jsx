@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { getAuthEmailRedirectTo } from "../utils/authRedirect";
 
 /** Source of truth for "who am I right now":
  *  - `user`         : the Supabase auth.User, or null when signed out.
@@ -93,8 +94,7 @@ export function useAuthSession() {
   }, []);
 
   const signUp = useCallback(async (email, password) => {
-    const emailRedirectTo =
-      typeof window !== "undefined" ? window.location.origin : undefined;
+    const emailRedirectTo = getAuthEmailRedirectTo();
     const { error: signUpErr } = await supabase.auth.signUp({
       email,
       password,

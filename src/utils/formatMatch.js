@@ -1,3 +1,4 @@
+import { TEAM_NAME } from "../constants.js";
 import { cleanOpponentName } from "./opponent.js";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -79,6 +80,27 @@ export function buildShareGameUrl(gameId) {
   const url = new URL(window.location.origin + window.location.pathname);
   url.searchParams.set("game", gameId);
   return url.toString();
+}
+
+/**
+ * Full current URL with `game` set — keeps `season` and other query params (unlike {@link buildShareGameUrl}).
+ */
+export function buildCurrentPageGameShareUrl(gameId) {
+  if (typeof window === "undefined") return buildShareGameUrl(gameId);
+  const url = new URL(window.location.href);
+  url.searchParams.set("game", gameId);
+  return url.toString();
+}
+
+/**
+ * Prefilled WhatsApp (app or web) — works on macOS where the system Share sheet often omits WhatsApp.
+ */
+export function buildGameWhatsAppShareUrl(game) {
+  const shareUrl = buildCurrentPageGameShareUrl(game.id);
+  const opp = cleanOpponentName(game.opponent);
+  const meta = `${game.game_date} · ${game.game_time || ""} · ${game.location || ""}`.trim();
+  const message = `${TEAM_NAME} vs ${opp}\n${meta}\n${shareUrl}`;
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
 }
 
 export function buildWhatsAppNudgeUrl(game, missingNames) {

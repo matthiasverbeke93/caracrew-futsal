@@ -2,7 +2,7 @@ import { useState } from "react";
 import { MIN_PLAYERS_WARNING, TEAM_NAME } from "../constants";
 import { getDifficulty } from "../utils/difficulty";
 import { isPlayed } from "../utils/game";
-import { buildWhatsAppNudgeUrl } from "../utils/formatMatch";
+import { buildCurrentPageGameShareUrl, buildGameWhatsAppShareUrl, buildWhatsAppNudgeUrl } from "../utils/formatMatch";
 import { getHeadToHeadSummary } from "../utils/headToHead";
 import { cleanOpponentName } from "../utils/opponent";
 
@@ -81,9 +81,7 @@ export default function SelectedGamePanel({
   );
 
   async function handleShare() {
-    const url = new URL(window.location.href);
-    url.searchParams.set("game", selectedGame.id);
-    const shareUrl = url.toString();
+    const shareUrl = buildCurrentPageGameShareUrl(selectedGame.id);
     const shareData = {
       title: `${TEAM_NAME} vs ${opponentName}`,
       text: `${selectedGame.game_date} · ${selectedGame.game_time || ""} · ${selectedGame.location || ""}`.trim(),
@@ -108,6 +106,11 @@ export default function SelectedGamePanel({
       setShareFeedback("Copy failed");
       setTimeout(() => setShareFeedback(null), 2000);
     }
+  }
+
+  function handleWhatsAppShare() {
+    const wa = buildGameWhatsAppShareUrl(selectedGame);
+    window.open(wa, "_blank", "noopener,noreferrer");
   }
 
   function handleNudge() {
@@ -139,6 +142,15 @@ export default function SelectedGamePanel({
             aria-label="Share link to this game"
           >
             {shareFeedback || "Share"}
+          </button>
+          <button
+            type="button"
+            className="whatsapp-button"
+            onClick={handleWhatsAppShare}
+            title="Opens WhatsApp Web or the app with this match link"
+            aria-label="Share match link in WhatsApp"
+          >
+            WhatsApp
           </button>
           {!played && missingFixed.length > 0 && canManageGame && (
             <button

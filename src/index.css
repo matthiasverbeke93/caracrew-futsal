@@ -711,6 +711,30 @@ button {
   margin-bottom: 12px;
 }
 
+.admin-digest-success {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  color: #065f46;
+  font-size: 14px;
+}
+
+.admin-digest-help {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.admin-digest-help code {
+  font-size: 12px;
+  background: #f1f5f9;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
 .admin-claim-list,
 .admin-player-list {
   list-style: none;

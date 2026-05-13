@@ -106,6 +106,19 @@ export function buildGameWhatsAppShareUrl(game) {
 export function buildWhatsAppNudgeUrl(game, missingNames) {
   const shareUrl = buildShareGameUrl(game.id);
   const list = missingNames.join(", ");
-  const line = `Yo, still no answer for ${formatMatchDayTime(game)} vs ${cleanOpponentName(game.opponent)}: ${list} — confirm here: ${shareUrl}`;
+  const opp = cleanOpponentName(game.opponent);
+  const when = formatMatchDayTime(game);
+  const line = [
+    "🤖 ATTENDANCE BOT 3000 — BEEP BOOP",
+    "",
+    "[SYSTEM NOTICE] RSVP telemetry incomplete.",
+    `MATCH_SLOT: ${when} · opponent=${opp}`,
+    `PENDING_HUMAN_IDS (${missingNames.length}): ${list}`,
+    "",
+    ">>> REQUIRED_ACTION: confirm match attendance",
+    `>>> HANDSHAKE_LINK: ${shareUrl}`,
+    "",
+    "// END TRANSMISSION — BOT 3000 OUT",
+  ].join("\n");
   return `https://wa.me/?text=${encodeURIComponent(line)}`;
 }

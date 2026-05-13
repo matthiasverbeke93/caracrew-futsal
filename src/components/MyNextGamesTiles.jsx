@@ -16,6 +16,7 @@ export default function MyNextGamesTiles({
   games,
   attendance,
   currentPlayer,
+  selectedGameId,
   onJumpToGame,
   onMarkAttendance,
 }) {
@@ -48,6 +49,7 @@ export default function MyNextGamesTiles({
           eyebrow={TILE_EYEBROWS[index] ?? `Match ${index + 1}`}
           myStatus={statusByGameId.get(game.id) ?? null}
           editable={isAttendanceEditable(game)}
+          showOpenButton={selectedGameId !== game.id}
           onJumpToGame={onJumpToGame}
           onMarkAttendance={onMarkAttendance}
         />
@@ -56,7 +58,15 @@ export default function MyNextGamesTiles({
   );
 }
 
-function NextGameTile({ game, eyebrow, myStatus, editable, onJumpToGame, onMarkAttendance }) {
+function NextGameTile({
+  game,
+  eyebrow,
+  myStatus,
+  editable,
+  showOpenButton,
+  onJumpToGame,
+  onMarkAttendance,
+}) {
   const rawOpponent = game.opponent ? String(game.opponent).trim() : "";
   const cleaned = cleanOpponentName(game.opponent);
   const opponent = (cleaned && cleaned.trim()) || rawOpponent || "Opponent TBD";
@@ -75,14 +85,16 @@ function NextGameTile({ game, eyebrow, myStatus, editable, onJumpToGame, onMarkA
           </h2>
           <p className="my-next-game-when">{whenLine}</p>
         </div>
-        <button
-          type="button"
-          className="my-next-game-jump"
-          onClick={() => onJumpToGame?.(game.id)}
-          title="Open this match"
-        >
-          Open →
-        </button>
+        {showOpenButton ? (
+          <button
+            type="button"
+            className="my-next-game-jump"
+            onClick={() => onJumpToGame?.(game.id)}
+            title="Open this match"
+          >
+            Open →
+          </button>
+        ) : null}
       </div>
 
       <div className="my-next-game-actions" role="group" aria-label="Quick attendance">

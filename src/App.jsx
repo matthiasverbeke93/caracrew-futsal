@@ -395,6 +395,7 @@ export default function App() {
               games={games}
               attendance={attendance}
               currentPlayer={currentPlayer}
+              selectedGameId={selectedGameId}
               onJumpToGame={(id) => setSelectedGameId(id)}
               onMarkAttendance={(gameId, status) =>
                 saveAttendance(currentPlayer.id, status, gameId)

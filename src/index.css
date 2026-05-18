@@ -2545,6 +2545,12 @@ button {
   font-size: 13px;
 }
 
+.tally-hint {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
 .tabs {
   display: flex;
   gap: 6px;

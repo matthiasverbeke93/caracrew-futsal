@@ -76,10 +76,11 @@ export default function SeasonOverviewPage({
   motmVotes = [],
   seasonSlug,
   seasonLabel: seasonLabelText,
+  activeOverviewTab = "current",
+  onOverviewTabChange,
   onBack,
   onOpenPlayer,
 }) {
-  const [overviewTab, setOverviewTab] = useState("current");
   const [barMetric, setBarMetric] = useState("involvement");
   const [tableSortKey, setTableSortKey] = useState("gamesPlayed");
   const [complianceSortKey, setComplianceSortKey] = useState("complianceStars");
@@ -188,6 +189,8 @@ export default function SeasonOverviewPage({
   const denominator = staticData
     ? tableRows[0]?.totalSeasonGames ?? 0
     : games?.length ?? 0;
+  const showCurrentSeasonSummary = seasonSlug !== "2526";
+  const showMonthlyScoringPace = seasonSlug !== "2526";
 
   return (
     <section className="panel insights-panel team-stats-panel season-overview-panel">
@@ -229,63 +232,67 @@ export default function SeasonOverviewPage({
             key={tab.id}
             type="button"
             role="tab"
-            aria-selected={overviewTab === tab.id}
-            className={overviewTab === tab.id ? "active" : ""}
-            onClick={() => setOverviewTab(tab.id)}
+            aria-selected={activeOverviewTab === tab.id}
+            className={activeOverviewTab === tab.id ? "active" : ""}
+            onClick={() => onOverviewTabChange?.(tab.id)}
           >
             {tab.label}
           </button>
         ))}
       </nav>
 
-      {overviewTab === "current" ? (
+      {activeOverviewTab === "current" ? (
         <>
-      <div className="insights-summary-strip">
-        <div className="insights-kpi">
-          <span className="insights-kpi-label">Team goals</span>
-          <strong className="insights-kpi-value">{summary.goals}</strong>
+      {showCurrentSeasonSummary && (
+        <div className="insights-summary-strip">
+          <div className="insights-kpi">
+            <span className="insights-kpi-label">Team goals</span>
+            <strong className="insights-kpi-value">{summary.goals}</strong>
+          </div>
+          <div className="insights-kpi">
+            <span className="insights-kpi-label">Team assists</span>
+            <strong className="insights-kpi-value">{summary.assists}</strong>
+          </div>
+          <div className="insights-kpi">
+            <span className="insights-kpi-label">G+A per played game</span>
+            <strong className="insights-kpi-value">{summary.gaPerPlayedGame.toFixed(2)}</strong>
+          </div>
         </div>
-        <div className="insights-kpi">
-          <span className="insights-kpi-label">Team assists</span>
-          <strong className="insights-kpi-value">{summary.assists}</strong>
-        </div>
-        <div className="insights-kpi">
-          <span className="insights-kpi-label">G+A per played game</span>
-          <strong className="insights-kpi-value">{summary.gaPerPlayedGame.toFixed(2)}</strong>
-        </div>
-      </div>
+      )}
 
-      <section className="insights-section" aria-labelledby="overview-monthly-heading">
-        <h3 id="overview-monthly-heading">Scoring pace by month</h3>
-        <p className="insights-section-intro">
-          Goals and assists counted in matches already played (calendar month of fixture).
-        </p>
-        {monthly.length === 0 ? (
-          <p className="insights-empty">No played matches in this season yet.</p>
-        ) : (
-          <ul className="insights-month-chart">
-            {monthly.map((mo) => {
-              const ga = mo.goals + mo.assists;
-              const w = Math.round((ga / maxMonthlyGa) * 100);
-              return (
-                <li key={mo.ym} className="insights-month-row">
-                  <span className="insights-month-label">{mo.label}</span>
-                  <div className="insights-month-bar-wrap" role="presentation">
-                    <div
-                      className="insights-month-bar"
-                      style={{ width: `${w}%` }}
-                      title={`${mo.goals}G ${mo.assists}A · ${mo.gamesPlayed} games`}
-                    />
-                  </div>
-                  <span className="insights-month-meta">
-                    {mo.goals}G {mo.assists}A · {mo.gamesPlayed} gp
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+      {showMonthlyScoringPace && (
+        <section className="insights-section" aria-labelledby="overview-monthly-heading">
+          <h3 id="overview-monthly-heading">Scoring pace by month</h3>
+          <p className="insights-section-intro">
+            Goals and assists counted in matches already played (calendar month of fixture).
+          </p>
+          {monthly.length === 0 ? (
+            <p className="insights-empty">No played matches in this season yet.</p>
+          ) : (
+            <ul className="insights-month-chart">
+              {monthly.map((mo) => {
+                const ga = mo.goals + mo.assists;
+                const w = Math.round((ga / maxMonthlyGa) * 100);
+                return (
+                  <li key={mo.ym} className="insights-month-row">
+                    <span className="insights-month-label">{mo.label}</span>
+                    <div className="insights-month-bar-wrap" role="presentation">
+                      <div
+                        className="insights-month-bar"
+                        style={{ width: `${w}%` }}
+                        title={`${mo.goals}G ${mo.assists}A · ${mo.gamesPlayed} games`}
+                      />
+                    </div>
+                    <span className="insights-month-meta">
+                      {mo.goals}G {mo.assists}A · {mo.gamesPlayed} gp
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      )}
 
       <section className="insights-section" aria-labelledby="overview-leaders-heading">
         <div className="insights-section-head">

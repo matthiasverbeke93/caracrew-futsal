@@ -17,7 +17,6 @@ export default function StatsTab({
   selectedGameTotals,
   saveGuestStat,
   saveStat,
-  saveGameTally,
   motmVotes,
   submitMotmVote,
   onOpenPlayer,
@@ -28,18 +27,7 @@ export default function StatsTab({
   const statsWindowOpen = isStatsEditable(selectedGame);
   const frozen = isStatsFrozen(selectedGame);
   const lockedForFutureGame = !statsWindowOpen && !frozen;
-  const tallyEditable = canManageGame && statsWindowOpen;
   const daysUntilLock = getStatsLockDaysLeft(selectedGame);
-  const [goalsInput, setGoalsInput] = useState(() =>
-    selectedGameTotals.goals === null || selectedGameTotals.goals === undefined
-      ? ""
-      : String(selectedGameTotals.goals)
-  );
-  const [assistsInput, setAssistsInput] = useState(() =>
-    selectedGameTotals.assists === null || selectedGameTotals.assists === undefined
-      ? ""
-      : String(selectedGameTotals.assists)
-  );
   const [motmMessage, setMotmMessage] = useState(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -137,59 +125,32 @@ export default function StatsTab({
         <div className="error-box">
           {goalsOverTarget && (
             <div>
-              Per-player goals ({currentGoals}) exceed the total goals target ({goalsTarget}).
+              Per-player goals ({currentGoals}) exceed the Caracrew final score ({goalsTarget}).
             </div>
           )}
           {assistsOverTarget && (
             <div>
-              Per-player assists ({currentAssists}) exceed the total assists target ({assistsTarget}).
+              Per-player assists ({currentAssists}) exceed the Caracrew final score ({assistsTarget}).
             </div>
           )}
         </div>
       )}
       <div className="tally-box">
         <div className="tally-row">
-          <label>Total goals</label>
-          <input
-            type="number"
-            min="0"
-            value={goalsInput}
-            placeholder="Set target"
-            disabled={!tallyEditable}
-            title={!canManageGame ? "Admin only" : undefined}
-            onChange={(e) => setGoalsInput(e.target.value)}
-            onBlur={() => saveGameTally("goals", goalsInput)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.currentTarget.blur();
-              }
-            }}
-          />
+          <label>Goals from final score</label>
           <span className={goalsBadgeClass}>
             {currentGoals} / {goalsTarget ?? "?"}
           </span>
         </div>
         <div className="tally-row">
-          <label>Total assists</label>
-          <input
-            type="number"
-            min="0"
-            value={assistsInput}
-            placeholder="Set target"
-            disabled={!tallyEditable}
-            title={!canManageGame ? "Admin only" : undefined}
-            onChange={(e) => setAssistsInput(e.target.value)}
-            onBlur={() => saveGameTally("assists", assistsInput)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.currentTarget.blur();
-              }
-            }}
-          />
+          <label>Assists from final score</label>
           <span className={assistsBadgeClass}>
             {currentAssists} / {assistsTarget ?? "?"}
           </span>
         </div>
+        {goalsTarget == null && (
+          <p className="tally-hint">Set the final score in the top card to unlock these targets.</p>
+        )}
       </div>
 
       {showMotmBlock && (

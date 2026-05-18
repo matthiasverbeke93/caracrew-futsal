@@ -33,7 +33,6 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
   const [newGuestFirstName, setNewGuestFirstName] = useState("");
   const [newGuestLastName, setNewGuestLastName] = useState("");
   const [gameFilters, setGameFilters] = useState([]);
-  const [tallyError, setTallyError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [motmVotes, setMotmVotes] = useState([]);
   const [opponentStrengths, setOpponentStrengths] = useState([]);
@@ -134,10 +133,17 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     const teamStats = url.searchParams.get("team_stats");
     const insights = url.searchParams.get("insights");
     url.searchParams.set("season", seasonSlug);
+    if (teamStats || insights === "1") {
+      url.searchParams.delete("game");
+      if (player) url.searchParams.set("player", player);
+      if (teamStats) url.searchParams.set("team_stats", teamStats);
+      if (insights === "1") url.searchParams.set("team_stats", "current");
+      url.searchParams.delete("insights");
+      window.history.replaceState({}, "", url);
+      return;
+    }
     url.searchParams.set("game", selectedGameId);
     if (player) url.searchParams.set("player", player);
-    if (teamStats) url.searchParams.set("team_stats", teamStats);
-    if (insights === "1") url.searchParams.set("insights", "1");
     window.history.replaceState({}, "", url);
   }, [selectedGameId, seasonSlug]);
 
@@ -205,8 +211,8 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
   );
   const selectedGameTotals = useMemo(
     () => ({
-      goals: selectedGame?.expected_goals ?? null,
-      assists: selectedGame?.expected_assists ?? null,
+      goals: selectedGame?.home_score ?? null,
+      assists: selectedGame?.home_score ?? null,
     }),
     [selectedGame]
   );
@@ -272,17 +278,14 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
         gameAttendanceRows.filter((row) => row.status === "playing").length +
         gameGuestRows.filter((row) => row.status === "playing").length;
       const played = isPlayed(game);
-      const hasTargetTotals =
-        game.expected_goals !== null &&
-        game.expected_goals !== undefined &&
-        game.expected_assists !== null &&
-        game.expected_assists !== undefined;
+      const scoreTarget = game.home_score;
+      const hasScoreTarget = scoreTarget !== null && scoreTarget !== undefined;
       const statsMissing =
         played &&
         (gameStatsRows.length < playingCount ||
-          !hasTargetTotals ||
-          actualGoals < game.expected_goals ||
-          actualAssists < game.expected_assists);
+          !hasScoreTarget ||
+          actualGoals < scoreTarget ||
+          actualAssists < scoreTarget);
 
       let playerReadiness = "players_right";
       if (playingCount <= 5) playerReadiness = "players_not_enough";
@@ -296,8 +299,8 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
         playingCount,
         actualGoals,
         actualAssists,
-        expectedGoals: game.expected_goals,
-        expectedAssists: game.expected_assists,
+        expectedGoals: scoreTarget,
+        expectedAssists: scoreTarget,
       };
     }
 
@@ -519,54 +522,6 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     await loadAll();
   }
 
-  async function saveGameTally(field, value) {
-    if (!selectedGameId) return;
-    if (!isAdmin) return;
-
-    const numericValue = value === "" ? null : Number(value);
-    const payload =
-      field === "goals"
-        ? { expected_goals: numericValue }
-        : { expected_assists: numericValue };
-
-    const snapshot = games;
-    setGames((prev) =>
-      prev.map((g) =>
-        g.id === selectedGameId
-          ? {
-              ...g,
-              ...(field === "goals" ? { expected_goals: numericValue } : { expected_assists: numericValue }),
-            }
-          : g
-      )
-    );
-
-    const { data, error } = await supabase
-      .from("games")
-      .update(payload)
-      .eq("id", selectedGameId)
-      .select();
-
-    if (error) {
-      console.error("saveGameTally failed:", error);
-      setGames(snapshot);
-      setTallyError(
-        error.message?.includes("expected_goals") || error.message?.includes("expected_assists")
-          ? "Tally columns are missing in the database. Run the games_expected_totals.sql migration."
-          : `Could not save tally: ${error.message}`
-      );
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      setGames(snapshot);
-      setTallyError("Tally update affected no rows. Check Supabase RLS policies for the games table.");
-      return;
-    }
-
-    setTallyError(null);
-  }
-
   async function saveFinalScore(homeScore, awayScore) {
     const gid = selectedGameId;
     if (!gid) return;
@@ -656,7 +611,6 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     setTab,
     gameFilters,
     setGameFilters,
-    tallyError,
     gameStatusById,
     newGuestFirstName,
     setNewGuestFirstName,
@@ -673,7 +627,6 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     saveGuestAttendance,
     saveStat,
     saveGuestStat,
-    saveGameTally,
     saveFinalScore,
     submitMotmVote,
     addGuestPlayer,

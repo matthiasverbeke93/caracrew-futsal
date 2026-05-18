@@ -25,6 +25,10 @@ import {
   SEASON_OPTIONS,
 } from "./seasons";
 
+function readTeamStatsTab(searchParams) {
+  return searchParams.get("team_stats") === "history" ? "history" : "current";
+}
+
 export default function App() {
   const {
     user,
@@ -51,19 +55,24 @@ export default function App() {
 
   const [seasonOverviewOpen, setSeasonOverviewOpen] = useState(() => {
     const sp = new URLSearchParams(window.location.search);
-    return sp.get("team_stats") === "1" || sp.get("insights") === "1";
+    return sp.has("team_stats") || sp.get("insights") === "1";
   });
+  const [seasonOverviewTab, setSeasonOverviewTab] = useState(() =>
+    readTeamStatsTab(new URLSearchParams(window.location.search))
+  );
 
   const [seasonSlug, setSeasonSlug] = useState(() =>
     readSeasonSlugFromSearch(new URLSearchParams(window.location.search))
   );
 
-  const openSeasonOverview = useCallback(() => {
+  const openSeasonOverview = useCallback((tab = "current") => {
+    const nextTab = tab === "history" ? "history" : "current";
     const url = new URL(window.location.href);
-    url.searchParams.set("team_stats", "1");
+    url.searchParams.set("team_stats", nextTab);
     url.searchParams.delete("game");
     url.searchParams.delete("insights");
     window.history.pushState({}, "", url);
+    setSeasonOverviewTab(nextTab);
     setSeasonOverviewOpen(true);
   }, []);
 
@@ -75,14 +84,26 @@ export default function App() {
     setSeasonOverviewOpen(false);
   }, []);
 
+  const selectSeasonOverviewTab = useCallback((tab) => {
+    const nextTab = tab === "history" ? "history" : "current";
+    const url = new URL(window.location.href);
+    url.searchParams.set("team_stats", nextTab);
+    url.searchParams.delete("game");
+    url.searchParams.delete("insights");
+    window.history.pushState({}, "", url);
+    setSeasonOverviewTab(nextTab);
+    setSeasonOverviewOpen(true);
+  }, []);
+
   const openPlayer = useCallback((id) => {
     if (!id) return;
     const url = new URL(window.location.href);
     const hadOverview =
-      url.searchParams.get("team_stats") === "1" || url.searchParams.get("insights") === "1";
+      url.searchParams.has("team_stats") || url.searchParams.get("insights") === "1";
+    const overviewTab = readTeamStatsTab(url.searchParams);
     url.searchParams.set("player", id);
     if (hadOverview) {
-      url.searchParams.set("team_stats", "1");
+      url.searchParams.set("team_stats", overviewTab);
       url.searchParams.delete("game");
       url.searchParams.delete("insights");
     }
@@ -93,10 +114,11 @@ export default function App() {
   const closePlayer = useCallback(() => {
     const url = new URL(window.location.href);
     const hadOverview =
-      url.searchParams.get("team_stats") === "1" || url.searchParams.get("insights") === "1";
+      url.searchParams.has("team_stats") || url.searchParams.get("insights") === "1";
+    const overviewTab = readTeamStatsTab(url.searchParams);
     url.searchParams.delete("player");
     if (hadOverview) {
-      url.searchParams.set("team_stats", "1");
+      url.searchParams.set("team_stats", overviewTab);
       url.searchParams.delete("game");
       url.searchParams.delete("insights");
     }
@@ -109,8 +131,9 @@ export default function App() {
       const sp = new URLSearchParams(window.location.search);
       setProfilePlayerId(sp.get("player"));
       setSeasonOverviewOpen(
-        sp.get("team_stats") === "1" || sp.get("insights") === "1"
+        sp.has("team_stats") || sp.get("insights") === "1"
       );
+      setSeasonOverviewTab(readTeamStatsTab(sp));
       setSeasonSlug(readSeasonSlugFromSearch(sp));
     };
     window.addEventListener("popstate", onPop);
@@ -129,9 +152,9 @@ export default function App() {
   useEffect(() => {
     const url = new URL(window.location.href);
     const hasLegacyInsights = url.searchParams.get("insights") === "1";
-    const hasTeamStats = url.searchParams.get("team_stats") === "1";
+    const hasTeamStats = url.searchParams.has("team_stats");
     if (hasLegacyInsights || hasTeamStats) {
-      url.searchParams.set("team_stats", "1");
+      url.searchParams.set("team_stats", readTeamStatsTab(url.searchParams));
       url.searchParams.delete("game");
       url.searchParams.delete("insights");
       window.history.replaceState({}, "", url);
@@ -166,7 +189,6 @@ export default function App() {
     gameFilters,
     setGameFilters,
     gameStatusById,
-    tallyError,
     newGuestFirstName,
     setNewGuestFirstName,
     newGuestLastName,
@@ -181,7 +203,6 @@ export default function App() {
     saveGuestAttendance,
     saveStat,
     saveGuestStat,
-    saveGameTally,
     saveFinalScore,
     submitMotmVote,
     addGuestPlayer,
@@ -351,8 +372,6 @@ export default function App() {
         </section>
       )}
 
-      {tallyError && <section className="auth-banner">{tallyError}</section>}
-
       <main
         className={`layout dashboard-layout${seasonOverviewOpen ? " layout--full" : ""}`}
       >
@@ -401,6 +420,8 @@ export default function App() {
               motmVotes={motmVotes}
               seasonSlug={seasonSlug}
               seasonLabel={seasonLabel(seasonSlug)}
+              activeOverviewTab={seasonOverviewTab}
+              onOverviewTabChange={selectSeasonOverviewTab}
               onBack={closeSeasonOverview}
               onOpenPlayer={openPlayer}
             />
@@ -468,7 +489,6 @@ export default function App() {
                     selectedGameTotals={selectedGameTotals}
                     saveGuestStat={saveGuestStat}
                     saveStat={saveStat}
-                    saveGameTally={saveGameTally}
                     motmVotes={motmVotes}
                     submitMotmVote={submitMotmVote}
                     onOpenPlayer={openPlayer}

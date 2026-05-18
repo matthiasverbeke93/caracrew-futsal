@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { TEAM_NAME } from "../constants";
 import { getStaticTeamStatsForSeason } from "../data/seasonTeamStatsOverrides";
+import HistoricalSeasonStats from "./HistoricalSeasonStats";
 import {
   RSVP_ON_TIME_DAYS_BEFORE,
   STATS_ON_TIME_DAYS_AFTER,
@@ -23,6 +24,11 @@ function fmtPer(n) {
 const BAR_KEYS = [
   { key: "involvement", label: "G+A" },
   { key: "pctPlayed", label: "% played" },
+];
+
+const OVERVIEW_TABS = [
+  { id: "current", label: "Current season" },
+  { id: "history", label: "History" },
 ];
 
 const COLUMNS = [
@@ -73,6 +79,7 @@ export default function SeasonOverviewPage({
   onBack,
   onOpenPlayer,
 }) {
+  const [overviewTab, setOverviewTab] = useState("current");
   const [barMetric, setBarMetric] = useState("involvement");
   const [tableSortKey, setTableSortKey] = useState("gamesPlayed");
   const [complianceSortKey, setComplianceSortKey] = useState("complianceStars");
@@ -90,6 +97,31 @@ export default function SeasonOverviewPage({
       : buildTeamSeasonPlayerRows(games, livePlayers, attendance, stats, motmVotes);
     return sortTeamSeasonRows(built, tableSortKey);
   }, [attendance, games, livePlayers, motmVotes, players, staticData, stats, tableSortKey]);
+
+  const leaderValues = useMemo(
+    () => ({
+      gamesPlayed: Math.max(0, ...tableRows.map((r) => Number(r.gamesPlayed) || 0)),
+      goals: Math.max(0, ...tableRows.map((r) => Number(r.goals) || 0)),
+      assists: Math.max(0, ...tableRows.map((r) => Number(r.assists) || 0)),
+    }),
+    [tableRows]
+  );
+
+  const renderLeaderValue = (value, key, label, icon) => {
+    const n = Number(value) || 0;
+    const isLeader = n > 0 && n === leaderValues[key];
+
+    return (
+      <span className="stat-leader-cell">
+        {value}
+        {isLeader && (
+          <span className="stat-leader-icon" title={label} aria-label={label}>
+            {icon}
+          </span>
+        )}
+      </span>
+    );
+  };
 
   const barRows = useMemo(() => {
     const sorted = sortTeamSeasonRows([...tableRows], barMetric);
@@ -191,6 +223,23 @@ export default function SeasonOverviewPage({
         </button>
       </div>
 
+      <nav className="season-overview-tabs" role="tablist" aria-label="Season overview sections">
+        {OVERVIEW_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={overviewTab === tab.id}
+            className={overviewTab === tab.id ? "active" : ""}
+            onClick={() => setOverviewTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+
+      {overviewTab === "current" ? (
+        <>
       <div className="insights-summary-strip">
         <div className="insights-kpi">
           <span className="insights-kpi-label">Team goals</span>
@@ -321,10 +370,10 @@ export default function SeasonOverviewPage({
                     {!r.fixed && <span className="guest-badge">Guest</span>}
                   </td>
                   <td>{r.fairplayRank ? `${r.fairplayRank}e` : "—"}</td>
-                  <td>{r.gamesPlayed}</td>
+                  <td>{renderLeaderValue(r.gamesPlayed, "gamesPlayed", "Most games played", "🎽")}</td>
                   <td>{r.pctPlayed}%</td>
-                  <td>{r.goals}</td>
-                  <td>{r.assists}</td>
+                  <td>{renderLeaderValue(r.goals, "goals", "Most goals", "⚽")}</td>
+                  <td>{renderLeaderValue(r.assists, "assists", "Most assists", "🎯")}</td>
                   <td>{r.motmWins ?? 0}</td>
                   <td>{fmtPer(r.goalsPerGame)}</td>
                   <td>{fmtPer(r.assistsPerGame)}</td>
@@ -448,6 +497,10 @@ export default function SeasonOverviewPage({
         <p className="team-stats-compliance-empty">
           No active players loaded for confirmation timing.
         </p>
+      )}
+        </>
+      ) : (
+        <HistoricalSeasonStats />
       )}
     </section>
   );

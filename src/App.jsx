@@ -61,6 +61,7 @@ export default function App() {
   const openSeasonOverview = useCallback(() => {
     const url = new URL(window.location.href);
     url.searchParams.set("team_stats", "1");
+    url.searchParams.delete("game");
     url.searchParams.delete("insights");
     window.history.pushState({}, "", url);
     setSeasonOverviewOpen(true);
@@ -82,6 +83,7 @@ export default function App() {
     url.searchParams.set("player", id);
     if (hadOverview) {
       url.searchParams.set("team_stats", "1");
+      url.searchParams.delete("game");
       url.searchParams.delete("insights");
     }
     window.history.pushState({}, "", url);
@@ -95,6 +97,7 @@ export default function App() {
     url.searchParams.delete("player");
     if (hadOverview) {
       url.searchParams.set("team_stats", "1");
+      url.searchParams.delete("game");
       url.searchParams.delete("insights");
     }
     window.history.pushState({}, "", url);
@@ -125,8 +128,11 @@ export default function App() {
   /** Legacy `?insights=1` opens the same page as team stats — normalize URL once. */
   useEffect(() => {
     const url = new URL(window.location.href);
-    if (url.searchParams.get("insights") === "1" && url.searchParams.get("team_stats") !== "1") {
+    const hasLegacyInsights = url.searchParams.get("insights") === "1";
+    const hasTeamStats = url.searchParams.get("team_stats") === "1";
+    if (hasLegacyInsights || hasTeamStats) {
       url.searchParams.set("team_stats", "1");
+      url.searchParams.delete("game");
       url.searchParams.delete("insights");
       window.history.replaceState({}, "", url);
     }

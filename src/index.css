@@ -1466,6 +1466,34 @@ button {
   background: #1e293b;
 }
 
+.season-overview-tabs {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  margin: 8px 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #f8fafc;
+}
+
+.season-overview-tabs button {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: transparent;
+  color: #475569;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.season-overview-tabs button.active {
+  background: #020617;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+}
+
 .team-stats-table-wrap {
   overflow-x: auto;
   margin-top: 8px;
@@ -1495,6 +1523,26 @@ button {
 .team-stats-table .th-sort.active {
   color: #1d4ed8;
   text-decoration-color: #1d4ed8;
+}
+
+.stat-leader-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-leader-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #fef3c7;
+  box-shadow: inset 0 0 0 1px #fde68a;
+  font-size: 12px;
+  line-height: 1;
 }
 
 .team-stats-compliance {
@@ -1579,6 +1627,15 @@ button {
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--text-primary);
+}
+
+.insights-kpi-value small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: #64748b;
 }
 
 .insights-section {
@@ -1726,8 +1783,151 @@ button {
   min-width: 520px;
 }
 
+.history-summary-strip {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.history-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.history-chart-card {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.history-goals-card {
+  grid-column: 1 / -1;
+}
+
+.history-chart-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.history-chart-head h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.history-chart-head span,
+.history-goals-legend {
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.history-line-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.history-line-chart line {
+  stroke: #e2e8f0;
+  stroke-width: 2;
+}
+
+.history-chart-value {
+  fill: #0f172a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.history-chart-season {
+  fill: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.history-goals-legend {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.history-goals-legend span::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 999px;
+}
+
+.history-goals-legend .for::before {
+  background: #2563eb;
+}
+
+.history-goals-legend .against::before {
+  background: #ef4444;
+}
+
+.history-goals-chart {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history-goals-chart li {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.history-goals-season {
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+}
+
+.history-goals-bars {
+  display: grid;
+  gap: 4px;
+}
+
+.history-goal-bar {
+  min-width: 30px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: right;
+}
+
+.history-goal-bar.for {
+  background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+}
+
+.history-goal-bar.against {
+  background: linear-gradient(90deg, #ef4444 0%, #f97316 100%);
+}
+
+.history-table {
+  min-width: 760px;
+}
+
 @media (max-width: 720px) {
   .insights-summary-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .history-chart-grid {
     grid-template-columns: 1fr;
   }
 

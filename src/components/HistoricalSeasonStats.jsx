@@ -110,7 +110,14 @@ function GoalsChart({ rows }) {
 }
 
 export default function HistoricalSeasonStats() {
-  const rows = HISTORICAL_SEASON_STATS;
+  const rows = useMemo(
+    () =>
+      HISTORICAL_SEASON_STATS.map((row) => ({
+        ...row,
+        goalsPerGame: row.games > 0 ? row.goalsFor / row.games : 0,
+      })),
+    []
+  );
   const summary = useMemo(() => {
     const bestPpg = bestBy(rows, "pointsPerGame", (value, best) => value > best);
     const bestFinish = bestBy(rows, "position", (value, best) => value < best);
@@ -164,6 +171,13 @@ export default function HistoricalSeasonStats() {
             title="Points per game"
             metricKey="pointsPerGame"
             formatValue={(value) => value.toFixed(2)}
+          />
+          <TrendChart
+            rows={rows}
+            title="Goals scored per game"
+            metricKey="goalsPerGame"
+            formatValue={(value) => value.toFixed(2)}
+            stroke="#16a34a"
           />
           <TrendChart
             rows={rows}

@@ -7,8 +7,8 @@ export const SEASON_OPTIONS = [
 export const DEFAULT_SEASON_SLUG =
   SEASON_OPTIONS.find((s) => s.isDefault)?.slug ?? "2526";
 
-/** Dummy/preview seasons: MOTM + attendance edits disabled (keep DB policies in sync). */
-export const SEASON_SLUGS_PREVIEW_LOCKED = Object.freeze(["2627"]);
+/** Seasons that should stay read-only while they are being prepared. */
+export const SEASON_SLUGS_PREVIEW_LOCKED = Object.freeze([]);
 
 /** @deprecated Use {@link SEASON_SLUGS_PREVIEW_LOCKED} */
 export const SEASON_SLUGS_WITH_VOTING_LOCKED = SEASON_SLUGS_PREVIEW_LOCKED;

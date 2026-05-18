@@ -158,7 +158,7 @@ export default function StatsTab({
           <h3>Player of the match</h3>
           {motmSeasonLocked && (
             <p className="motm-hint">
-              MOTM voting is turned off for this preview season (26–27 dummy data).
+              MOTM voting is turned off for this season while fixtures are being prepared.
             </p>
           )}
           {votingPending && !motmSeasonLocked && (

@@ -12,7 +12,6 @@
     "sync:lzv:dryrun": "node scripts/sync-lzv-dryrun.mjs",
     "sync:palmares": "node scripts/sync-palmares.mjs",
     "sync:palmares:dryrun": "node scripts/sync-palmares-dryrun.mjs",
-    "seed:2627": "node scripts/seed-dummy-2627.mjs",
     "digest:weekly": "node scripts/send-weekly-digest.mjs"
   },
   "dependencies": {

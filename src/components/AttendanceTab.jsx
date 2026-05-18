@@ -49,7 +49,7 @@ export default function AttendanceTab({
 
       {lockedBecausePreview && (
         <div className="warning-box">
-          RSVP is read-only for this preview season (26–27 dummy data), including for admins.
+          RSVP is read-only for this season while fixtures are being prepared, including for admins.
         </div>
       )}
 

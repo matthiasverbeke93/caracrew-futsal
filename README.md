@@ -26,7 +26,6 @@ VITE_SUPABASE_ANON_KEY=...
 - `npm run lint` — ESLint (flat config, React + hooks plugins).
 - `npm run sync:lzv` / `npm run sync:lzv:dryrun` — pull final scores from `lzvcup.be`.
 - `npm run sync:palmares` / `npm run sync:palmares:dryrun` — refresh opponent strength.
-- `npm run seed:2627` — clone 25–26 fixtures into a dummy 26–27 season (+1 year dates, no scores); needs `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (see Seasons).
 - `npm run digest:weekly` — send the squad pulse email via [Resend](https://resend.com); needs service role + `RESEND_API_KEY` + `DIGEST_TO_EMAIL` (see Weekly digest).
 
 ## Weekly digest email
@@ -50,11 +49,9 @@ To start a new season:
 3. Set repo variable `LZV_SEASON_SLUG` (+ `LZV_TEAM_URL`, `LZV_OUR_TEAM_ID`) and run the sync workflows.
 4. Optionally fill `LEAGUE_STANDINGS_BY_SEASON[<slug>]` in `seasonLeagueStandings.js`.
 
-**Dummy 26–27 preview (clone 25–26 calendar with +1 year, no scores):** set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, then run `npm run seed:2627` (add `--dry-run` on the script to preview). Or run `supabase/seed_dummy_2627.sql` in the Supabase SQL Editor if your `games` columns match.
-
 ## Editing windows
-- **Attendance** is editable up to and including the game day; it locks the day after.
-- **Stats** (goals/assists, tally targets) lock 10 days after the game (`STATS_FREEZE_DAYS` in `src/utils/game.js`).
+- **Attendance** is editable for the next 3 upcoming games only; later future fixtures stay locked until they enter that window.
+- **Stats** (goals/assists and MOTM) lock 10 days after the game (`STATS_FREEZE_DAYS` in `src/utils/game.js`).
 
 ## Accounts and permissions
 
@@ -66,7 +63,7 @@ Email + password auth via Supabase. Reads stay public; writes are scoped:
 | Mark own attendance                     | Signed-in, linked player (own row)     |
 | Edit own goals / assists                | Signed-in, linked player (own row)     |
 | Vote MOTM                               | Any signed-in user (one per game)      |
-| Set final score, expected G/A           | Admin                                  |
+| Set final score                         | Admin                                  |
 | Add / remove ad-hoc guest               | Admin                                  |
 | Override anyone's attendance or stats   | Admin                                  |
 

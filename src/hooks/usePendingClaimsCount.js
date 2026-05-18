@@ -4,28 +4,39 @@ import { supabase } from "../lib/supabase";
 /**
  * For admins: count of `player_claims` rows with status `pending`.
  */
+async function fetchPendingClaimsCount() {
+  const { count: n, error } = await supabase
+    .from("player_claims")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
+  if (error) {
+    console.error("pending claims count:", error);
+    return null;
+  }
+  return typeof n === "number" ? n : 0;
+}
+
 export function usePendingClaimsCount(isAdmin) {
   const [count, setCount] = useState(0);
 
   const refresh = useCallback(async () => {
-    if (!isAdmin) {
-      setCount(0);
-      return;
-    }
-    const { count: n, error } = await supabase
-      .from("player_claims")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "pending");
-    if (error) {
-      console.error("pending claims count:", error);
-      return;
-    }
-    setCount(typeof n === "number" ? n : 0);
+    if (!isAdmin) return;
+    const nextCount = await fetchPendingClaimsCount();
+    if (nextCount != null) setCount(nextCount);
   }, [isAdmin]);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (!isAdmin) return undefined;
+    let cancelled = false;
+    async function load() {
+      const nextCount = await fetchPendingClaimsCount();
+      if (!cancelled && nextCount != null) setCount(nextCount);
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
 
   useEffect(() => {
     function onFocus() {
@@ -41,5 +52,5 @@ export function usePendingClaimsCount(isAdmin) {
     return () => clearInterval(id);
   }, [isAdmin, refresh]);
 
-  return [count, refresh];
+  return [isAdmin ? count : 0, refresh];
 }

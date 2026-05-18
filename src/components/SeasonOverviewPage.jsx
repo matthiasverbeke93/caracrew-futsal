@@ -189,8 +189,7 @@ export default function SeasonOverviewPage({
   const denominator = staticData
     ? tableRows[0]?.totalSeasonGames ?? 0
     : games?.length ?? 0;
-  const showCurrentSeasonSummary = seasonSlug !== "2526";
-  const showMonthlyScoringPace = seasonSlug !== "2526";
+  const showLiveSeasonInsights = seasonSlug !== "2526";
 
   return (
     <section className="panel insights-panel team-stats-panel season-overview-panel">
@@ -243,7 +242,7 @@ export default function SeasonOverviewPage({
 
       {activeOverviewTab === "current" ? (
         <>
-      {showCurrentSeasonSummary && (
+      {showLiveSeasonInsights && (
         <div className="insights-summary-strip">
           <div className="insights-kpi">
             <span className="insights-kpi-label">Team goals</span>
@@ -260,7 +259,7 @@ export default function SeasonOverviewPage({
         </div>
       )}
 
-      {showMonthlyScoringPace && (
+      {showLiveSeasonInsights && (
         <section className="insights-section" aria-labelledby="overview-monthly-heading">
           <h3 id="overview-monthly-heading">Scoring pace by month</h3>
           <p className="insights-section-intro">

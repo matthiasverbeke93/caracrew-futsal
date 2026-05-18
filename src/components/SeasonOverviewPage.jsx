@@ -27,6 +27,7 @@ const BAR_KEYS = [
 
 const COLUMNS = [
   { key: "name", label: "Player" },
+  { key: "fairplayRank", label: "Fairplay" },
   { key: "gamesPlayed", label: "GP" },
   { key: "pctPlayed", label: "% played" },
   { key: "goals", label: "G" },
@@ -319,6 +320,7 @@ export default function SeasonOverviewPage({
                     )}
                     {!r.fixed && <span className="guest-badge">Guest</span>}
                   </td>
+                  <td>{r.fairplayRank ? `${r.fairplayRank}e` : "—"}</td>
                   <td>{r.gamesPlayed}</td>
                   <td>{r.pctPlayed}%</td>
                   <td>{r.goals}</td>

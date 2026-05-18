@@ -49,6 +49,7 @@ export function buildTeamSeasonPlayerRows(
       gamesPlayed,
       totalSeasonGames,
       pctPlayed,
+      fairplayRank: null,
       goals,
       assists,
       goalsPerGame,
@@ -85,6 +86,7 @@ export function buildStaticTeamSeasonRows(staticData, playersWithRole) {
   return staticData.rows.map((row) => {
     const matched = playerByName.get(normalizeName(row.name));
     const gamesPlayed = Number(row.gamesPlayed) || 0;
+    const fairplayRank = Number(row.fairplayRank) || null;
     const goals = Number(row.goals) || 0;
     const assists = Number(row.assists) || 0;
     const involvement = goals + assists;
@@ -100,6 +102,7 @@ export function buildStaticTeamSeasonRows(staticData, playersWithRole) {
       gamesPlayed,
       totalSeasonGames: totalGamesPlayed,
       pctPlayed,
+      fairplayRank,
       goals,
       assists,
       goalsPerGame: gamesPlayed > 0 ? goals / gamesPlayed : 0,
@@ -115,6 +118,13 @@ export function sortTeamSeasonRows(rows, key = "involvement") {
   const copy = [...(rows || [])];
   copy.sort((a, b) => {
     if (key === "name") {
+      return a.name.localeCompare(b.name);
+    }
+    if (key === "fairplayRank") {
+      if (a.fairplayRank == null && b.fairplayRank == null) return a.name.localeCompare(b.name);
+      if (a.fairplayRank == null) return 1;
+      if (b.fairplayRank == null) return -1;
+      if (a.fairplayRank !== b.fairplayRank) return a.fairplayRank - b.fairplayRank;
       return a.name.localeCompare(b.name);
     }
     const va = Number(a[key]);

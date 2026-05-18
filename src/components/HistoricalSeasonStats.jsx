@@ -181,6 +181,13 @@ export default function HistoricalSeasonStats() {
           />
           <TrendChart
             rows={rows}
+            title="Goal difference"
+            metricKey="goalDifference"
+            formatValue={fmtSigned}
+            stroke="#ea580c"
+          />
+          <TrendChart
+            rows={rows}
             title="League position"
             metricKey="position"
             formatValue={(value) => `${value}e`}

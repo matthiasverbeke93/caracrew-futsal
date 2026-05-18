@@ -58,11 +58,18 @@ export function isAttendanceEditableByCalendar(game) {
   return game.game_date >= today;
 }
 
-/** Attendance locks the day after the match: editable up to and including the game day. Preview seasons are read-only. */
-export function isAttendanceEditable(game) {
+/** Only the next fixtures are open for RSVP; later future games stay visible but locked. */
+export function isAttendanceInUpcomingWindow(game, allGames, limit = 3) {
+  if (!game?.id || !allGames?.length) return false;
+  return nextUpcomingGamesByCalendar(allGames, limit).some((g) => g.id === game.id);
+}
+
+/** Attendance locks to the next 3 upcoming games. Preview seasons are read-only. */
+export function isAttendanceEditable(game, allGames = null) {
   if (!game?.game_date) return false;
   if (isSeasonAttendanceLocked(game.season_slug)) return false;
-  return isAttendanceEditableByCalendar(game);
+  if (!isAttendanceEditableByCalendar(game)) return false;
+  return allGames ? isAttendanceInUpcomingWindow(game, allGames, 3) : true;
 }
 
 /** Days remaining before stats freeze; null if not played yet or already frozen. */

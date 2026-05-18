@@ -2,6 +2,7 @@ import { ATTENDANCE_OPTIONS } from "../constants";
 import {
   isAttendanceEditable,
   isAttendanceEditableByCalendar,
+  isAttendanceInUpcomingWindow,
 } from "../utils/game";
 import { isSeasonAttendanceLocked } from "../seasons";
 
@@ -19,6 +20,7 @@ export default function AttendanceTab({
   removeGuestPlayer,
   onOpenPlayer,
   selectedGame,
+  allGames,
   canEditAttendanceFor,
   canManageGame,
   isSignedIn,
@@ -27,12 +29,17 @@ export default function AttendanceTab({
   const lockedBecausePreview = isSeasonAttendanceLocked(selectedGame?.season_slug);
   const lockedBecausePlayed =
     !lockedBecausePreview && !isAttendanceEditableByCalendar(selectedGame);
-  const attendanceOpen = isAttendanceEditable(selectedGame);
+  const lockedBecauseOutsideWindow =
+    !lockedBecausePreview &&
+    !lockedBecausePlayed &&
+    !isAttendanceInUpcomingWindow(selectedGame, allGames, 3);
+  const attendanceOpen = isAttendanceEditable(selectedGame, allGames);
 
   function disabledTitle(player) {
     if (!isSignedIn) return "Sign in to mark attendance";
     if (lockedBecausePreview) return "RSVP is read-only for this preview season";
     if (lockedBecausePlayed) return "Attendance is locked — match already played";
+    if (lockedBecauseOutsideWindow) return "RSVP opens when this match is one of the next 3 upcoming games";
     return `Only ${player.name} or an admin can edit this`;
   }
 
@@ -52,7 +59,13 @@ export default function AttendanceTab({
         </div>
       )}
 
-      {!isSignedIn && !lockedBecausePlayed && !lockedBecausePreview && (
+      {lockedBecauseOutsideWindow && (
+        <div className="warning-box">
+          RSVP is locked for this match. Attendance voting opens for the next 3 upcoming games only.
+        </div>
+      )}
+
+      {!isSignedIn && !lockedBecausePlayed && !lockedBecausePreview && !lockedBecauseOutsideWindow && (
         <div className="info-banner">
           <button type="button" className="player-link" onClick={onRequestSignIn}>
             Sign in

@@ -42,7 +42,7 @@ export default function MyNextGamesTiles({
           game={game}
           eyebrow={TILE_EYEBROWS[index] ?? `Match ${index + 1}`}
           myStatus={statusByGameId.get(game.id) ?? null}
-          editable={isAttendanceEditable(game)}
+          editable={isAttendanceEditable(game, games)}
           showOpenButton={selectedGameId !== game.id}
           onJumpToGame={onJumpToGame}
           onMarkAttendance={onMarkAttendance}

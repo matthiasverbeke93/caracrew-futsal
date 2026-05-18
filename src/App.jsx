@@ -473,6 +473,7 @@ export default function App() {
                     removeGuestPlayer={removeGuestPlayer}
                     onOpenPlayer={openPlayer}
                     selectedGame={selectedGame}
+                    allGames={games}
                     canEditAttendanceFor={canEditAttendanceFor}
                     canManageGame={canManageGame}
                     isSignedIn={isSignedIn}

@@ -364,7 +364,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     const gameId = gameIdArg || selectedGameId;
     if (!gameId) return;
     const game = gameIdArg ? games.find((g) => g.id === gameIdArg) : selectedGame;
-    if (!isAttendanceEditable(game)) return;
+    if (!isAttendanceEditable(game, games)) return;
     if (!canEditAttendanceFor(playerId)) return;
 
     if (status === null || status === undefined) {
@@ -411,7 +411,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
   }
 
   async function saveGuestAttendance(playerId, status) {
-    if (!isAttendanceEditable(selectedGame)) return;
+    if (!isAttendanceEditable(selectedGame, games)) return;
     if (!isAdmin) return;
     const updated_at = new Date().toISOString();
     const snapshot = guestPlayers;
@@ -494,7 +494,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     const firstName = newGuestFirstName.trim();
     const lastName = newGuestLastName.trim();
     if (!firstName || !lastName || !selectedGameId) return;
-    if (!isAttendanceEditable(selectedGame)) return;
+    if (!isAttendanceEditable(selectedGame, games)) return;
     if (!isAdmin) return;
     const fullName = `${firstName} ${lastName}`.replace(/\s+/g, " ").trim();
     const existingExternal = playersWithRole.find(
@@ -580,7 +580,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
   }
 
   async function removeGuestPlayer(playerId) {
-    if (!isAttendanceEditable(selectedGame)) return;
+    if (!isAttendanceEditable(selectedGame, games)) return;
     if (!isAdmin) return;
     const snapshot = guestPlayers;
     setGuestPlayers((prev) => prev.filter((g) => g.id !== playerId));

@@ -81,7 +81,7 @@ export default function SeasonOverviewPage({
   onBack,
   onOpenPlayer,
 }) {
-  const [barMetric, setBarMetric] = useState("involvement");
+  const [barMetric, setBarMetric] = useState("pctPlayed");
   const [tableSortKey, setTableSortKey] = useState("gamesPlayed");
   const [complianceSortKey, setComplianceSortKey] = useState("complianceStars");
 

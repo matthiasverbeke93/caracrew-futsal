@@ -33,4 +33,4 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           LZV_TEAM_URL: ${{ vars.LZV_TEAM_URL || 'https://www.lzvcup.be/teams/overview/742' }}
           LZV_OUR_TEAM_ID: ${{ vars.LZV_OUR_TEAM_ID || '742' }}
-          LZV_SEASON_SLUG: ${{ vars.LZV_SEASON_SLUG || '2526' }}
+          LZV_SEASON_SLUG: ${{ vars.LZV_SEASON_SLUG || '2627' }}

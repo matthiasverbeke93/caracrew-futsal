@@ -1,11 +1,11 @@
 /** DB value on `games.season_slug` and `opponent_strength.season_slug`; also URL `?season=`. */
 export const SEASON_OPTIONS = [
-  { slug: "2526", label: "25-26", isDefault: true },
-  { slug: "2627", label: "26-27", isDefault: false },
+  { slug: "2526", label: "25-26", isDefault: false },
+  { slug: "2627", label: "26-27", isDefault: true },
 ];
 
 export const DEFAULT_SEASON_SLUG =
-  SEASON_OPTIONS.find((s) => s.isDefault)?.slug ?? "2526";
+  SEASON_OPTIONS.find((s) => s.isDefault)?.slug ?? "2627";
 
 /** Seasons that should stay read-only while they are being prepared. */
 export const SEASON_SLUGS_PREVIEW_LOCKED = Object.freeze([]);

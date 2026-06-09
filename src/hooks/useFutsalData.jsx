@@ -212,7 +212,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
   const selectedGameTotals = useMemo(
     () => ({
       goals: selectedGame?.home_score ?? null,
-      assists: selectedGame?.home_score ?? null,
+      assists: null,
     }),
     [selectedGame]
   );
@@ -284,8 +284,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
         played &&
         (gameStatsRows.length < playingCount ||
           !hasScoreTarget ||
-          actualGoals < scoreTarget ||
-          actualAssists < scoreTarget);
+          actualGoals < scoreTarget);
 
       let playerReadiness = "players_right";
       if (playingCount <= 5) playerReadiness = "players_not_enough";
@@ -300,7 +299,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
         actualGoals,
         actualAssists,
         expectedGoals: scoreTarget,
-        expectedAssists: scoreTarget,
+        expectedAssists: null,
       };
     }
 
@@ -503,19 +502,28 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     const externalId = existingExternal?.id || makeGuestId();
 
     if (!existingExternal) {
-      await supabase.from("players").insert({
+      const { error: insertErr } = await supabase.from("players").insert({
         id: externalId,
         name: fullName,
         fixed: false,
       });
+      if (insertErr) {
+        console.error(insertErr);
+        return;
+      }
     }
 
-    await supabase.from("attendance").upsert({
+    const { error: upsertErr } = await supabase.from("attendance").upsert({
       game_id: selectedGameId,
       player_id: externalId,
       status: "playing",
       updated_at: new Date().toISOString(),
     });
+    if (upsertErr) {
+      console.error(upsertErr);
+      await loadAll();
+      return;
+    }
 
     setNewGuestFirstName("");
     setNewGuestLastName("");

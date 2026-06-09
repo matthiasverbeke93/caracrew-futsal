@@ -2,9 +2,15 @@ import { isSeasonAttendanceLocked } from "../seasons.js";
 
 export const STATS_FREEZE_DAYS = 10;
 
+function localToday() {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
 export function isPlayed(game) {
-  const today = new Date().toISOString().slice(0, 10);
-  return game.game_date < today;
+  return game.game_date < localToday();
 }
 
 /** Compare kick-off: calendar date then time (strings sort OK for ISO dates / HH:MM:SS). */
@@ -46,16 +52,14 @@ export function isStatsFrozen(game, nowMs = Date.now()) {
 
 export function isStatsEditable(game, nowMs = Date.now()) {
   if (!game?.game_date) return false;
-  const today = new Date().toISOString().slice(0, 10);
-  if (game.game_date > today) return false;
+  if (game.game_date > localToday()) return false;
   return !isStatsFrozen(game, nowMs);
 }
 
 /** Upcoming or today by calendar — ignores preview-season locks (see {@link isAttendanceEditable}). */
 export function isAttendanceEditableByCalendar(game) {
   if (!game?.game_date) return false;
-  const today = new Date().toISOString().slice(0, 10);
-  return game.game_date >= today;
+  return game.game_date >= localToday();
 }
 
 /** Only the next fixtures are open for RSVP; later future games stay visible but locked. */
@@ -75,8 +79,7 @@ export function isAttendanceEditable(game, allGames = null) {
 /** Days remaining before stats freeze; null if not played yet or already frozen. */
 export function getStatsLockDaysLeft(game, nowMs = Date.now()) {
   if (!game?.game_date) return null;
-  const today = new Date().toISOString().slice(0, 10);
-  if (game.game_date > today) return null;
+  if (game.game_date > localToday()) return null;
   const gameMs = new Date(`${game.game_date}T00:00:00`).getTime();
   if (Number.isNaN(gameMs)) return null;
   const days = Math.floor((nowMs - gameMs) / (24 * 60 * 60 * 1000));

@@ -13,10 +13,11 @@
   --on-dark: #f5f7fa;
   --text-primary: #0e1726;
   --text-muted: #5a6b82;
-  --accent: #f5a524; /* amber — the one accent */
-  --accent-strong: #b45309; /* amber-700, for text/emphasis on light */
-  --accent-muted: #fdeccb; /* amber tint background */
-  --accent-ring: rgba(245, 165, 36, 0.45);
+  --accent: #146c43; /* deep green — the one accent (white text sits on it) */
+  --accent-strong: #0f5132; /* darker green, for text/emphasis on light */
+  --accent-muted: #dcefe4; /* pale green tint background */
+  --accent-ring: rgba(20, 108, 67, 0.4);
+  --on-accent: #ffffff; /* text/icons on an accent fill */
   --radius-panel: 14px;
   --radius-lg: 16px;
   --shadow-panel: 0 1px 2px rgba(14, 23, 38, 0.04), 0 8px 24px rgba(14, 23, 38, 0.05);
@@ -148,102 +149,99 @@ button {
 }
 
 .dashboard-header {
-  background: var(--surface-ink);
-  color: var(--on-dark);
-  padding: 18px 22px 16px;
-  margin: -20px -22px 22px;
-  border-bottom: 3px solid var(--accent);
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  padding: 10px 22px;
+  margin: -20px -22px 20px;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-.dashboard-header-main {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+/* Everything on one row: brand left, controls + account pushed right. */
+.dashboard-bar {
+  display: flex;
   align-items: center;
-  gap: 14px 20px;
+  justify-content: space-between;
+  gap: 8px 16px;
+  flex-wrap: wrap;
 }
 
 .dashboard-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
 }
 
-.dashboard-title-row {
+.dashboard-bar-right {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 10px 14px;
+  gap: 8px 12px;
+  flex-wrap: wrap;
 }
 
 .dashboard-header h1 {
   margin: 0;
-  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
   line-height: 1.15;
+  white-space: nowrap;
 }
 
 .dashboard-nav {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
   gap: 8px;
 }
 
 .dashboard-nav-btn {
   font: inherit;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 13px;
-  padding: 8px 14px;
+  padding: 6px 12px;
   border-radius: 999px;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
   transition: background 120ms ease, border-color 120ms ease;
 }
 
 .dashboard-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: #eaeef3;
 }
 
 .dashboard-nav-link {
   display: inline-flex;
   align-items: center;
   font-size: 13px;
-  font-weight: 700;
-  padding: 8px 14px;
+  font-weight: 600;
+  padding: 6px 12px;
   border-radius: 999px;
-  color: var(--accent);
+  color: var(--accent-strong);
   text-decoration: none;
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid var(--accent-muted);
+  background: var(--accent-muted);
   transition: background 120ms ease, border-color 120ms ease;
 }
 
 .dashboard-nav-link:hover {
-  background: rgba(251, 191, 36, 0.16);
-}
-
-.dashboard-account {
-  justify-self: end;
+  background: #cfe8dc;
 }
 
 .dashboard-season {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  display: flex;
-  flex-wrap: wrap;
+  display: inline-flex;
   align-items: center;
-  gap: 10px 12px;
+  gap: 8px;
 }
 
 .dashboard-season-label {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #94a3b8;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -258,26 +256,26 @@ button {
 .dashboard-season .season-pill {
   display: inline-block;
   border-radius: 999px;
-  padding: 7px 14px;
+  padding: 5px 12px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.02em;
   border: 1px solid transparent;
   background: transparent;
-  color: #cbd5e1;
+  color: var(--text-muted);
   cursor: pointer;
   font-family: inherit;
   transition: background 120ms ease, color 120ms ease;
 }
 
 .dashboard-season .season-pill:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
+  background: var(--surface-elevated);
+  color: var(--text-primary);
 }
 
 .dashboard-season .season-pill.active {
   background: var(--accent);
-  color: #0f172a;
+  color: var(--on-accent);
   border-color: var(--accent);
 }
 
@@ -290,7 +288,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--border-subtle);
 }
 
 .season-history-caret {
@@ -309,45 +307,45 @@ button {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  background: #0f172a;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
   border-radius: 14px;
-  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.5);
+  box-shadow: var(--shadow-panel);
 }
 
 .season-history-item {
   font: inherit;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   text-align: left;
   padding: 8px 12px;
   border-radius: 10px;
   border: 1px solid transparent;
   background: transparent;
-  color: #cbd5e1;
+  color: var(--text-primary);
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease;
 }
 
 .season-history-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
+  background: var(--surface-elevated);
+  color: var(--text-primary);
 }
 
 .season-history-item.active {
   background: var(--accent);
-  color: #0f172a;
+  color: var(--on-accent);
 }
 
 .account-chip {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 10px 6px 14px;
+  padding: 5px 8px 5px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #e2e8f0;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
   font-size: 13px;
   font-weight: 600;
 }
@@ -361,14 +359,14 @@ button {
   font-family: inherit;
   font-weight: 700;
   background: var(--accent);
-  color: #0f172a;
+  color: var(--on-accent);
   border-color: var(--accent);
   padding: 8px 16px;
 }
 
 .account-chip-signin:hover {
-  background: var(--signal-warning);
-  border-color: var(--signal-warning);
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
 }
 
 .account-chip-meta {
@@ -379,7 +377,7 @@ button {
 
 .account-chip-name {
   font-weight: 700;
-  color: #f8fafc;
+  color: var(--text-primary);
   max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -390,22 +388,22 @@ button {
   font-size: 10px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #cbd5e1;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
 .account-chip-role.role-admin {
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 
 .account-chip-role.role-unlinked {
-  color: #fda4af;
+  color: var(--tone-danger-fg);
 }
 
 .account-chip-signout {
-  background: rgba(15, 23, 42, 0.4);
-  color: #e2e8f0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
   padding: 6px 12px;
   border-radius: 999px;
   cursor: pointer;
@@ -415,7 +413,8 @@ button {
 }
 
 .account-chip-signout:hover {
-  background: rgba(15, 23, 42, 0.7);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
 }
 
 .auth-modal-backdrop {
@@ -651,7 +650,7 @@ button {
 
 .account-chip-admin {
   background: var(--accent);
-  color: #0f172a;
+  color: var(--on-accent);
   border: 1px solid var(--accent);
   padding: 6px 12px;
   border-radius: 999px;
@@ -1075,6 +1074,13 @@ button {
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   color: #f8fafc;
   border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Keep the RSVP controls aligned across tiles even when opponent names wrap. */
+.panel.my-next-game-card .my-next-game-actions {
+  margin-top: auto;
 }
 
 .panel.my-next-game-card.my-next-game-card--rsvp-playing {
@@ -1180,7 +1186,7 @@ button {
 .panel.my-next-game-card .my-next-game-btn.status-if_needed.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #0f172a;
+  color: var(--on-accent);
 }
 
 .panel.my-next-game-card .my-next-game-btn.status-cant.active {
@@ -2105,7 +2111,7 @@ button {
   margin-top: 1px;
   border-radius: 999px;
   background: var(--accent);
-  color: var(--text-primary);
+  color: var(--on-accent);
   font-size: 12px;
   font-weight: 800;
   display: inline-flex;
@@ -3056,7 +3062,7 @@ input[type="number"] {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.06em;
-  color: #cbd5e1;
+  color: var(--text-muted);
   text-transform: uppercase;
 }
 

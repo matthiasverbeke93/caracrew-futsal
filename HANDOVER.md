@@ -50,12 +50,15 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
 - **`data/`** — manual fallbacks: `seasonLeagueStandings.js`, `seasonTeamStatsOverrides.js`,
   `historicalSeasonStats.js` (pre-Supabase snapshots, 2017-18 →).
 - **`index.css`** — one global stylesheet, plain CSS. **Design = "Refined Matchday":** calm `#F5F7FA` canvas,
-  ink text, a single **amber** accent, Inter body + Space Grotesk display (loaded from Google Fonts in
-  `index.html`, with system fallbacks), static ink header bar with an amber underline stripe. `:root` holds the
+  ink text, a single **deep-green** accent (`--accent #146c43`, white text sits on it — `--on-accent`), Inter
+  body + Space Grotesk display (Google Fonts in `index.html`, system fallbacks), and a **light, minimalistic
+  single-row header** (white, hairline bottom border, static/scrolls away — brand left, season+nav+account
+  right). `:root` holds the
   whole palette: base tokens (`--surface-*`, `--text-*`, `--accent` / `--accent-strong` / `--accent-muted`,
   `--font-body` / `--font-display`) **plus** the semantic colour system — `--tone-*` (success/danger/warning/
   caution/info bg+fg pairs), `--signal-*` (readiness rails, toast accents), `--diff-*` (difficulty ramp),
-  `--form-*`. **Use these tokens for any colour rather than new hex** — the accent is unified on amber (no blue).
+  `--form-*`. **Use these tokens for any colour rather than new hex** — the accent is unified on green. Because
+  the accent is dark, fills that use it need **light** text (`color: var(--on-accent)`), not dark.
   Brand colours (WhatsApp green) are intentionally left literal.
 - **`components/ToastProvider.jsx` + `hooks/useToast.jsx`** — app-level toasts; `useToast().notify(msg, tone)`
   surfaces write failures (see below).
@@ -94,7 +97,8 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   add `useCallback` there expecting a win without also memoizing the heavy children (profile first).
 
 ## Current state (as of 2026-07-02)
-- **Refined Matchday UI overhaul** shipped: static ink header, amber accent, Inter/Space Grotesk, calm canvas.
+- **Refined Matchday UI**: light minimalistic single-row header, **deep-green** accent, Inter/Space Grotesk,
+  calm canvas. (Earlier in the day this was a dark ink header + amber accent — since changed per the user.)
 - Season switcher restructured (26-27 front, older behind "Historical seasons"); sidebar cards + match panel
   decluttered; write failures surface as toasts; semantic colour tokens; Vitest with `utils/` coverage.
 - **vite 8.1.3** (security). **Code-split** overlays (initial JS ~457 KB). **Keyboard nav** in the dropdown menus.
@@ -125,3 +129,11 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   - `React.lazy` code-split for AdminPanel / SeasonOverviewPage / PlayerProfileModal (498 → 457 KB initial).
   - Keyboard roving focus in the dropdown menus (`utils/menuNav.js`).
   - Decided **against** memoizing `useFutsalData` writes — no memoized children, so zero benefit + real risk.
+- **2026-07-02** — *Header + colour refinements.*
+  - Header: collapsed to a single row (brand left; season switcher, "Stats" button, LZV link, account right),
+    made it **light/minimalistic** (white, hairline border, narrower) and inverted all its interior text to
+    dark-on-light. Renamed "Season overview" → **Stats**.
+  - Accent recoloured **amber → deep green** (`#146c43`); added `--on-accent` and flipped every accent-fill
+    control to light text (dark green needs it).
+  - Bottom-aligned the RSVP controls in the "next games" tiles so they line up when names wrap. (Other
+    tile/label alignment awaits a screenshot to pinpoint.)

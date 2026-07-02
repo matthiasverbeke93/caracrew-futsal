@@ -258,27 +258,26 @@ export default function App() {
         Skip to match details
       </a>
       <header className="dashboard-header">
-        <div className="dashboard-header-main">
+        <div className="dashboard-bar">
           <div className="dashboard-brand">
-            <div className="dashboard-title-row">
-              <h1>{TEAM_NAME}</h1>
-              <FormChip games={games} />
-            </div>
+            <h1>{TEAM_NAME}</h1>
+            <FormChip games={games} />
           </div>
-          <nav className="dashboard-nav" aria-label="Team links">
-            <button type="button" className="dashboard-nav-btn" onClick={openSeasonOverview}>
-              Season overview
-            </button>
-            <a
-              className="dashboard-nav-link"
-              href="https://www.lzvcup.be/teams/detail/742"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              LZV Cup ↗
-            </a>
-          </nav>
-          <div className="dashboard-account">
+          <div className="dashboard-bar-right">
+            <SeasonSwitcher seasonSlug={seasonSlug} onSelect={selectSeason} />
+            <nav className="dashboard-nav" aria-label="Team links">
+              <button type="button" className="dashboard-nav-btn" onClick={openSeasonOverview}>
+                Stats
+              </button>
+              <a
+                className="dashboard-nav-link"
+                href="https://www.lzvcup.be/teams/detail/742"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                LZV Cup ↗
+              </a>
+            </nav>
             <AccountChip
               user={user}
               currentPlayer={currentPlayer}
@@ -291,7 +290,6 @@ export default function App() {
             />
           </div>
         </div>
-        <SeasonSwitcher seasonSlug={seasonSlug} onSelect={selectSeason} />
       </header>
 
       {isSignedIn && !currentPlayer && (

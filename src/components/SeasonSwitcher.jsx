@@ -1,16 +1,10 @@
-import { useEffect, useId, useRef, useState } from "react";
-import {
-  CURRENT_SEASON_OPTION,
-  CURRENT_SEASON_SLUG,
-  HISTORICAL_SEASON_OPTIONS,
-  seasonLabel,
-} from "../seasons";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { SEASON_OPTIONS, seasonLabel } from "../seasons";
 import { focusInitialMenuItem, handleMenuArrowKeys } from "../utils/menuNav";
 
 /**
- * Season switcher: the current campaign sits up front as a prominent pill, while
- * older seasons live behind a "Historical seasons" dropdown so the header stays
- * focused on the season in play. Falls back to a single pill when no past seasons exist.
+ * A single season dropdown. Shows the selected season (defaults to the current one)
+ * and lets any season — current or past — be picked from the same list.
  */
 export default function SeasonSwitcher({ seasonSlug, onSelect }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -18,9 +12,11 @@ export default function SeasonSwitcher({ seasonSlug, onSelect }) {
   const menuRef = useRef(null);
   const menuId = useId();
 
-  const hasHistory = HISTORICAL_SEASON_OPTIONS.length > 0;
-  const currentActive = seasonSlug === CURRENT_SEASON_SLUG;
-  const historyActive = hasHistory && !currentActive;
+  // Newest season first.
+  const options = useMemo(
+    () => [...SEASON_OPTIONS].sort((a, b) => String(b.slug).localeCompare(String(a.slug))),
+    []
+  );
 
   useEffect(() => {
     if (!menuOpen) return undefined;
@@ -48,62 +44,47 @@ export default function SeasonSwitcher({ seasonSlug, onSelect }) {
   }
 
   return (
-    <div className="dashboard-season" role="navigation" aria-label="Season">
-      <span className="dashboard-season-label">Season</span>
-      <div className="dashboard-season-track">
-        <button
-          type="button"
-          className={`season-pill ${currentActive ? "active" : ""}`}
-          aria-pressed={currentActive}
-          onClick={() => choose(CURRENT_SEASON_SLUG)}
+    <div className="season-select" ref={wrapRef}>
+      <span className="season-select-label">Season</span>
+      <button
+        type="button"
+        className="season-select-toggle"
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
+        aria-controls={menuId}
+        onClick={() => setMenuOpen((v) => !v)}
+      >
+        {seasonLabel(seasonSlug)}
+        <span className="season-select-caret" aria-hidden="true">
+          ▾
+        </span>
+      </button>
+
+      {menuOpen && (
+        <div
+          className="season-select-menu"
+          id={menuId}
+          role="menu"
+          ref={menuRef}
+          onKeyDown={handleMenuArrowKeys}
         >
-          {CURRENT_SEASON_OPTION.label}
-        </button>
-
-        {hasHistory && (
-          <div className="season-history" ref={wrapRef}>
-            <button
-              type="button"
-              className={`season-pill season-history-toggle ${historyActive ? "active" : ""}`}
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              aria-controls={menuId}
-              onClick={() => setMenuOpen((v) => !v)}
-            >
-              {historyActive ? `Historical · ${seasonLabel(seasonSlug)}` : "Historical seasons"}
-              <span className="season-history-caret" aria-hidden="true">
-                ▾
-              </span>
-            </button>
-
-            {menuOpen && (
-              <div
-                className="season-history-menu"
-                id={menuId}
-                role="menu"
-                ref={menuRef}
-                onKeyDown={handleMenuArrowKeys}
+          {options.map((opt) => {
+            const isActive = opt.slug === seasonSlug;
+            return (
+              <button
+                key={opt.slug}
+                type="button"
+                role="menuitemradio"
+                aria-checked={isActive}
+                className={`season-select-item ${isActive ? "active" : ""}`}
+                onClick={() => choose(opt.slug)}
               >
-                {HISTORICAL_SEASON_OPTIONS.map((opt) => {
-                  const isActive = opt.slug === seasonSlug;
-                  return (
-                    <button
-                      key={opt.slug}
-                      type="button"
-                      role="menuitemradio"
-                      aria-checked={isActive}
-                      className={`season-history-item ${isActive ? "active" : ""}`}
-                      onClick={() => choose(opt.slug)}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

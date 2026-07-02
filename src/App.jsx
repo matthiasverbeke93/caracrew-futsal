@@ -261,10 +261,10 @@ export default function App() {
         <div className="dashboard-bar">
           <div className="dashboard-brand">
             <h1>{TEAM_NAME}</h1>
+            <SeasonSwitcher seasonSlug={seasonSlug} onSelect={selectSeason} />
             <FormChip games={games} />
           </div>
           <div className="dashboard-bar-right">
-            <SeasonSwitcher seasonSlug={seasonSlug} onSelect={selectSeason} />
             <nav className="dashboard-nav" aria-label="Team links">
               <button type="button" className="dashboard-nav-btn" onClick={openSeasonOverview}>
                 Stats

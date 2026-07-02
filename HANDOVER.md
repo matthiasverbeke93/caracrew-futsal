@@ -73,8 +73,9 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   `LZV_SEASON_SLUG` / `LZV_TEAM_URL` / `LZV_OUR_TEAM_ID` and secrets (`RESEND_API_KEY`, etc.).
 
 ## Domain rules that shape the code
-- **Seasons:** multi-season via `season_slug` (`2526` = 25-26, `2627` = 26-27). `26-27` is current/default and is
-  the prominent pill; older seasons sit behind the **"Historical seasons"** dropdown (`SeasonSwitcher`).
+- **Seasons:** multi-season via `season_slug` (`2526` = 25-26, `2627` = 26-27). `SeasonSwitcher` is a single
+  season **dropdown** (next to the team name) listing all seasons newest-first; it defaults to
+  `DEFAULT_SEASON_SLUG` (26-27). No current/historical split.
 - **Roles:** anyone reads; a signed-in *linked* player edits their own attendance/stats; any signed-in user votes
   MOTM once/game; **admin** sets scores, manages guests/roster, and overrides anyone.
 - **Editing windows:** attendance is editable only for the **next 3 upcoming fixtures**; stats lock **10 days**
@@ -137,3 +138,9 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
     control to light text (dark green needs it).
   - Bottom-aligned the RSVP controls in the "next games" tiles so they line up when names wrap. (Other
     tile/label alignment awaits a screenshot to pinpoint.)
+- **2026-07-02** — *Header dropdowns.*
+  - `AccountChip` is now a **dropdown**: the username is the trigger; Admin panel + Sign out live in the menu
+    (pending-claims count shows as a dot on the trigger + a badge on the Admin item).
+  - `SeasonSwitcher` collapsed to a **single season dropdown** (all seasons, newest-first, defaults to current),
+    moved next to the team name. Removed the current/historical split (+ the now-dead `seasons.js` helpers).
+  - Aligned sidebar card metadata (fixed 40px RSVP slot) and the goals/assists tally badges.

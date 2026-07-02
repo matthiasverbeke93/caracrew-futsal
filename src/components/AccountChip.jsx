@@ -1,3 +1,6 @@
+import { useEffect, useId, useRef, useState } from "react";
+import { focusInitialMenuItem, handleMenuArrowKeys } from "../utils/menuNav";
+
 export default function AccountChip({
   user,
   currentPlayer,
@@ -8,8 +11,37 @@ export default function AccountChip({
   onAdminClick,
   pendingClaimsCount = 0,
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const wrapRef = useRef(null);
+  const menuRef = useRef(null);
+  const menuId = useId();
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    function onPointerDown(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setMenuOpen(false);
+    }
+    function onKey(e) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    window.addEventListener("mousedown", onPointerDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("mousedown", onPointerDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (menuOpen) focusInitialMenuItem(menuRef.current);
+  }, [menuOpen]);
+
   if (authLoading) {
-    return <div className="account-chip skeleton" aria-hidden="true">…</div>;
+    return (
+      <div className="account-chip skeleton" aria-hidden="true">
+        …
+      </div>
+    );
   }
 
   if (!user) {
@@ -22,53 +54,66 @@ export default function AccountChip({
 
   const label = currentPlayer?.name || user.email || "Signed in";
   const role = isAdmin ? "Admin" : currentPlayer ? "Player" : "Unlinked";
+  const showClaimsDot = isAdmin && pendingClaimsCount > 0;
 
   return (
-    <div className="account-chip account-chip-user">
-      <div className="account-chip-meta">
-        <span className="account-chip-name" title={user.email || ""}>
-          {label}
+    <div className="account-chip-wrap" ref={wrapRef}>
+      <button
+        type="button"
+        className="account-chip account-chip-trigger"
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
+        aria-controls={menuId}
+        onClick={() => setMenuOpen((v) => !v)}
+        title={user.email || ""}
+      >
+        <span className="account-chip-meta">
+          <span className="account-chip-name">{label}</span>
+          <span className={`account-chip-role role-${role.toLowerCase()}`}>{role}</span>
         </span>
-        <span className={`account-chip-role role-${role.toLowerCase()}`}>{role}</span>
-      </div>
-      <div className="account-chip-actions">
-        {onAdminClick && (
-          <span className="account-chip-admin-wrap">
+        {showClaimsDot ? <span className="account-chip-admin-dot" aria-hidden="true" /> : null}
+        <span className="account-chip-caret" aria-hidden="true">
+          ▾
+        </span>
+      </button>
+
+      {menuOpen && (
+        <div
+          className="account-menu"
+          id={menuId}
+          role="menu"
+          ref={menuRef}
+          onKeyDown={handleMenuArrowKeys}
+        >
+          {onAdminClick && (
             <button
               type="button"
-              className="account-chip-admin"
-              onClick={onAdminClick}
-              title={
-                pendingClaimsCount > 0
-                  ? `Open admin panel · ${pendingClaimsCount} pending player claim${
-                      pendingClaimsCount === 1 ? "" : "s"
-                    }`
-                  : "Open admin panel"
-              }
-              aria-label={
-                pendingClaimsCount > 0
-                  ? `Admin · ${pendingClaimsCount} pending player claim${
-                      pendingClaimsCount === 1 ? "" : "s"
-                    }`
-                  : "Open admin panel"
-              }
+              role="menuitem"
+              className="account-menu-item"
+              onClick={() => {
+                setMenuOpen(false);
+                onAdminClick();
+              }}
             >
-              Admin
+              Admin panel
+              {pendingClaimsCount > 0 ? (
+                <span className="account-menu-badge">{pendingClaimsCount}</span>
+              ) : null}
             </button>
-            {pendingClaimsCount > 0 ? (
-              <span className="account-chip-admin-dot" aria-hidden="true" />
-            ) : null}
-          </span>
-        )}
-        <button
-          type="button"
-          className="account-chip-signout"
-          onClick={onSignOut}
-          title="Sign out"
-        >
-          Sign out
-        </button>
-      </div>
+          )}
+          <button
+            type="button"
+            role="menuitem"
+            className="account-menu-item"
+            onClick={() => {
+              setMenuOpen(false);
+              onSignOut();
+            }}
+          >
+            Sign out
+          </button>
+        </div>
+      )}
     </div>
   );
 }

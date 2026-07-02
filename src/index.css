@@ -230,13 +230,15 @@ button {
   background: #cfe8dc;
 }
 
-.dashboard-season {
+/* Single season dropdown, sitting next to the team name. */
+.season-select {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
-.dashboard-season-label {
+.season-select-label {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -245,59 +247,34 @@ button {
   flex-shrink: 0;
 }
 
-.dashboard-season-track {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.dashboard-season .season-pill {
-  display: inline-block;
-  border-radius: 999px;
-  padding: 5px 12px;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 120ms ease, color 120ms ease;
-}
-
-.dashboard-season .season-pill:hover {
-  background: var(--surface-elevated);
-  color: var(--text-primary);
-}
-
-.dashboard-season .season-pill.active {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--accent);
-}
-
-.season-history {
-  position: relative;
-  display: inline-flex;
-}
-
-.dashboard-season .season-history-toggle {
+.season-select-toggle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-color: var(--border-subtle);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  transition: background 120ms ease, border-color 120ms ease;
 }
 
-.season-history-caret {
+.season-select-toggle:hover {
+  background: #eaeef3;
+}
+
+.season-select-caret {
   font-size: 10px;
   line-height: 1;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
-.season-history-menu {
+.season-select-menu {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
@@ -313,7 +290,7 @@ button {
   box-shadow: var(--shadow-panel);
 }
 
-.season-history-item {
+.season-select-item {
   font: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -327,12 +304,12 @@ button {
   transition: background 120ms ease, color 120ms ease;
 }
 
-.season-history-item:hover {
+.season-select-item:hover {
   background: var(--surface-elevated);
   color: var(--text-primary);
 }
 
-.season-history-item.active {
+.season-select-item.active {
   background: var(--accent);
   color: var(--on-accent);
 }
@@ -352,6 +329,21 @@ button {
 
 .account-chip.skeleton {
   opacity: 0.4;
+}
+
+.account-chip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.account-chip-trigger {
+  cursor: pointer;
+}
+
+.account-chip-caret {
+  font-size: 10px;
+  line-height: 1;
+  opacity: 0.7;
 }
 
 .account-chip-signin {
@@ -400,21 +392,55 @@ button {
   color: var(--tone-danger-fg);
 }
 
-.account-chip-signout {
-  background: transparent;
-  color: var(--text-muted);
+.account-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 170px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface-panel);
   border: 1px solid var(--border-subtle);
-  padding: 6px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
+  border-radius: 14px;
+  box-shadow: var(--shadow-panel);
 }
 
-.account-chip-signout:hover {
-  background: var(--surface-elevated);
+.account-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: transparent;
   color: var(--text-primary);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.account-menu-item:hover {
+  background: var(--surface-elevated);
+}
+
+.account-menu-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .auth-modal-backdrop {
@@ -624,45 +650,14 @@ button {
   color: currentColor;
 }
 
-.account-chip-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.account-chip-admin-wrap {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
+/* Unread-claims indicator on the account trigger (admins). */
 .account-chip-admin-dot {
-  position: absolute;
-  top: -1px;
-  right: -1px;
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: #dc2626;
-  box-shadow: 0 0 0 2px #020617;
+  background: var(--signal-danger);
+  flex-shrink: 0;
   pointer-events: none;
-}
-
-.account-chip-admin {
-  background: var(--accent);
-  color: var(--on-accent);
-  border: 1px solid var(--accent);
-  padding: 6px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.account-chip-admin:hover {
-  background: var(--signal-warning);
-  border-color: var(--signal-warning);
 }
 
 /* ---------- Claim modal ---------- */

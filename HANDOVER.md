@@ -20,8 +20,11 @@ cp .env.example .env      # needs VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY (a 
 npm run dev               # http://localhost:3000
 npm run lint              # eslint (flat config) — must stay clean
 npm run build             # vite build → dist/  (dist is gitignored)
+npm test                  # vitest run — unit tests for src/utils/*.test.js
 ```
-There is **no test suite** (no `test` script). Verification = `lint` + `build`, plus a manual eyeball in `npm run dev`.
+Verification = `lint` + `build` + `test`, plus a manual eyeball in `npm run dev`. Tests use **Vitest 4** (pairs
+with Vite 8 here; the ARM64 rollup issue that pins the sibling Ambiorix project to Vitest 0.34 does **not** apply
+on this machine) and cover the pure `utils/` logic in a `node` environment.
 **No browser-automation tool is installed in this workspace**, so Claude sessions can't screenshot the running app —
 UI changes are verified by build/lint and reasoning; ask the user to eyeball visual work.
 
@@ -46,8 +49,12 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   `seasonInsights.js`, `teamSeasonStats.js`, `playerCompliance.js`.
 - **`data/`** — manual fallbacks: `seasonLeagueStandings.js`, `seasonTeamStatsOverrides.js`,
   `historicalSeasonStats.js` (pre-Supabase snapshots, 2017-18 →).
-- **`index.css`** — one global stylesheet, plain CSS. `:root` has base tokens (`--surface-*`, `--text-*`,
-  `--accent*`); semantic accents (readiness red/amber/green, difficulty scale, RSVP chips) are still hardcoded hex.
+- **`index.css`** — one global stylesheet, plain CSS. `:root` holds the palette: base tokens (`--surface-*`,
+  `--text-*`, `--accent*`) **plus** the semantic colour system — `--tone-*` (success/danger/warning/caution/info
+  bg+fg pairs), `--signal-*` (readiness rails, toast accents), `--diff-*` (difficulty ramp), `--form-*`. Use these
+  tokens for any status colour rather than new hex. Brand colours (WhatsApp green) are intentionally left literal.
+- **`components/ToastProvider.jsx` + `hooks/useToast.jsx`** — app-level toasts; `useToast().notify(msg, tone)`
+  surfaces write failures (see below).
 - **`scripts/*.mjs`** — Node sync jobs run by GitHub Actions.
 
 ## Data & external jobs
@@ -73,16 +80,19 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   against a locally-formatted "today" string. This is intentional (fixes an earlier UTC off-by-one). Don't
   "fix" it by switching to UTC `Date` comparisons.
 - **Optimistic writes.** All mutations in `useFutsalData` update state first and roll back on error. Keep new
-  writes to that pattern (snapshot → mutate → on error restore + `loadAll()`).
+  writes to that pattern (snapshot → mutate → on error restore + `notify(...)` toast + `loadAll()`).
 - **Line endings:** repo is LF; on this Windows workspace git prints harmless `LF will be replaced by CRLF`
   warnings on add. Ignore them.
 - **`file:` there is none** — single package, plain npm. No monorepo/workspaces.
 
 ## Current state (as of 2026-07-02)
 - Season switcher restructured: 26-27 up front, older seasons behind a "Historical seasons" dropdown.
-- Sidebar cards and the match detail panel were **decluttered** (fewer competing color/chip signals). See log.
-- Known follow-ups discussed but **not done**: consolidating `index.css` into a semantic **color-token** set
-  (highest-leverage cleanup); a header simplification (drop the "Team dashboard" eyebrow).
+- Sidebar cards and the match detail panel **decluttered** (fewer competing colour/chip signals).
+- **Write failures now surface** as toasts (were silent). **Semantic colour tokens** in place. **Vitest** added
+  with `utils/` coverage. Header "Team dashboard" eyebrow removed.
+- Known follow-ups discussed but **not done**: `React.lazy` code-splitting for `AdminPanel` /
+  `SeasonOverviewPage` / `PlayerProfileModal` (initial JS bundle is ~495 KB, one chunk); memoizing the write
+  functions in `useFutsalData`; arrow-key roving focus in the `SeasonSwitcher` / Share menus.
 
 ## Session log
 - **2026-07-02** — *Season switcher & UI declutter.*
@@ -93,3 +103,10 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
     "Share ▾" dropdown and the head-to-head meta-list moved behind a "Match context" `<details>`.
   - Ran a code review the same session — the flagged "bugs" were verified as **false positives** (local-day date
     handling is correct, `saveStat`/`saveFinalScore` guards already present). No fixes were warranted.
+- **2026-07-02** — *Reliability + quality pass (4 improvements).*
+  - **Write-failure toasts:** new `ToastProvider` / `useToast`; every optimistic-write error path in
+    `useFutsalData` now calls `notify(...)` instead of failing silently.
+  - **Tests:** added Vitest 4 (`npm test`) + 20 unit tests for `game.js`, `motm.js`, `opponent.js`.
+  - **Colour tokens:** consolidated the status-colour hex into a semantic `:root` palette (`--tone-*` /
+    `--signal-*` / `--diff-*` / `--form-*`); no visual change.
+  - **Header:** dropped the "Team dashboard" eyebrow.

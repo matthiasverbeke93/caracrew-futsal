@@ -9,7 +9,12 @@ import {
   computeComplianceForAllPlayers,
   formatComplianceStars,
 } from "../utils/playerCompliance";
-import { buildMonthlyTeamGaSeries, seasonPlayedSummary } from "../utils/seasonInsights";
+import { cleanOpponentName } from "../utils/opponent";
+import {
+  buildMonthlyTeamGaSeries,
+  buildPlayersPerGameSeries,
+  seasonPlayedSummary,
+} from "../utils/seasonInsights";
 import {
   buildStaticTeamSeasonRows,
   buildTeamSeasonPlayerRows,
@@ -19,6 +24,74 @@ import {
 function fmtPer(n) {
   if (n === 0) return "0";
   return n.toFixed(2);
+}
+
+const PPG_W = 760;
+const PPG_H = 220;
+const PPG_PAD_X = 32;
+const PPG_PAD_Y = 24;
+
+function shortDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ""));
+  return m ? `${m[3]}/${m[2]}` : "";
+}
+
+/** Line chart: players marked Played per fixture, one point per game, in date order. */
+function PlayersPerGameChart({ series }) {
+  const max = Math.max(1, ...series.map((d) => d.players));
+  const innerW = PPG_W - PPG_PAD_X * 2;
+  const innerH = PPG_H - PPG_PAD_Y * 2;
+  const labelStep = Math.max(1, Math.ceil(series.length / 12));
+
+  const points = series.map((d, idx) => {
+    const x =
+      series.length === 1
+        ? PPG_PAD_X + innerW / 2
+        : PPG_PAD_X + (idx / (series.length - 1)) * innerW;
+    const y = PPG_PAD_Y + (1 - d.players / max) * innerH;
+    return { ...d, x, y };
+  });
+  const path = points.map((p) => `${p.x},${p.y}`).join(" ");
+
+  return (
+    <article className="history-chart-card">
+      <svg
+        className="history-line-chart"
+        viewBox={`0 0 ${PPG_W} ${PPG_H}`}
+        role="img"
+        aria-label="Players marked played per fixture"
+      >
+        <line x1={PPG_PAD_X} y1={PPG_H - PPG_PAD_Y} x2={PPG_W - PPG_PAD_X} y2={PPG_H - PPG_PAD_Y} />
+        <polyline
+          points={path}
+          fill="none"
+          className="squad-line"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {points.map((p, idx) => (
+          <g key={p.id}>
+            <circle cx={p.x} cy={p.y} r="4" className="squad-dot">
+              <title>
+                {`${shortDate(p.date)} · ${cleanOpponentName(p.opponent)} — ${p.players} player${
+                  p.players === 1 ? "" : "s"
+                }`}
+              </title>
+            </circle>
+            <text x={p.x} y={p.y - 10} textAnchor="middle" className="history-chart-value">
+              {p.players}
+            </text>
+            {idx % labelStep === 0 && (
+              <text x={p.x} y={PPG_H - 6} textAnchor="middle" className="history-chart-season">
+                {shortDate(p.date)}
+              </text>
+            )}
+          </g>
+        ))}
+      </svg>
+    </article>
+  );
 }
 
 const BAR_KEYS = [
@@ -139,6 +212,11 @@ export default function SeasonOverviewPage({
   }, [barMetric, barRows]);
 
   const monthly = useMemo(() => buildMonthlyTeamGaSeries(games, stats), [games, stats]);
+
+  const playersPerGame = useMemo(
+    () => buildPlayersPerGameSeries(games, stats),
+    [games, stats]
+  );
 
   const summary = useMemo(() => seasonPlayedSummary(games, stats), [games, stats]);
 
@@ -289,6 +367,20 @@ export default function SeasonOverviewPage({
                 );
               })}
             </ul>
+          )}
+        </section>
+      )}
+
+      {showLiveSeasonInsights && (
+        <section className="insights-section" aria-labelledby="overview-squadsize-heading">
+          <h3 id="overview-squadsize-heading">Squad size per game</h3>
+          <p className="insights-section-intro">
+            Players marked <em>Played</em> on the Stats tab — one point per played fixture, in date order.
+          </p>
+          {playersPerGame.length === 0 ? (
+            <p className="insights-empty">No played fixtures with stats yet.</p>
+          ) : (
+            <PlayersPerGameChart series={playersPerGame} />
           )}
         </section>
       )}

@@ -144,3 +144,7 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   - `SeasonSwitcher` collapsed to a **single season dropdown** (all seasons, newest-first, defaults to current),
     moved next to the team name. Removed the current/historical split (+ the now-dead `seasons.js` helpers).
   - Aligned sidebar card metadata (fixed 40px RSVP slot) and the goals/assists tally badges.
+- **2026-07-02** — *Squad-size chart.* Added a line chart to the season Stats page (current tab) — one point per
+  played fixture showing how many players are marked Played on the Stats tab. New util
+  `buildPlayersPerGameSeries` (`seasonInsights.js`, tested) + a small SVG `PlayersPerGameChart` in
+  `SeasonOverviewPage` reusing the `.history-*` chart styles.

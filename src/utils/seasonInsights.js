@@ -29,6 +29,28 @@ function formatMonthLabel(ym) {
   return d.toLocaleString("en-GB", { month: "short", year: "numeric" });
 }
 
+/**
+ * One entry per played fixture (chronological): how many players are marked
+ * Played on the Stats tab for that game. Games with no stats yet count as 0.
+ */
+export function buildPlayersPerGameSeries(games, stats) {
+  const playedCountByGame = new Map();
+  for (const s of stats || []) {
+    if (s.played === false) continue;
+    playedCountByGame.set(s.game_id, (playedCountByGame.get(s.game_id) || 0) + 1);
+  }
+  return (games || [])
+    .filter((g) => isPlayed(g))
+    .slice()
+    .sort((a, b) => String(a.game_date).localeCompare(String(b.game_date)))
+    .map((g) => ({
+      id: g.id,
+      date: g.game_date,
+      opponent: g.opponent,
+      players: playedCountByGame.get(g.id) || 0,
+    }));
+}
+
 /** Season totals from played games only. */
 export function seasonPlayedSummary(games, stats) {
   let playedGames = 0;

@@ -1932,6 +1932,14 @@ button {
   stroke-width: 2;
 }
 
+.squad-line {
+  stroke: var(--accent);
+}
+
+.squad-dot {
+  fill: var(--accent);
+}
+
 .history-chart-value {
   fill: #0f172a;
   font-size: 13px;

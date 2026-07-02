@@ -399,6 +399,7 @@ export default function App() {
                 players={players}
                 attendance={attendance}
                 stats={stats}
+                guestPlayers={guestPlayers}
                 motmVotes={motmVotes}
                 seasonSlug={seasonSlug}
                 seasonLabel={seasonLabel(seasonSlug)}

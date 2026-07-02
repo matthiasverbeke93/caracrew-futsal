@@ -30,25 +30,38 @@ function formatMonthLabel(ym) {
 }
 
 /**
- * One entry per played fixture (chronological): how many players are marked
- * Played on the Stats tab for that game. Games with no stats yet count as 0.
+ * One entry per played fixture (chronological), splitting who turned out:
+ * `roster` = roster players marked Played on the Stats tab (`player_stats.played`),
+ * `guests` = ad-hoc guests marked playing for that game (`guest_players.status`).
+ * Games with no data yet count as 0. `players` is the combined total.
  */
-export function buildPlayersPerGameSeries(games, stats) {
-  const playedCountByGame = new Map();
+export function buildPlayersPerGameSeries(games, stats, guestPlayers) {
+  const rosterByGame = new Map();
   for (const s of stats || []) {
     if (s.played === false) continue;
-    playedCountByGame.set(s.game_id, (playedCountByGame.get(s.game_id) || 0) + 1);
+    rosterByGame.set(s.game_id, (rosterByGame.get(s.game_id) || 0) + 1);
+  }
+  const guestByGame = new Map();
+  for (const g of guestPlayers || []) {
+    if (g.status !== "playing") continue;
+    guestByGame.set(g.game_id, (guestByGame.get(g.game_id) || 0) + 1);
   }
   return (games || [])
     .filter((g) => isPlayed(g))
     .slice()
     .sort((a, b) => String(a.game_date).localeCompare(String(b.game_date)))
-    .map((g) => ({
-      id: g.id,
-      date: g.game_date,
-      opponent: g.opponent,
-      players: playedCountByGame.get(g.id) || 0,
-    }));
+    .map((g) => {
+      const roster = rosterByGame.get(g.id) || 0;
+      const guests = guestByGame.get(g.id) || 0;
+      return {
+        id: g.id,
+        date: g.game_date,
+        opponent: g.opponent,
+        roster,
+        guests,
+        players: roster + guests,
+      };
+    });
 }
 
 /** Season totals from played games only. */

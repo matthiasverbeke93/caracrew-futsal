@@ -36,59 +36,65 @@ function shortDate(iso) {
   return m ? `${m[3]}/${m[2]}` : "";
 }
 
-/** Line chart: players marked Played per fixture, one point per game, in date order. */
+/** Stacked bar chart: roster players + guests marked playing per fixture, in date order. */
 function PlayersPerGameChart({ series }) {
   const max = Math.max(1, ...series.map((d) => d.players));
   const innerW = PPG_W - PPG_PAD_X * 2;
   const innerH = PPG_H - PPG_PAD_Y * 2;
+  const baseline = PPG_PAD_Y + innerH;
   const labelStep = Math.max(1, Math.ceil(series.length / 12));
-
-  const points = series.map((d, idx) => {
-    const x =
-      series.length === 1
-        ? PPG_PAD_X + innerW / 2
-        : PPG_PAD_X + (idx / (series.length - 1)) * innerW;
-    const y = PPG_PAD_Y + (1 - d.players / max) * innerH;
-    return { ...d, x, y };
-  });
-  const path = points.map((p) => `${p.x},${p.y}`).join(" ");
+  const band = innerW / series.length;
+  const barW = Math.min(band * 0.6, 30);
 
   return (
     <article className="history-chart-card">
+      <div className="squad-chart-legend" aria-hidden="true">
+        <span className="squad-legend-item">
+          <span className="squad-swatch squad-swatch-roster" /> Roster
+        </span>
+        <span className="squad-legend-item">
+          <span className="squad-swatch squad-swatch-guest" /> Guests
+        </span>
+      </div>
       <svg
         className="history-line-chart"
         viewBox={`0 0 ${PPG_W} ${PPG_H}`}
         role="img"
-        aria-label="Players marked played per fixture"
+        aria-label="Players per fixture, roster and guests"
       >
-        <line x1={PPG_PAD_X} y1={PPG_H - PPG_PAD_Y} x2={PPG_W - PPG_PAD_X} y2={PPG_H - PPG_PAD_Y} />
-        <polyline
-          points={path}
-          fill="none"
-          className="squad-line"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {points.map((p, idx) => (
-          <g key={p.id}>
-            <circle cx={p.x} cy={p.y} r="4" className="squad-dot">
-              <title>
-                {`${shortDate(p.date)} · ${cleanOpponentName(p.opponent)} — ${p.players} player${
-                  p.players === 1 ? "" : "s"
-                }`}
-              </title>
-            </circle>
-            <text x={p.x} y={p.y - 10} textAnchor="middle" className="history-chart-value">
-              {p.players}
-            </text>
-            {idx % labelStep === 0 && (
-              <text x={p.x} y={PPG_H - 6} textAnchor="middle" className="history-chart-season">
-                {shortDate(p.date)}
-              </text>
-            )}
-          </g>
-        ))}
+        <line x1={PPG_PAD_X} y1={baseline} x2={PPG_W - PPG_PAD_X} y2={baseline} />
+        {series.map((d, idx) => {
+          const cx = PPG_PAD_X + band * idx + band / 2;
+          const x = cx - barW / 2;
+          const rosterH = (d.roster / max) * innerH;
+          const guestH = (d.guests / max) * innerH;
+          const rosterY = baseline - rosterH;
+          const guestY = rosterY - guestH;
+          const title = `${shortDate(d.date)} · ${cleanOpponentName(d.opponent)} — ${d.roster} roster${
+            d.guests ? ` + ${d.guests} guest${d.guests === 1 ? "" : "s"}` : ""
+          }`;
+          return (
+            <g key={d.id}>
+              <title>{title}</title>
+              {d.roster > 0 && (
+                <rect className="squad-bar-roster" x={x} y={rosterY} width={barW} height={rosterH} rx="2" />
+              )}
+              {d.guests > 0 && (
+                <rect className="squad-bar-guest" x={x} y={guestY} width={barW} height={guestH} rx="2" />
+              )}
+              {d.players > 0 && (
+                <text x={cx} y={guestY - 6} textAnchor="middle" className="history-chart-value">
+                  {d.players}
+                </text>
+              )}
+              {idx % labelStep === 0 && (
+                <text x={cx} y={PPG_H - 6} textAnchor="middle" className="history-chart-season">
+                  {shortDate(d.date)}
+                </text>
+              )}
+            </g>
+          );
+        })}
       </svg>
     </article>
   );
@@ -146,6 +152,7 @@ export default function SeasonOverviewPage({
   players,
   attendance,
   stats,
+  guestPlayers = [],
   motmVotes = [],
   seasonSlug,
   seasonLabel: seasonLabelText,
@@ -214,8 +221,8 @@ export default function SeasonOverviewPage({
   const monthly = useMemo(() => buildMonthlyTeamGaSeries(games, stats), [games, stats]);
 
   const playersPerGame = useMemo(
-    () => buildPlayersPerGameSeries(games, stats),
-    [games, stats]
+    () => buildPlayersPerGameSeries(games, stats, guestPlayers),
+    [games, stats, guestPlayers]
   );
 
   const summary = useMemo(() => seasonPlayedSummary(games, stats), [games, stats]);

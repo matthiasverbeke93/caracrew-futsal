@@ -144,7 +144,9 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   - `SeasonSwitcher` collapsed to a **single season dropdown** (all seasons, newest-first, defaults to current),
     moved next to the team name. Removed the current/historical split (+ the now-dead `seasons.js` helpers).
   - Aligned sidebar card metadata (fixed 40px RSVP slot) and the goals/assists tally badges.
-- **2026-07-02** — *Squad-size chart.* Added a line chart to the season Stats page (current tab) — one point per
-  played fixture showing how many players are marked Played on the Stats tab. New util
-  `buildPlayersPerGameSeries` (`seasonInsights.js`, tested) + a small SVG `PlayersPerGameChart` in
-  `SeasonOverviewPage` reusing the `.history-*` chart styles.
+- **2026-07-02** — *Squad-size chart.* Added a squad-size chart to the season Stats page (current tab), one bar
+  per played fixture. Now a **stacked bar** (roster = `player_stats.played`, guests = `guest_players.status
+  === "playing"`), built by `buildPlayersPerGameSeries(games, stats, guestPlayers)` (`seasonInsights.js`,
+  tested) and drawn by `PlayersPerGameChart` in `SeasonOverviewPage`. It is **not** gated by
+  `showLiveSeasonInsights` — it reads per-game stats, which exist for 25-26 too. `guestPlayers` is now passed
+  from `App.jsx` to the page.

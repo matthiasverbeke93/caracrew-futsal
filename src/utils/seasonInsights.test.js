@@ -23,22 +23,29 @@ describe("buildPlayersPerGameSeries", () => {
     { game_id: "gB", player_id: "1", played: true },
     { game_id: "gFuture", player_id: "1", played: true }, // future game excluded
   ];
+  const guests = [
+    { game_id: "gA", status: "playing" }, // counts as a guest
+    { game_id: "gA", status: "cant" }, // excluded
+    { game_id: "gFuture", status: "playing" }, // future game excluded
+  ];
 
-  it("returns one point per played fixture, chronological, counting only played rows", () => {
-    const series = buildPlayersPerGameSeries(games, stats);
-    expect(series.map((s) => s.id)).toEqual(["gA", "gB"]); // date order, future dropped
-    expect(series.map((s) => s.players)).toEqual([2, 1]);
+  it("splits roster/guests per played fixture in date order (future dropped)", () => {
+    const series = buildPlayersPerGameSeries(games, stats, guests);
+    expect(series.map((s) => s.id)).toEqual(["gA", "gB"]);
+    expect(series.map((s) => s.roster)).toEqual([2, 1]);
+    expect(series.map((s) => s.guests)).toEqual([1, 0]);
+    expect(series.map((s) => s.players)).toEqual([3, 1]); // roster + guests
   });
 
-  it("counts a played fixture with no stats as 0", () => {
-    const series = buildPlayersPerGameSeries([{ id: "gX", game_date: isoOffset(-2) }], []);
+  it("counts a played fixture with no data as 0", () => {
+    const series = buildPlayersPerGameSeries([{ id: "gX", game_date: isoOffset(-2) }], [], []);
     expect(series).toEqual([
-      { id: "gX", date: isoOffset(-2), opponent: undefined, players: 0 },
+      { id: "gX", date: isoOffset(-2), opponent: undefined, roster: 0, guests: 0, players: 0 },
     ]);
   });
 
-  it("handles empty input", () => {
-    expect(buildPlayersPerGameSeries([], [])).toEqual([]);
-    expect(buildPlayersPerGameSeries(null, null)).toEqual([]);
+  it("handles empty/missing input", () => {
+    expect(buildPlayersPerGameSeries([], [], [])).toEqual([]);
+    expect(buildPlayersPerGameSeries(null, null, null)).toEqual([]);
   });
 });

@@ -1932,12 +1932,41 @@ button {
   stroke-width: 2;
 }
 
-.squad-line {
-  stroke: var(--accent);
+.squad-bar-roster {
+  fill: var(--accent);
 }
 
-.squad-dot {
-  fill: var(--accent);
+.squad-bar-guest {
+  fill: #9cc2ae;
+}
+
+.squad-chart-legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.squad-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.squad-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.squad-swatch-roster {
+  background: var(--accent);
+}
+
+.squad-swatch-guest {
+  background: #9cc2ae;
 }
 
 .history-chart-value {

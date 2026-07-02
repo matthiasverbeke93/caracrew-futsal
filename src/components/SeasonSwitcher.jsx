@@ -5,6 +5,7 @@ import {
   HISTORICAL_SEASON_OPTIONS,
   seasonLabel,
 } from "../seasons";
+import { focusInitialMenuItem, handleMenuArrowKeys } from "../utils/menuNav";
 
 /**
  * Season switcher: the current campaign sits up front as a prominent pill, while
@@ -14,6 +15,7 @@ import {
 export default function SeasonSwitcher({ seasonSlug, onSelect }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const wrapRef = useRef(null);
+  const menuRef = useRef(null);
   const menuId = useId();
 
   const hasHistory = HISTORICAL_SEASON_OPTIONS.length > 0;
@@ -34,6 +36,10 @@ export default function SeasonSwitcher({ seasonSlug, onSelect }) {
       window.removeEventListener("mousedown", onPointerDown);
       window.removeEventListener("keydown", onKey);
     };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (menuOpen) focusInitialMenuItem(menuRef.current);
   }, [menuOpen]);
 
   function choose(slug) {
@@ -71,7 +77,13 @@ export default function SeasonSwitcher({ seasonSlug, onSelect }) {
             </button>
 
             {menuOpen && (
-              <div className="season-history-menu" id={menuId} role="menu">
+              <div
+                className="season-history-menu"
+                id={menuId}
+                role="menu"
+                ref={menuRef}
+                onKeyDown={handleMenuArrowKeys}
+              >
                 {HISTORICAL_SEASON_OPTIONS.map((opt) => {
                   const isActive = opt.slug === seasonSlug;
                   return (

@@ -4,6 +4,7 @@ import { getDifficulty } from "../utils/difficulty";
 import { isPlayed } from "../utils/game";
 import { buildCurrentPageGameShareUrl, buildGameWhatsAppShareUrl, buildWhatsAppNudgeUrl } from "../utils/formatMatch";
 import { getHeadToHeadSummary } from "../utils/headToHead";
+import { focusInitialMenuItem, handleMenuArrowKeys } from "../utils/menuNav";
 import { cleanOpponentName } from "../utils/opponent";
 
 function FinalScoreFields({ game, canManageGame, saveFinalScore }) {
@@ -73,6 +74,7 @@ export default function SelectedGamePanel({
   const [shareFeedback, setShareFeedback] = useState(null);
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const shareWrapRef = useRef(null);
+  const shareMenuRef = useRef(null);
   const shareMenuId = useId();
   const opponentName = cleanOpponentName(selectedGame.opponent);
   const difficulty = getDifficulty(selectedGame.opponent, opponentStrengths, seasonSlug);
@@ -100,6 +102,10 @@ export default function SelectedGamePanel({
       window.removeEventListener("mousedown", onPointerDown);
       window.removeEventListener("keydown", onKey);
     };
+  }, [shareMenuOpen]);
+
+  useEffect(() => {
+    if (shareMenuOpen) focusInitialMenuItem(shareMenuRef.current);
   }, [shareMenuOpen]);
 
   async function handleShare() {
@@ -178,7 +184,13 @@ export default function SelectedGamePanel({
             </span>
           </button>
           {shareMenuOpen && (
-            <div className="share-menu" id={shareMenuId} role="menu">
+            <div
+              className="share-menu"
+              id={shareMenuId}
+              role="menu"
+              ref={shareMenuRef}
+              onKeyDown={handleMenuArrowKeys}
+            >
               <button
                 type="button"
                 role="menuitem"

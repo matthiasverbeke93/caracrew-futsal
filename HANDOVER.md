@@ -49,10 +49,14 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   `seasonInsights.js`, `teamSeasonStats.js`, `playerCompliance.js`.
 - **`data/`** — manual fallbacks: `seasonLeagueStandings.js`, `seasonTeamStatsOverrides.js`,
   `historicalSeasonStats.js` (pre-Supabase snapshots, 2017-18 →).
-- **`index.css`** — one global stylesheet, plain CSS. `:root` holds the palette: base tokens (`--surface-*`,
-  `--text-*`, `--accent*`) **plus** the semantic colour system — `--tone-*` (success/danger/warning/caution/info
-  bg+fg pairs), `--signal-*` (readiness rails, toast accents), `--diff-*` (difficulty ramp), `--form-*`. Use these
-  tokens for any status colour rather than new hex. Brand colours (WhatsApp green) are intentionally left literal.
+- **`index.css`** — one global stylesheet, plain CSS. **Design = "Refined Matchday":** calm `#F5F7FA` canvas,
+  ink text, a single **amber** accent, Inter body + Space Grotesk display (loaded from Google Fonts in
+  `index.html`, with system fallbacks), static ink header bar with an amber underline stripe. `:root` holds the
+  whole palette: base tokens (`--surface-*`, `--text-*`, `--accent` / `--accent-strong` / `--accent-muted`,
+  `--font-body` / `--font-display`) **plus** the semantic colour system — `--tone-*` (success/danger/warning/
+  caution/info bg+fg pairs), `--signal-*` (readiness rails, toast accents), `--diff-*` (difficulty ramp),
+  `--form-*`. **Use these tokens for any colour rather than new hex** — the accent is unified on amber (no blue).
+  Brand colours (WhatsApp green) are intentionally left literal.
 - **`components/ToastProvider.jsx` + `hooks/useToast.jsx`** — app-level toasts; `useToast().notify(msg, tone)`
   surfaces write failures (see below).
 - **`scripts/*.mjs`** — Node sync jobs run by GitHub Actions.
@@ -84,15 +88,18 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
 - **Line endings:** repo is LF; on this Windows workspace git prints harmless `LF will be replaced by CRLF`
   warnings on add. Ignore them.
 - **`file:` there is none** — single package, plain npm. No monorepo/workspaces.
+- **Web fonts** come from Google Fonts (`index.html`); offline they fall back to a system sans — fine, just less
+  distinctive. **Header is static** (scrolls away) by the user's choice — not sticky/fixed.
+- **No component uses `React.memo`.** So memoizing callbacks in `useFutsalData` buys nothing on its own — don't
+  add `useCallback` there expecting a win without also memoizing the heavy children (profile first).
 
 ## Current state (as of 2026-07-02)
-- Season switcher restructured: 26-27 up front, older seasons behind a "Historical seasons" dropdown.
-- Sidebar cards and the match detail panel **decluttered** (fewer competing colour/chip signals).
-- **Write failures now surface** as toasts (were silent). **Semantic colour tokens** in place. **Vitest** added
-  with `utils/` coverage. Header "Team dashboard" eyebrow removed.
-- Known follow-ups discussed but **not done**: `React.lazy` code-splitting for `AdminPanel` /
-  `SeasonOverviewPage` / `PlayerProfileModal` (initial JS bundle is ~495 KB, one chunk); memoizing the write
-  functions in `useFutsalData`; arrow-key roving focus in the `SeasonSwitcher` / Share menus.
+- **Refined Matchday UI overhaul** shipped: static ink header, amber accent, Inter/Space Grotesk, calm canvas.
+- Season switcher restructured (26-27 front, older behind "Historical seasons"); sidebar cards + match panel
+  decluttered; write failures surface as toasts; semantic colour tokens; Vitest with `utils/` coverage.
+- **vite 8.1.3** (security). **Code-split** overlays (initial JS ~457 KB). **Keyboard nav** in the dropdown menus.
+- Deliberately **not done**: memoizing `useFutsalData` writes (no `React.memo` children → no benefit; needs
+  profiling). Possible future: further per-component visual polish, self-hosting fonts, a dark mode (tokens ready).
 
 ## Session log
 - **2026-07-02** — *Season switcher & UI declutter.*
@@ -110,3 +117,11 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   - **Colour tokens:** consolidated the status-colour hex into a semantic `:root` palette (`--tone-*` /
     `--signal-*` / `--diff-*` / `--form-*`); no visual change.
   - **Header:** dropped the "Team dashboard" eyebrow.
+- **2026-07-02** — *UI overhaul ("Refined Matchday") + follow-ups.*
+  - Overhaul: static ink header w/ amber stripe (was a floating sticky card, per user choice), Inter + Space
+    Grotesk, calm `#F5F7FA` canvas, softer shadows/radii, and **accent unified on amber** — reconciled all the
+    stray blue accents into the amber token system (dark-amber text on light, amber fills/borders/tints).
+  - `vite` → 8.1.3 (fixes the high `server.fs.deny` advisory).
+  - `React.lazy` code-split for AdminPanel / SeasonOverviewPage / PlayerProfileModal (498 → 457 KB initial).
+  - Keyboard roving focus in the dropdown menus (`utils/menuNav.js`).
+  - Decided **against** memoizing `useFutsalData` writes — no memoized children, so zero benefit + real risk.

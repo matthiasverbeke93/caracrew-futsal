@@ -100,11 +100,16 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
 ## Current state (as of 2026-07-02)
 - **Refined Matchday UI**: light minimalistic single-row header, **deep-green** accent, Inter/Space Grotesk,
   calm canvas. (Earlier in the day this was a dark ink header + amber accent — since changed per the user.)
-- Season switcher restructured (26-27 front, older behind "Historical seasons"); sidebar cards + match panel
-  decluttered; write failures surface as toasts; semantic colour tokens; Vitest with `utils/` coverage.
-- **vite 8.1.3** (security). **Code-split** overlays (initial JS ~457 KB). **Keyboard nav** in the dropdown menus.
+- **Header** (one row): team name + a single **season dropdown** (all seasons, defaults to current) + FORM chips
+  on the left; "Stats" button, LZV link, and the **account dropdown** (username → Admin panel / Sign out) on the
+  right.
+- **Season Stats page** carries a **stacked-bar** squad-size-per-game chart (roster vs guests), styled like the
+  historical trend cards.
+- Foundations in place: sidebar/panel declutter, write-failure toasts, semantic colour tokens, Vitest `utils/`
+  coverage (23 tests), vite 8.1.3, code-split overlays (~457 KB initial), keyboard nav in the dropdown menus.
 - Deliberately **not done**: memoizing `useFutsalData` writes (no `React.memo` children → no benefit; needs
-  profiling). Possible future: further per-component visual polish, self-hosting fonts, a dark mode (tokens ready).
+  profiling). Possible future: further visual polish, self-hosting fonts, dark mode (tokens ready), folding
+  guests into more of the season metrics/tables.
 
 ## Session log
 - **2026-07-02** — *Season switcher & UI declutter.*
@@ -149,4 +154,5 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   === "playing"`), built by `buildPlayersPerGameSeries(games, stats, guestPlayers)` (`seasonInsights.js`,
   tested) and drawn by `PlayersPerGameChart` in `SeasonOverviewPage`. It is **not** gated by
   `showLiveSeasonInsights` — it reads per-game stats, which exist for 25-26 too. `guestPlayers` is now passed
-  from `App.jsx` to the page.
+  from `App.jsx` to the page. Polished into a titled card (`.history-chart-card` + `.history-chart-head` with
+  legend) to match the historical trend charts.

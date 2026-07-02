@@ -1,18 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import AccountChip from "./components/AccountChip";
-import AdminPanel from "./components/AdminPanel";
 import AttendanceTab from "./components/AttendanceTab";
 import AuthModal from "./components/AuthModal";
 import ClaimPlayerModal from "./components/ClaimPlayerModal";
 import FormChip from "./components/FormChip";
 import GameSidebar from "./components/GameSidebar";
 import MyNextGamesTiles from "./components/MyNextGamesTiles";
-import PlayerProfileModal from "./components/PlayerProfileModal";
-import SeasonOverviewPage from "./components/SeasonOverviewPage";
 import SeasonSwitcher from "./components/SeasonSwitcher";
 import SelectedGamePanel from "./components/SelectedGamePanel";
 import StatsTab from "./components/StatsTab";
 import Tabs from "./components/Tabs";
+
+// Heavy, rarely-first-seen overlays — split out of the initial bundle.
+const AdminPanel = lazy(() => import("./components/AdminPanel"));
+const PlayerProfileModal = lazy(() => import("./components/PlayerProfileModal"));
+const SeasonOverviewPage = lazy(() => import("./components/SeasonOverviewPage"));
 import { TEAM_NAME } from "./constants";
 import { useAuthSession } from "./hooks/useAuthSession";
 import { useFutsalData } from "./hooks/useFutsalData";
@@ -393,19 +395,21 @@ export default function App() {
           )}
 
           {!loading && seasonOverviewOpen && (
-            <SeasonOverviewPage
-              games={games}
-              players={players}
-              attendance={attendance}
-              stats={stats}
-              motmVotes={motmVotes}
-              seasonSlug={seasonSlug}
-              seasonLabel={seasonLabel(seasonSlug)}
-              activeOverviewTab={seasonOverviewTab}
-              onOverviewTabChange={selectSeasonOverviewTab}
-              onBack={closeSeasonOverview}
-              onOpenPlayer={openPlayer}
-            />
+            <Suspense fallback={<div className="panel content-empty">Loading…</div>}>
+              <SeasonOverviewPage
+                games={games}
+                players={players}
+                attendance={attendance}
+                stats={stats}
+                motmVotes={motmVotes}
+                seasonSlug={seasonSlug}
+                seasonLabel={seasonLabel(seasonSlug)}
+                activeOverviewTab={seasonOverviewTab}
+                onOverviewTabChange={selectSeasonOverviewTab}
+                onBack={closeSeasonOverview}
+                onOpenPlayer={openPlayer}
+              />
+            </Suspense>
           )}
 
           {!loading && !seasonOverviewOpen && showNextGamesTiles && (
@@ -502,16 +506,18 @@ export default function App() {
       </main>
 
       {profilePlayerId && (
-        <PlayerProfileModal
-          playerId={profilePlayerId}
-          onClose={closePlayer}
-          games={games}
-          attendance={attendance}
-          stats={stats}
-          guestPlayers={guestPlayers}
-          players={players}
-          motmVotes={motmVotes}
-        />
+        <Suspense fallback={null}>
+          <PlayerProfileModal
+            playerId={profilePlayerId}
+            onClose={closePlayer}
+            games={games}
+            attendance={attendance}
+            stats={stats}
+            guestPlayers={guestPlayers}
+            players={players}
+            motmVotes={motmVotes}
+          />
+        </Suspense>
       )}
 
       <AuthModal
@@ -527,15 +533,19 @@ export default function App() {
         onSubmit={submitClaim}
       />
 
-      <AdminPanel
-        open={adminPanelOpen}
-        onClose={() => setAdminPanelOpen(false)}
-        onChanged={() => {
-          refreshClaim();
-          reloadAll();
-          refreshPendingClaimsCount();
-        }}
-      />
+      {adminPanelOpen && (
+        <Suspense fallback={null}>
+          <AdminPanel
+            open={adminPanelOpen}
+            onClose={() => setAdminPanelOpen(false)}
+            onChanged={() => {
+              refreshClaim();
+              reloadAll();
+              refreshPendingClaimsCount();
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

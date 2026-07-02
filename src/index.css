@@ -1932,6 +1932,14 @@ button {
   stroke-width: 2;
 }
 
+.squad-chart-card {
+  grid-column: 1 / -1;
+}
+
+.squad-chart-svg {
+  margin-top: 4px;
+}
+
 .squad-bar-roster {
   fill: var(--accent);
 }
@@ -1943,7 +1951,6 @@ button {
 .squad-chart-legend {
   display: flex;
   gap: 16px;
-  margin-bottom: 8px;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);

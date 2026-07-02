@@ -27,9 +27,9 @@ function fmtPer(n) {
 }
 
 const PPG_W = 760;
-const PPG_H = 220;
-const PPG_PAD_X = 32;
-const PPG_PAD_Y = 24;
+const PPG_H = 240;
+const PPG_PAD_X = 28;
+const PPG_PAD_Y = 28;
 
 function shortDate(iso) {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ""));
@@ -44,20 +44,23 @@ function PlayersPerGameChart({ series }) {
   const baseline = PPG_PAD_Y + innerH;
   const labelStep = Math.max(1, Math.ceil(series.length / 12));
   const band = innerW / series.length;
-  const barW = Math.min(band * 0.6, 30);
+  const barW = Math.min(band * 0.62, 26);
 
   return (
-    <article className="history-chart-card">
-      <div className="squad-chart-legend" aria-hidden="true">
-        <span className="squad-legend-item">
-          <span className="squad-swatch squad-swatch-roster" /> Roster
-        </span>
-        <span className="squad-legend-item">
-          <span className="squad-swatch squad-swatch-guest" /> Guests
-        </span>
+    <article className="history-chart-card squad-chart-card">
+      <div className="history-chart-head">
+        <h4>Turnout per fixture</h4>
+        <div className="squad-chart-legend" aria-hidden="true">
+          <span className="squad-legend-item">
+            <span className="squad-swatch squad-swatch-roster" /> Roster
+          </span>
+          <span className="squad-legend-item">
+            <span className="squad-swatch squad-swatch-guest" /> Guests
+          </span>
+        </div>
       </div>
       <svg
-        className="history-line-chart"
+        className="history-line-chart squad-chart-svg"
         viewBox={`0 0 ${PPG_W} ${PPG_H}`}
         role="img"
         aria-label="Players per fixture, roster and guests"
@@ -383,7 +386,8 @@ export default function SeasonOverviewPage({
       <section className="insights-section" aria-labelledby="overview-squadsize-heading">
         <h3 id="overview-squadsize-heading">Squad size per game</h3>
         <p className="insights-section-intro">
-          Players marked <em>Played</em> on the Stats tab — one point per played fixture, in date order.
+          Roster players marked <em>Played</em> plus guests who turned out — one bar per played fixture, in
+          date order.
         </p>
         {playersPerGame.length === 0 ? (
           <p className="insights-empty">No played fixtures with stats yet.</p>

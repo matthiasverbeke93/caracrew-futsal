@@ -2377,6 +2377,13 @@ button {
   font-weight: 600;
 }
 
+/* Fixed slot for the RSVP chip so the score pill + difficulty line up card-to-card
+   instead of shifting with "In" vs "—" vs "Out". */
+.mini-counts .my-rsvp-chip {
+  min-width: 40px;
+  text-align: center;
+}
+
 .my-rsvp-chip {
   font-size: 11px;
   font-weight: 700;

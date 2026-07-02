@@ -9,6 +9,7 @@ import GameSidebar from "./components/GameSidebar";
 import MyNextGamesTiles from "./components/MyNextGamesTiles";
 import PlayerProfileModal from "./components/PlayerProfileModal";
 import SeasonOverviewPage from "./components/SeasonOverviewPage";
+import SeasonSwitcher from "./components/SeasonSwitcher";
 import SelectedGamePanel from "./components/SelectedGamePanel";
 import StatsTab from "./components/StatsTab";
 import Tabs from "./components/Tabs";
@@ -22,7 +23,6 @@ import {
   isSeasonSlug,
   readSeasonSlugFromSearch,
   seasonLabel,
-  SEASON_OPTIONS,
 } from "./seasons";
 
 function readTeamStatsTab(searchParams) {
@@ -290,25 +290,7 @@ export default function App() {
             />
           </div>
         </div>
-        <div className="dashboard-season" role="navigation" aria-label="Season">
-          <span className="dashboard-season-label">Season</span>
-          <div className="dashboard-season-track">
-            {SEASON_OPTIONS.map((opt) => {
-              const isActive = opt.slug === seasonSlug;
-              return (
-                <button
-                  key={opt.slug}
-                  type="button"
-                  className={`season-pill ${isActive ? "active" : ""}`}
-                  aria-pressed={isActive}
-                  onClick={() => selectSeason(opt.slug)}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <SeasonSwitcher seasonSlug={seasonSlug} onSelect={selectSeason} />
       </header>
 
       {isSignedIn && !currentPlayer && (

@@ -246,6 +246,64 @@ button {
   border-color: #fbbf24;
 }
 
+.season-history {
+  position: relative;
+  display: inline-flex;
+}
+
+.dashboard-season .season-history-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.season-history-caret {
+  font-size: 10px;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.season-history-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 40;
+  min-width: 140px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.5);
+}
+
+.season-history-item {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.season-history-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+.season-history-item.active {
+  background: #fbbf24;
+  color: #0f172a;
+}
+
 .account-chip {
   display: inline-flex;
   align-items: center;

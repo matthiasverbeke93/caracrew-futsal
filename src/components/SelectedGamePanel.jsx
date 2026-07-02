@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { MIN_PLAYERS_WARNING, TEAM_NAME } from "../constants";
 import { getDifficulty } from "../utils/difficulty";
 import { isPlayed } from "../utils/game";
@@ -71,6 +71,9 @@ export default function SelectedGamePanel({
   showAttendanceSummary = true,
 }) {
   const [shareFeedback, setShareFeedback] = useState(null);
+  const [shareMenuOpen, setShareMenuOpen] = useState(false);
+  const shareWrapRef = useRef(null);
+  const shareMenuId = useId();
   const opponentName = cleanOpponentName(selectedGame.opponent);
   const difficulty = getDifficulty(selectedGame.opponent, opponentStrengths, seasonSlug);
   const h2h = getHeadToHeadSummary(allGames, selectedGame.opponent);
@@ -79,6 +82,25 @@ export default function SelectedGamePanel({
   const missingFixed = (fixedPlayers || []).filter(
     (p) => !(gameAttendance || []).some((a) => a.player_id === p.id)
   );
+  const canNudge = !played && missingFixed.length > 0 && canManageGame;
+
+  useEffect(() => {
+    if (!shareMenuOpen) return undefined;
+    function onPointerDown(e) {
+      if (shareWrapRef.current && !shareWrapRef.current.contains(e.target)) {
+        setShareMenuOpen(false);
+      }
+    }
+    function onKey(e) {
+      if (e.key === "Escape") setShareMenuOpen(false);
+    }
+    window.addEventListener("mousedown", onPointerDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("mousedown", onPointerDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [shareMenuOpen]);
 
   async function handleShare() {
     const shareUrl = buildCurrentPageGameShareUrl(selectedGame.id, selectedGame.season_slug);
@@ -141,33 +163,59 @@ export default function SelectedGamePanel({
         <h2>
           <span className="vs-prefix">vs</span> {opponentName}
         </h2>
-        <div className="share-actions">
+        <div className="share-actions" ref={shareWrapRef}>
           <button
             type="button"
-            className="share-button"
-            onClick={handleShare}
-            aria-label="Share link to this game"
+            className="share-button share-toggle"
+            aria-haspopup="menu"
+            aria-expanded={shareMenuOpen}
+            aria-controls={shareMenuId}
+            onClick={() => setShareMenuOpen((v) => !v)}
           >
             {shareFeedback || "Share"}
+            <span className="share-toggle-caret" aria-hidden="true">
+              ▾
+            </span>
           </button>
-          <button
-            type="button"
-            className="whatsapp-button"
-            onClick={handleWhatsAppShare}
-            title="Opens WhatsApp Web or the app with this match link"
-            aria-label="Share match link in WhatsApp"
-          >
-            WhatsApp
-          </button>
-          {!played && missingFixed.length > 0 && canManageGame && (
-            <button
-              type="button"
-              className="whatsapp-button nudge"
-              onClick={handleNudge}
-              title={`Nudge ${missingFixed.map((p) => p.name).join(", ")}`}
-            >
-              Nudge missing ({missingFixed.length})
-            </button>
+          {shareMenuOpen && (
+            <div className="share-menu" id={shareMenuId} role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                className="share-menu-item"
+                onClick={() => {
+                  setShareMenuOpen(false);
+                  handleShare();
+                }}
+              >
+                Copy / share link
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="share-menu-item"
+                onClick={() => {
+                  setShareMenuOpen(false);
+                  handleWhatsAppShare();
+                }}
+              >
+                Share in WhatsApp
+              </button>
+              {canNudge && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="share-menu-item"
+                  title={`Nudge ${missingFixed.map((p) => p.name).join(", ")}`}
+                  onClick={() => {
+                    setShareMenuOpen(false);
+                    handleNudge();
+                  }}
+                >
+                  Nudge missing ({missingFixed.length})
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -193,29 +241,32 @@ export default function SelectedGamePanel({
       </div>
 
       {(difficulty?.lastSeason || h2h) && (
-        <dl className="meta-list">
-          {difficulty?.lastSeason && (
-            <div>
-              <dt>Last year's league standing</dt>
-              <dd>
-                Pos {difficulty.lastSeason.position}
-                {difficulty.lastSeason.reeks ? ` · ${difficulty.lastSeason.reeks}` : ""}
-              </dd>
-            </div>
-          )}
-          {h2h?.lastLine && (
-            <div>
-              <dt>Last meeting</dt>
-              <dd>{h2h.lastLine.replace(/^Last meeting:\s*/, "")}</dd>
-            </div>
-          )}
-          {h2h?.seasonLine && (
-            <div>
-              <dt>Season vs them</dt>
-              <dd>{h2h.seasonLine.replace(/^Season vs them:\s*/, "")}</dd>
-            </div>
-          )}
-        </dl>
+        <details className="match-context">
+          <summary className="match-context-summary">Match context</summary>
+          <dl className="meta-list">
+            {difficulty?.lastSeason && (
+              <div>
+                <dt>Last year's league standing</dt>
+                <dd>
+                  Pos {difficulty.lastSeason.position}
+                  {difficulty.lastSeason.reeks ? ` · ${difficulty.lastSeason.reeks}` : ""}
+                </dd>
+              </div>
+            )}
+            {h2h?.lastLine && (
+              <div>
+                <dt>Last meeting</dt>
+                <dd>{h2h.lastLine.replace(/^Last meeting:\s*/, "")}</dd>
+              </div>
+            )}
+            {h2h?.seasonLine && (
+              <div>
+                <dt>Season vs them</dt>
+                <dd>{h2h.seasonLine.replace(/^Season vs them:\s*/, "")}</dd>
+              </div>
+            )}
+          </dl>
+        </details>
       )}
 
       {played && (

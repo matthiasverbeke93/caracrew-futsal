@@ -384,6 +384,8 @@ export default function GameSidebar({
                       </span>
                     ) : attendanceNext && !played ? (
                       <span className="attendance-next-badge">Attendance</span>
+                    ) : played && showSidebarMatchStats && status?.statsMissing ? (
+                      <span className="game-status-pill is-stats-missing">Stats missing</span>
                     ) : (
                       <span className="game-status-pill">
                         {played ? "Played" : "To be played"}
@@ -414,12 +416,9 @@ export default function GameSidebar({
                       </span>
                     )}
                     {showSidebarMatchStats && difficulty && (
-                      <span className={`difficulty-chip ${difficulty.className}`}>
+                      <span className="mini-diff">
                         {difficulty.label} · P{difficulty.position}
                       </span>
-                    )}
-                    {showSidebarMatchStats && status?.statsMissing && (
-                      <span className="badge-warning">Stats missing</span>
                     )}
                   </div>
                 </button>

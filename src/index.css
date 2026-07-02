@@ -2190,6 +2190,8 @@ button {
 }
 
 .game-card {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   text-align: left;
   border: 2px solid transparent;
@@ -2198,6 +2200,7 @@ button {
   margin-bottom: 12px;
   cursor: pointer;
   display: block;
+  background: var(--surface-panel);
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
@@ -2214,16 +2217,28 @@ button {
   box-shadow: 0 0 0 3px rgba(2, 6, 23, 0.12);
 }
 
-.game-card.danger {
-  background: #fef2f2;
+/* Roster readiness reads as a quiet left rail, not a full-card colour wash,
+   so it stops competing with the RSVP / difficulty / status chips. */
+.game-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
 }
 
-.game-card.warning {
-  background: #fff7ed;
+.game-card.danger::before {
+  background: #ef4444;
 }
 
-.game-card.success {
-  background: #ecfdf5;
+.game-card.warning::before {
+  background: #f59e0b;
+}
+
+.game-card.success::before {
+  background: #22c55e;
 }
 
 .game-card.neutral {
@@ -2287,9 +2302,16 @@ button {
 .game-top .game-status-pill {
   flex-shrink: 0;
   font-size: 12px;
-  background: rgba(255, 255, 255, 0.85);
+  color: #475569;
+  background: rgba(15, 23, 42, 0.06);
   border-radius: 999px;
   padding: 5px 10px;
+}
+
+.game-top .game-status-pill.is-stats-missing {
+  color: #9a3412;
+  background: #ffedd5;
+  font-weight: 700;
 }
 
 .mini-counts {
@@ -2298,12 +2320,20 @@ button {
   margin-top: 8px;
   font-size: 12px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
-.mini-counts span:not(.my-rsvp-chip):not(.result-chip-mini) {
-  background: rgba(255, 255, 255, 0.75);
+.mini-counts span:not(.my-rsvp-chip):not(.result-chip-mini):not(.mini-diff) {
+  background: rgba(15, 23, 42, 0.06);
   border-radius: 999px;
   padding: 4px 8px;
+}
+
+/* Difficulty is a glance-level hint in the sidebar — plain muted text, no colour
+   pill (the coloured chip still lives in the match detail panel). */
+.mini-counts .mini-diff {
+  color: #64748b;
+  font-weight: 600;
 }
 
 .my-rsvp-chip {
@@ -2835,10 +2865,89 @@ input[type="number"] {
 }
 
 .share-actions {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+}
+
+.share-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.share-toggle-caret {
+  font-size: 10px;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+.share-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 200px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  box-shadow: var(--shadow-panel);
+}
+
+.share-menu-item {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.share-menu-item:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.match-context {
+  margin: 4px 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-elevated);
+  overflow: hidden;
+}
+
+.match-context-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.match-context-summary::-webkit-details-marker {
+  display: none;
+}
+
+.match-context[open] .match-context-summary {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.match-context .meta-list {
+  margin: 0;
+  padding: 10px 12px;
 }
 
 .form-chip {

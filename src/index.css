@@ -4,20 +4,25 @@
 
 :root {
   color-scheme: light;
-  --surface-page: #e8eef5;
+  /* Refined Matchday palette: calm canvas, ink text, one amber accent. */
+  --surface-page: #f5f7fa;
   --surface-panel: #ffffff;
-  --surface-elevated: #f8fafc;
-  --border-subtle: rgba(15, 23, 42, 0.08);
-  --text-primary: #0f172a;
-  --text-muted: #64748b;
-  --accent: #2563eb;
-  --accent-muted: #dbeafe;
-  --accent-ring: rgba(37, 99, 235, 0.35);
-  --radius-panel: 16px;
-  --radius-lg: 20px;
-  --shadow-panel: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 32px rgba(15, 23, 42, 0.06);
-  --shadow-header: 0 18px 48px rgba(15, 23, 42, 0.22);
-  --font-display: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --surface-elevated: #f5f7fa;
+  --surface-ink: #0e1726; /* dark bar + dark chips */
+  --border-subtle: #e4e8ef;
+  --on-dark: #f5f7fa;
+  --text-primary: #0e1726;
+  --text-muted: #5a6b82;
+  --accent: #f5a524; /* amber — the one accent */
+  --accent-strong: #b45309; /* amber-700, for text/emphasis on light */
+  --accent-muted: #fdeccb; /* amber tint background */
+  --accent-ring: rgba(245, 165, 36, 0.45);
+  --radius-panel: 14px;
+  --radius-lg: 16px;
+  --shadow-panel: 0 1px 2px rgba(14, 23, 38, 0.04), 0 8px 24px rgba(14, 23, 38, 0.05);
+  --shadow-header: 0 1px 0 rgba(14, 23, 38, 0.06);
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Space Grotesk", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* Semantic feedback tones — light tint + AA-readable text, reused by every
      status chip (RSVP, difficulty, badges). Change a meaning in one place. */
@@ -52,14 +57,28 @@
 
 body {
   margin: 0;
-  font-family: var(--font-display);
-  background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(37, 99, 235, 0.09), transparent 55%),
-    radial-gradient(900px 500px at 90% 0%, rgba(245, 158, 11, 0.06), transparent 50%),
-    var(--surface-page);
+  font-family: var(--font-body);
+  background: var(--surface-page);
   color: var(--text-primary);
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Display face carries the personality; numbers stay column-aligned. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+.count-grid strong,
+.result-chip,
+.result-chip-mini,
+.form-chip-cell,
+.final-score-inputs input,
+.mini-counts {
+  font-variant-numeric: tabular-nums;
 }
 
 .skip-link {
@@ -80,7 +99,7 @@ body {
 .skip-link:focus {
   position: fixed;
   left: 16px;
-  outline: 3px solid #fbbf24;
+  outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -129,16 +148,11 @@ button {
 }
 
 .dashboard-header {
-  position: sticky;
-  top: 12px;
-  z-index: 30;
-  background: linear-gradient(135deg, #020617 0%, #0f172a 42%, #1e293b 100%);
-  color: #f8fafc;
-  border-radius: var(--radius-lg);
-  padding: 16px 20px 14px;
-  margin-bottom: 20px;
-  box-shadow: var(--shadow-header);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-ink);
+  color: var(--on-dark);
+  padding: 18px 22px 16px;
+  margin: -20px -22px 22px;
+  border-bottom: 3px solid var(--accent);
 }
 
 .dashboard-header-main {
@@ -199,7 +213,7 @@ button {
   font-weight: 700;
   padding: 8px 14px;
   border-radius: 999px;
-  color: #fbbf24;
+  color: var(--accent);
   text-decoration: none;
   border: 1px solid rgba(251, 191, 36, 0.35);
   background: rgba(251, 191, 36, 0.08);
@@ -262,9 +276,9 @@ button {
 }
 
 .dashboard-season .season-pill.active {
-  background: #fbbf24;
+  background: var(--accent);
   color: #0f172a;
-  border-color: #fbbf24;
+  border-color: var(--accent);
 }
 
 .season-history {
@@ -321,7 +335,7 @@ button {
 }
 
 .season-history-item.active {
-  background: #fbbf24;
+  background: var(--accent);
   color: #0f172a;
 }
 
@@ -346,9 +360,9 @@ button {
   cursor: pointer;
   font-family: inherit;
   font-weight: 700;
-  background: #fbbf24;
+  background: var(--accent);
   color: #0f172a;
-  border-color: #fbbf24;
+  border-color: var(--accent);
   padding: 8px 16px;
 }
 
@@ -381,7 +395,7 @@ button {
 }
 
 .account-chip-role.role-admin {
-  color: #fbbf24;
+  color: var(--accent);
 }
 
 .account-chip-role.role-unlinked {
@@ -483,9 +497,9 @@ button {
 .auth-modal .auth-form input[type="email"]:focus,
 .auth-modal .auth-form input[type="password"]:focus,
 .auth-modal .auth-form input[type="text"]:focus {
-  outline: 2px solid #1d4ed8;
+  outline: 2px solid var(--accent);
   outline-offset: 0;
-  border-color: #1d4ed8;
+  border-color: var(--accent-strong);
 }
 
 .auth-error {
@@ -544,7 +558,7 @@ button {
   padding: 0;
   font: inherit;
   font-weight: 700;
-  color: #1d4ed8;
+  color: var(--accent-strong);
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -573,9 +587,9 @@ button {
 }
 
 .auth-banner.claim-banner.status-pending {
-  background: #eff6ff;
-  border-color: #93c5fd;
-  color: #1e3a8a;
+  background: var(--accent-muted);
+  border-color: var(--accent);
+  color: var(--accent-strong);
 }
 
 .auth-banner.claim-banner.status-rejected {
@@ -636,9 +650,9 @@ button {
 }
 
 .account-chip-admin {
-  background: #fbbf24;
+  background: var(--accent);
   color: #0f172a;
-  border: 1px solid #fbbf24;
+  border: 1px solid var(--accent);
   padding: 6px 12px;
   border-radius: 999px;
   cursor: pointer;
@@ -693,16 +707,16 @@ button {
 }
 
 .claim-player-card:hover {
-  border-color: #1d4ed8;
+  border-color: var(--accent-strong);
 }
 
 .claim-player-card.selected {
-  border-color: #1d4ed8;
-  background: #eff6ff;
+  border-color: var(--accent-strong);
+  background: var(--accent-muted);
 }
 
 .claim-player-card input[type="radio"] {
-  accent-color: #1d4ed8;
+  accent-color: var(--accent-strong);
 }
 
 .claim-player-name {
@@ -978,7 +992,7 @@ button {
 }
 
 .admin-toggle input {
-  accent-color: #1d4ed8;
+  accent-color: var(--accent-strong);
 }
 
 .admin-add-form {
@@ -1018,7 +1032,7 @@ button {
 }
 
 .admin-add-fixed input {
-  accent-color: #1d4ed8;
+  accent-color: var(--accent-strong);
 }
 
 .admin-add-form > button {
@@ -1031,7 +1045,7 @@ button {
   font-size: 14px;
   font-weight: 700;
   padding: 4px 8px;
-  border: 1px solid #1d4ed8;
+  border: 1px solid var(--accent);
   border-radius: 8px;
   min-width: 180px;
 }
@@ -1164,8 +1178,8 @@ button {
 }
 
 .panel.my-next-game-card .my-next-game-btn.status-if_needed.active {
-  background: #fbbf24;
-  border-color: #fbbf24;
+  background: var(--accent);
+  border-color: var(--accent);
   color: #0f172a;
 }
 
@@ -1440,8 +1454,8 @@ button {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #1d4ed8;
-  background: #dbeafe;
+  color: var(--accent-strong);
+  background: var(--accent-muted);
   border-radius: 999px;
   padding: 3px 8px;
 }
@@ -1600,8 +1614,8 @@ button {
 }
 
 .team-stats-table .th-sort.active {
-  color: #1d4ed8;
-  text-decoration-color: #1d4ed8;
+  color: var(--accent-strong);
+  text-decoration-color: var(--accent-strong);
 }
 
 .stat-leader-cell {
@@ -1769,7 +1783,7 @@ button {
 
 .insights-month-bar {
   height: 100%;
-  background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%);
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-strong) 100%);
   border-radius: 999px;
   min-width: 4px;
 }
@@ -1842,7 +1856,7 @@ button {
 
 .insights-leader-bar {
   height: 100%;
-  background: #2563eb;
+  background: var(--accent);
   border-radius: 999px;
   min-width: 4px;
 }
@@ -1945,7 +1959,7 @@ button {
 }
 
 .history-goals-legend .for::before {
-  background: #2563eb;
+  background: var(--accent);
 }
 
 .history-goals-legend .against::before {
@@ -1990,7 +2004,7 @@ button {
 }
 
 .history-goal-bar.for {
-  background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent) 100%);
 }
 
 .history-goal-bar.against {
@@ -2045,10 +2059,10 @@ button {
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #1e40af;
+  color: var(--accent-strong);
   margin: 0;
   padding: 10px 12px;
-  background: linear-gradient(90deg, #eff6ff 0%, #f8fafc 100%);
+  background: linear-gradient(90deg, var(--accent-muted) 0%, #f8fafc 100%);
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -2079,7 +2093,7 @@ button {
 }
 
 .sidebar-next-fixtures-link:hover {
-  border-color: rgba(59, 130, 246, 0.35);
+  border-color: rgba(245, 165, 36, 0.4);
   background: #fff;
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
 }
@@ -2090,14 +2104,14 @@ button {
   height: 26px;
   margin-top: 1px;
   border-radius: 999px;
-  background: linear-gradient(145deg, #2563eb 0%, #1d4ed8 100%);
-  color: white;
+  background: var(--accent);
+  color: var(--text-primary);
   font-size: 12px;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 2px 6px rgba(245, 165, 36, 0.4);
 }
 
 .sidebar-next-fixtures-meta {
@@ -2206,8 +2220,8 @@ button {
 }
 
 .calendar-game-item.attendance-next {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(245, 165, 36, 0.25);
 }
 
 .game-card {
@@ -2267,14 +2281,14 @@ button {
 }
 
 .game-card.attendance-next {
-  border-color: rgba(59, 130, 246, 0.45);
-  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.12);
+  border-color: rgba(245, 165, 36, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(245, 165, 36, 0.16);
 }
 
 .game-card.attendance-next.selected {
   border-color: #020617;
   box-shadow:
-    inset 0 0 0 1px rgba(59, 130, 246, 0.14),
+    inset 0 0 0 1px rgba(245, 165, 36, 0.18),
     0 0 0 3px rgba(2, 6, 23, 0.12);
 }
 
@@ -2283,9 +2297,9 @@ button {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: #1e40af;
+  color: var(--accent-strong);
   background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  border: 1px solid rgba(245, 165, 36, 0.4);
   border-radius: 999px;
   padding: 5px 10px;
   white-space: nowrap;
@@ -2296,9 +2310,9 @@ button {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: #1e3a8a;
-  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
-  border: 1px solid rgba(59, 130, 246, 0.45);
+  color: var(--accent-strong);
+  background: linear-gradient(135deg, var(--accent-muted) 0%, var(--accent-muted) 100%);
+  border: 1px solid rgba(245, 165, 36, 0.5);
   border-radius: 999px;
   padding: 5px 10px;
   white-space: nowrap;
@@ -2707,7 +2721,7 @@ button {
 
 .match-detail-panel .tabs button:hover {
   filter: none;
-  background: rgba(37, 99, 235, 0.06);
+  background: rgba(245, 165, 36, 0.08);
   color: var(--text-primary);
 }
 
@@ -2841,8 +2855,8 @@ input:disabled {
 
 .fixed-badge {
   margin-left: 8px;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--accent-muted);
+  color: var(--accent-strong);
   border-radius: 999px;
   padding: 3px 8px;
   font-size: 11px;
@@ -3357,7 +3371,7 @@ input[type="number"] {
   padding: 0;
   font: inherit;
   font-weight: 700;
-  color: #1d4ed8;
+  color: var(--accent-strong);
   cursor: pointer;
   text-align: left;
   text-decoration: underline;
@@ -3365,7 +3379,7 @@ input[type="number"] {
 }
 
 .player-link:hover {
-  color: #1e3a8a;
+  color: var(--accent-strong);
 }
 
 .player-name-plain {
@@ -3567,8 +3581,8 @@ input[type="number"] {
 }
 
 .motm-vote.active {
-  border-color: #1d4ed8;
-  background: #eff6ff;
+  border-color: var(--accent-strong);
+  background: var(--accent-muted);
 }
 
 .motm-count {

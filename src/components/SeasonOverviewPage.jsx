@@ -371,19 +371,19 @@ export default function SeasonOverviewPage({
         </section>
       )}
 
-      {showLiveSeasonInsights && (
-        <section className="insights-section" aria-labelledby="overview-squadsize-heading">
-          <h3 id="overview-squadsize-heading">Squad size per game</h3>
-          <p className="insights-section-intro">
-            Players marked <em>Played</em> on the Stats tab — one point per played fixture, in date order.
-          </p>
-          {playersPerGame.length === 0 ? (
-            <p className="insights-empty">No played fixtures with stats yet.</p>
-          ) : (
-            <PlayersPerGameChart series={playersPerGame} />
-          )}
-        </section>
-      )}
+      {/* Built from per-game "Played" stats, so it works for any season with stats
+          (including 25-26, whose totals table comes from a static LZV snapshot). */}
+      <section className="insights-section" aria-labelledby="overview-squadsize-heading">
+        <h3 id="overview-squadsize-heading">Squad size per game</h3>
+        <p className="insights-section-intro">
+          Players marked <em>Played</em> on the Stats tab — one point per played fixture, in date order.
+        </p>
+        {playersPerGame.length === 0 ? (
+          <p className="insights-empty">No played fixtures with stats yet.</p>
+        ) : (
+          <PlayersPerGameChart series={playersPerGame} />
+        )}
+      </section>
 
       <section className="insights-section" aria-labelledby="overview-leaders-heading">
         <div className="insights-section-head">

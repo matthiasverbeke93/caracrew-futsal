@@ -18,6 +18,36 @@
   --shadow-panel: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 32px rgba(15, 23, 42, 0.06);
   --shadow-header: 0 18px 48px rgba(15, 23, 42, 0.22);
   --font-display: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Semantic feedback tones — light tint + AA-readable text, reused by every
+     status chip (RSVP, difficulty, badges). Change a meaning in one place. */
+  --tone-success-bg: #dcfce7;
+  --tone-success-fg: #166534;
+  --tone-danger-bg: #fee2e2;
+  --tone-danger-fg: #991b1b;
+  --tone-warning-bg: #fef3c7;
+  --tone-warning-fg: #92400e;
+  --tone-caution-bg: #ffedd5;
+  --tone-caution-fg: #9a3412;
+  --tone-info-bg: #e0f2fe;
+  --tone-info-fg: #0369a1;
+
+  /* Solid signal colours — readiness rails, rings, toast accents. */
+  --signal-success: #22c55e;
+  --signal-danger: #ef4444;
+  --signal-warning: #f59e0b;
+  --signal-info: #38bdf8;
+
+  /* Difficulty ramp: hard/easy sit between the danger/warning/success tones. */
+  --diff-hard-bg: #ffe4e6;
+  --diff-hard-fg: #9f1239;
+  --diff-easy-bg: #ecfccb;
+  --diff-easy-fg: #3f6212;
+
+  /* Recent-form solids (W / D / L cells). */
+  --form-w: #16a34a;
+  --form-d: #ca8a04;
+  --form-l: #dc2626;
 }
 
 body {
@@ -323,8 +353,8 @@ button {
 }
 
 .account-chip-signin:hover {
-  background: #f59e0b;
-  border-color: #f59e0b;
+  background: var(--signal-warning);
+  border-color: var(--signal-warning);
 }
 
 .account-chip-meta {
@@ -529,7 +559,7 @@ button {
 
 .auth-banner {
   background: #fff7ed;
-  color: #9a3412;
+  color: var(--tone-caution-fg);
   border: 1px solid #fdba74;
   border-radius: 14px;
   padding: 12px 14px;
@@ -551,7 +581,7 @@ button {
 .auth-banner.claim-banner.status-rejected {
   background: #fef2f2;
   border-color: #fca5a5;
-  color: #991b1b;
+  color: var(--tone-danger-fg);
 }
 
 .auth-banner.claim-banner.status-cancelled {
@@ -618,8 +648,8 @@ button {
 }
 
 .account-chip-admin:hover {
-  background: #f59e0b;
-  border-color: #f59e0b;
+  background: var(--signal-warning);
+  border-color: var(--signal-warning);
 }
 
 /* ---------- Claim modal ---------- */
@@ -821,13 +851,13 @@ button {
 }
 
 .admin-claim-status.status-approved {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--tone-success-bg);
+  color: var(--tone-success-fg);
 }
 
 .admin-claim-status.status-rejected {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--tone-danger-bg);
+  color: var(--tone-danger-fg);
 }
 
 .admin-claim-status.status-cancelled {
@@ -904,18 +934,18 @@ button {
 }
 
 .admin-pill.role-admin {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--tone-warning-bg);
+  color: var(--tone-warning-fg);
 }
 
 .admin-pill.role-guest {
-  background: #e0f2fe;
+  background: var(--tone-info-bg);
   color: #075985;
 }
 
 .admin-pill.role-player {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--tone-success-bg);
+  color: var(--tone-success-fg);
 }
 
 .admin-pill.role-archived {
@@ -1034,15 +1064,15 @@ button {
 }
 
 .panel.my-next-game-card.my-next-game-card--rsvp-playing {
-  box-shadow: inset 0 0 0 2px #22c55e;
+  box-shadow: inset 0 0 0 2px var(--signal-success);
 }
 
 .panel.my-next-game-card.my-next-game-card--rsvp-if_needed {
-  box-shadow: inset 0 0 0 2px #f59e0b;
+  box-shadow: inset 0 0 0 2px var(--signal-warning);
 }
 
 .panel.my-next-game-card.my-next-game-card--rsvp-cant {
-  box-shadow: inset 0 0 0 2px #ef4444;
+  box-shadow: inset 0 0 0 2px var(--signal-danger);
 }
 
 .panel.my-next-game-card .my-next-game-eyebrow {
@@ -1129,7 +1159,7 @@ button {
 
 .panel.my-next-game-card .my-next-game-btn.status-playing.active {
   background: #16a34a;
-  border-color: #22c55e;
+  border-color: var(--signal-success);
   color: white;
 }
 
@@ -1141,7 +1171,7 @@ button {
 
 .panel.my-next-game-card .my-next-game-btn.status-cant.active {
   background: #b91c1c;
-  border-color: #ef4444;
+  border-color: var(--signal-danger);
   color: white;
 }
 
@@ -1588,7 +1618,7 @@ button {
   width: 20px;
   height: 20px;
   border-radius: 999px;
-  background: #fef3c7;
+  background: var(--tone-warning-bg);
   box-shadow: inset 0 0 0 1px #fde68a;
   font-size: 12px;
   line-height: 1;
@@ -1919,7 +1949,7 @@ button {
 }
 
 .history-goals-legend .against::before {
-  background: #ef4444;
+  background: var(--signal-danger);
 }
 
 .history-goals-chart {
@@ -1964,7 +1994,7 @@ button {
 }
 
 .history-goal-bar.against {
-  background: linear-gradient(90deg, #ef4444 0%, #f97316 100%);
+  background: linear-gradient(90deg, var(--signal-danger) 0%, #f97316 100%);
 }
 
 .history-table {
@@ -2221,15 +2251,15 @@ button {
 }
 
 .game-card.danger::before {
-  background: #ef4444;
+  background: var(--signal-danger);
 }
 
 .game-card.warning::before {
-  background: #f59e0b;
+  background: var(--signal-warning);
 }
 
 .game-card.success::before {
-  background: #22c55e;
+  background: var(--signal-success);
 }
 
 .game-card.neutral {
@@ -2300,8 +2330,8 @@ button {
 }
 
 .game-top .game-status-pill.is-stats-missing {
-  color: #9a3412;
-  background: #ffedd5;
+  color: var(--tone-caution-fg);
+  background: var(--tone-caution-bg);
   font-weight: 700;
 }
 
@@ -2337,23 +2367,23 @@ button {
 }
 
 .my-rsvp-in {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--tone-success-bg);
+  color: var(--tone-success-fg);
 }
 
 .my-rsvp-out {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--tone-danger-bg);
+  color: var(--tone-danger-fg);
 }
 
 .my-rsvp-maybe {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--tone-warning-bg);
+  color: var(--tone-warning-fg);
 }
 
 .my-rsvp-pending {
-  background: #e0f2fe;
-  color: #0369a1;
+  background: var(--tone-info-bg);
+  color: var(--tone-info-fg);
 }
 
 .my-rsvp-none {
@@ -2369,14 +2399,14 @@ button {
 }
 
 .my-rsvp-vote-missing {
-  background: #ffedd5;
-  color: #9a3412;
+  background: var(--tone-caution-bg);
+  color: var(--tone-caution-fg);
   border: 1px solid rgba(234, 88, 12, 0.35);
 }
 
 .badge-warning {
-  background: #ffedd5 !important;
-  color: #9a3412;
+  background: var(--tone-caution-bg) !important;
+  color: var(--tone-caution-fg);
   font-weight: 700;
   border-radius: 999px;
   padding: 4px 8px;
@@ -2392,28 +2422,28 @@ button {
 }
 
 .difficulty-chip.diff-very-hard {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--tone-danger-bg);
+  color: var(--tone-danger-fg);
 }
 
 .difficulty-chip.diff-hard {
-  background: #ffe4e6;
-  color: #9f1239;
+  background: var(--diff-hard-bg);
+  color: var(--diff-hard-fg);
 }
 
 .difficulty-chip.diff-medium {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--tone-warning-bg);
+  color: var(--tone-warning-fg);
 }
 
 .difficulty-chip.diff-easy {
-  background: #ecfccb;
-  color: #3f6212;
+  background: var(--diff-easy-bg);
+  color: var(--diff-easy-fg);
 }
 
 .difficulty-chip.diff-very-easy {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--tone-success-bg);
+  color: var(--tone-success-fg);
 }
 
 .selected-game-difficulty {
@@ -2443,8 +2473,8 @@ button {
 }
 
 .badge-ok {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--tone-success-bg);
+  color: var(--tone-success-fg);
   border-radius: 999px;
   padding: 4px 8px;
   font-weight: 700;
@@ -2452,8 +2482,8 @@ button {
 }
 
 .badge-error {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--tone-danger-bg);
+  color: var(--tone-danger-fg);
   border-radius: 999px;
   padding: 4px 8px;
   font-weight: 700;
@@ -2464,7 +2494,7 @@ button {
   margin-top: 8px;
   margin-bottom: 14px;
   background: #fef2f2;
-  color: #991b1b;
+  color: var(--tone-danger-fg);
   border: 1px solid #fecaca;
   padding: 12px 14px;
   border-radius: 14px;
@@ -2527,7 +2557,7 @@ button {
 .warning-box {
   margin-top: 16px;
   background: #fff7ed;
-  color: #9a3412;
+  color: var(--tone-caution-fg);
   padding: 14px;
   border-radius: 16px;
   font-weight: 700;
@@ -2759,7 +2789,7 @@ button {
 
 .player-card button.attendance-opt.active.attendance-opt--playing {
   background: #15803d;
-  border-color: #166534;
+  border-color: var(--tone-success-fg);
   color: #fff;
 }
 
@@ -2771,7 +2801,7 @@ button {
 
 .player-card button.attendance-opt.active.attendance-opt--cant {
   background: #b91c1c;
-  border-color: #991b1b;
+  border-color: var(--tone-danger-fg);
   color: #fff;
 }
 
@@ -2971,15 +3001,15 @@ input[type="number"] {
 }
 
 .toast--error {
-  border-left-color: #ef4444;
+  border-left-color: var(--signal-danger);
 }
 
 .toast--success {
-  border-left-color: #22c55e;
+  border-left-color: var(--signal-success);
 }
 
 .toast--info {
-  border-left-color: #38bdf8;
+  border-left-color: var(--signal-info);
 }
 
 .toast-message {
@@ -3038,15 +3068,15 @@ input[type="number"] {
 }
 
 .form-w {
-  background: #16a34a;
+  background: var(--form-w);
 }
 
 .form-d {
-  background: #ca8a04;
+  background: var(--form-d);
 }
 
 .form-l {
-  background: #dc2626;
+  background: var(--form-l);
 }
 
 .form-\? {
@@ -3121,7 +3151,7 @@ input[type="number"] {
 }
 
 .whatsapp-button {
-  background: #22c55e;
+  background: var(--signal-success);
   color: #052e16;
 }
 
@@ -3452,15 +3482,15 @@ input[type="number"] {
 }
 
 .profile-last-status.status-playing {
-  color: #166534;
+  color: var(--tone-success-fg);
 }
 
 .profile-last-status.status-if_needed {
-  color: #92400e;
+  color: var(--tone-warning-fg);
 }
 
 .profile-last-status.status-cant {
-  color: #991b1b;
+  color: var(--tone-danger-fg);
 }
 
 .profile-last-ga {

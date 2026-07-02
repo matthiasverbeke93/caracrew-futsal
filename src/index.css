@@ -122,15 +122,6 @@ button {
   min-width: 0;
 }
 
-.dashboard-eyebrow {
-  margin: 0 0 4px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #94a3b8;
-}
-
 .dashboard-title-row {
   display: flex;
   flex-wrap: wrap;
@@ -2948,6 +2939,67 @@ input[type="number"] {
 .match-context .meta-list {
   margin: 0;
   padding: 10px 12px;
+}
+
+/* Toasts — mainly for surfacing otherwise-silent write failures. */
+.toast-stack {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(440px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #0f172a;
+  color: #f8fafc;
+  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.35);
+  font-size: 14px;
+  font-weight: 600;
+  border-left: 4px solid #64748b;
+}
+
+.toast--error {
+  border-left-color: #ef4444;
+}
+
+.toast--success {
+  border-left-color: #22c55e;
+}
+
+.toast--info {
+  border-left-color: #38bdf8;
+}
+
+.toast-message {
+  flex: 1 1 auto;
+  line-height: 1.35;
+}
+
+.toast-close {
+  flex-shrink: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.toast-close:hover {
+  opacity: 1;
 }
 
 .form-chip {

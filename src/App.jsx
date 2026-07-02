@@ -258,7 +258,6 @@ export default function App() {
       <header className="dashboard-header">
         <div className="dashboard-header-main">
           <div className="dashboard-brand">
-            <p className="dashboard-eyebrow">Team dashboard</p>
             <div className="dashboard-title-row">
               <h1>{TEAM_NAME}</h1>
               <FormChip games={games} />

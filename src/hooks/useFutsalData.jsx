@@ -2,6 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { isSeasonVotingLocked } from "../seasons.js";
 import { isAttendanceEditable, isPlayed } from "../utils/game";
+import { useToast } from "./useToast.jsx";
+
+/** Shown when an optimistic write fails and we roll the UI back. */
+const SAVE_FAILED_HINT = "check your connection and try again.";
 
 const FORCED_GUEST_NAMES = new Set(["bart moyens"]);
 const FORCED_FIXED_NAMES = new Set([
@@ -23,6 +27,7 @@ function makeGuestId() {
 }
 
 export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
+  const { notify } = useToast();
   const [games, setGames] = useState([]);
   const [players, setPlayers] = useState([]);
   const [attendance, setAttendance] = useState([]);
@@ -379,6 +384,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       if (error) {
         console.error(error);
         setAttendance(snapshot);
+        notify(`Couldn't clear attendance — ${SAVE_FAILED_HINT}`, "error");
         loadAll();
       }
       return;
@@ -405,6 +411,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     if (error) {
       console.error(error);
       setAttendance(snapshot);
+      notify(`Couldn't save attendance — ${SAVE_FAILED_HINT}`, "error");
       loadAll();
     }
   }
@@ -424,6 +431,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     if (error) {
       console.error(error);
       setGuestPlayers(snapshot);
+      notify(`Couldn't save guest attendance — ${SAVE_FAILED_HINT}`, "error");
       loadAll();
     }
   }
@@ -464,6 +472,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     if (error) {
       console.error(error);
       setStats(snapshot);
+      notify(`Couldn't save stats — ${SAVE_FAILED_HINT}`, "error");
       loadAll();
     }
   }
@@ -485,6 +494,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     if (error) {
       console.error(error);
       setGuestPlayers(snapshot);
+      notify(`Couldn't save guest stats — ${SAVE_FAILED_HINT}`, "error");
       loadAll();
     }
   }
@@ -509,6 +519,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       });
       if (insertErr) {
         console.error(insertErr);
+        notify(`Couldn't add guest — ${SAVE_FAILED_HINT}`, "error");
         return;
       }
     }
@@ -521,6 +532,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     });
     if (upsertErr) {
       console.error(upsertErr);
+      notify(`Couldn't add guest — ${SAVE_FAILED_HINT}`, "error");
       await loadAll();
       return;
     }
@@ -548,6 +560,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     if (error || !data?.length) {
       console.error(error);
       setGames(snapshot);
+      notify(`Couldn't save the final score — ${SAVE_FAILED_HINT}`, "error");
       loadAll();
     }
   }
@@ -596,6 +609,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     if (error) {
       console.error(error);
       setGuestPlayers(snapshot);
+      notify(`Couldn't remove guest — ${SAVE_FAILED_HINT}`, "error");
       loadAll();
     }
   }

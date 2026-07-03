@@ -401,6 +401,7 @@ export default function App() {
                 stats={stats}
                 guestPlayers={guestPlayers}
                 motmVotes={motmVotes}
+                opponentStrengths={opponentStrengths}
                 seasonSlug={seasonSlug}
                 seasonLabel={seasonLabel(seasonSlug)}
                 activeOverviewTab={seasonOverviewTab}

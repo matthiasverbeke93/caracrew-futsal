@@ -1761,6 +1761,118 @@ button {
   font-size: 14px;
 }
 
+/* Season record card */
+.record-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.record-kpi {
+  background: var(--surface-muted, rgba(15, 23, 42, 0.04));
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.record-kpi-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.record-kpi-value {
+  font-family: var(--font-display, inherit);
+  font-size: 24px;
+  line-height: 1.1;
+  color: var(--text-strong, #0f172a);
+}
+
+.record-kpi-slash {
+  color: #94a3b8;
+  margin: 0 2px;
+}
+
+.record-kpi-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Results timeline (oldest → newest) */
+.record-timeline {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 0;
+  margin: 0;
+}
+
+.record-result {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.record-result.is-w {
+  background: var(--form-w);
+}
+
+.record-result.is-d {
+  background: var(--form-d);
+}
+
+.record-result.is-l {
+  background: var(--form-l);
+}
+
+/* League table: our row highlighted */
+.league-table .league-rank-col {
+  width: 2.5em;
+  text-align: right;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+.league-table .league-ppm-col {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.league-table .league-row.is-us {
+  background: var(--accent-muted, rgba(20, 108, 67, 0.1));
+}
+
+.league-table .league-row.is-us td {
+  font-weight: 700;
+  color: var(--accent-strong, #0b5138);
+}
+
+.league-us-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+
 .insights-month-chart {
   list-style: none;
   padding: 0;

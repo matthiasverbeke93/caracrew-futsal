@@ -20,6 +20,7 @@ import {
   buildTeamSeasonPlayerRows,
   sortTeamSeasonRows,
 } from "../utils/teamSeasonStats";
+import { buildLeagueTable, computeTeamRecord } from "../utils/teamRecord";
 
 function fmtPer(n) {
   if (n === 0) return "0";
@@ -157,6 +158,7 @@ export default function SeasonOverviewPage({
   stats,
   guestPlayers = [],
   motmVotes = [],
+  opponentStrengths = [],
   seasonSlug,
   seasonLabel: seasonLabelText,
   activeOverviewTab = "current",
@@ -229,6 +231,12 @@ export default function SeasonOverviewPage({
   );
 
   const summary = useMemo(() => seasonPlayedSummary(games, stats), [games, stats]);
+
+  const record = useMemo(() => computeTeamRecord(games), [games]);
+  const leagueTable = useMemo(
+    () => buildLeagueTable(opponentStrengths, record, TEAM_NAME),
+    [opponentStrengths, record]
+  );
 
   const maxMonthlyGa = useMemo(() => {
     let m = 1;
@@ -330,6 +338,100 @@ export default function SeasonOverviewPage({
 
       {activeOverviewTab === "current" ? (
         <>
+      <section className="insights-section" aria-labelledby="overview-record-heading">
+        <h3 id="overview-record-heading">Season record</h3>
+        {record.played === 0 ? (
+          <p className="insights-empty">
+            No played fixtures with a final score yet
+            {record.unscored > 0
+              ? ` (${record.unscored} played ${
+                  record.unscored === 1 ? "game is" : "games are"
+                } still awaiting a score).`
+              : "."}
+          </p>
+        ) : (
+          <>
+            <div className="record-kpis">
+              <div className="record-kpi record-kpi--wide">
+                <span className="record-kpi-label">Record (W–D–L)</span>
+                <strong className="record-kpi-value">
+                  {record.wins}–{record.draws}–{record.losses}
+                </strong>
+              </div>
+              <div className="record-kpi">
+                <span className="record-kpi-label">Points</span>
+                <strong className="record-kpi-value">{record.points}</strong>
+                <span className="record-kpi-sub">{fmtPer(record.pointsPerGame)}/game</span>
+              </div>
+              <div className="record-kpi">
+                <span className="record-kpi-label">Goals</span>
+                <strong className="record-kpi-value">
+                  {record.gf}<span className="record-kpi-slash">–</span>{record.ga}
+                </strong>
+                <span className="record-kpi-sub">
+                  GD {record.gd > 0 ? `+${record.gd}` : record.gd}
+                </span>
+              </div>
+              <div className="record-kpi">
+                <span className="record-kpi-label">Win rate</span>
+                <strong className="record-kpi-value">{Math.round(record.winPct)}%</strong>
+                <span className="record-kpi-sub">{record.played} played</span>
+              </div>
+            </div>
+            <ol className="record-timeline" aria-label="Results, oldest to newest">
+              {record.results.map((r) => (
+                <li
+                  key={r.id}
+                  className={`record-result is-${r.result.toLowerCase()}`}
+                  title={`${r.date} vs ${cleanOpponentName(r.opponent)} — ${r.us}–${r.them}`}
+                >
+                  {r.result}
+                </li>
+              ))}
+            </ol>
+          </>
+        )}
+      </section>
+
+      {leagueTable.length > 1 && (
+        <section className="insights-section" aria-labelledby="overview-table-heading">
+          <h3 id="overview-table-heading">League table</h3>
+          <p className="insights-section-intro">
+            Ranked by points per match. Opponent figures are the latest{" "}
+            <strong>LZV standings snapshot</strong>; the <em>{TEAM_NAME}</em> row is computed from
+            our own results{record.played === 0 ? " (none played yet)" : ""}.
+          </p>
+          <div className="team-stats-table-wrap">
+            <table className="team-stats-table league-table">
+              <thead>
+                <tr>
+                  <th className="league-rank-col">#</th>
+                  <th>Team</th>
+                  <th className="league-ppm-col">Pts/match</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leagueTable.map((row) => (
+                  <tr
+                    key={row.teamId || (row.isUs ? "__us" : row.team)}
+                    className={row.isUs ? "league-row is-us" : "league-row"}
+                  >
+                    <td className="league-rank-col">{row.rank}</td>
+                    <td>
+                      {cleanOpponentName(row.team)}
+                      {row.isUs && <span className="league-us-badge">us</span>}
+                    </td>
+                    <td className="league-ppm-col">
+                      {row.ptnPerMatch != null ? row.ptnPerMatch.toFixed(2) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       {showLiveSeasonInsights && (
         <div className="insights-summary-strip">
           <div className="insights-kpi">

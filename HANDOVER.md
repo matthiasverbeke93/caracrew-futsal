@@ -112,6 +112,14 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-07-03** — *26-27 dummy-season seed.* Added `supabase/seed_season_2627.sql` (+ its generator
+  `scripts/gen-seed-2627.mjs`) to populate the 26-27 season for testing. **16-team league** → 30-game double
+  round-robin vs 15 opponents, weekly Thursdays **2026-09-10 → 2027-05-06** (Christmas/krokus/Easter gaps),
+  round 1 home @ De Nekker 21:00, round 2 away @ opponent venues 22:00. Also seeds `opponent_strength` (the 15
+  standings rows, drives sidebar difficulty), RSVP `attendance` on the first 6 fixtures, and 3 ad-hoc guests.
+  **All fixtures are UPCOMING** (per the user) — no scores / `player_stats` / MOTM, since today (pre-season) is
+  before the whole window so nothing is "played". Idempotent (clears 2627 first). Run it in the **Supabase SQL
+  editor** — anon key can't write (RLS: games/players/opponent_strength are admin/service-role only, verified 401).
 - **2026-07-02** — *Season switcher & UI declutter.*
   - `158e78d` Foreground 26-27 season; older seasons moved into a new `SeasonSwitcher` dropdown
     (`CURRENT_SEASON_OPTION` / `HISTORICAL_SEASON_OPTIONS` added to `seasons.js`).

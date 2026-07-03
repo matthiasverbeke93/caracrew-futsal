@@ -112,21 +112,25 @@ function NextGameTile({
         ))}
       </div>
 
-      {editable && myStatus ? (
-        <button
-          type="button"
-          className="my-next-game-clear"
-          onClick={() => onMarkAttendance(game.id, null)}
-        >
-          Clear RSVP
-        </button>
-      ) : null}
+      {/* Reserved footer keeps the RSVP buttons above it aligned tile-to-tile,
+          whether or not a tile has a Clear/Marked line (see .my-next-game-footer). */}
+      <div className="my-next-game-footer">
+        {editable && myStatus ? (
+          <button
+            type="button"
+            className="my-next-game-clear"
+            onClick={() => onMarkAttendance(game.id, null)}
+          >
+            Clear RSVP
+          </button>
+        ) : null}
 
-      {myStatus ? (
-        <p className="my-next-game-status">
-          Marked <strong>{attendanceLabel(myStatus)}</strong>.
-        </p>
-      ) : null}
+        {myStatus ? (
+          <p className="my-next-game-status">
+            Marked <strong>{attendanceLabel(myStatus)}</strong>.
+          </p>
+        ) : null}
+      </div>
     </section>
   );
 }

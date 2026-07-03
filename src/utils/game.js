@@ -96,5 +96,5 @@ export function readinessClass(count) {
 export function playerStatusLabel(count) {
   if (count <= 5) return "Not enough players";
   if (count === 6) return "Just enough players";
-  return "Just the right amount";
+  return "Enough players";
 }

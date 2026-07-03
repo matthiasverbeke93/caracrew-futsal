@@ -112,6 +112,15 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-07-03** — *Readiness label + next-games tile alignment.*
+  - Renamed the ≥7 readiness label **"Just the right amount" → "Enough players"** (`utils/game.js`
+    `playerStatusLabel`), so per-game statuses read Not enough / Just enough / **Enough** players. Matched the
+    sidebar filter labels in `constants.js` (`players_right` → "Enough players" in both `GAME_FILTERS` and
+    `GAME_EXTRA_FILTERS`).
+  - Fixed the "next games" tiles (`MyNextGamesTiles`): the RSVP buttons are bottom-anchored
+    (`.my-next-game-actions { margin-top:auto }`), but a tile without a Clear/Marked footer (e.g. the currently-
+    selected "Soonest" tile) dropped its buttons lower than tiles that had one. Wrapped Clear + "Marked …" in a
+    `.my-next-game-footer` with a reserved `min-height` so the buttons line up tile-to-tile in every RSVP state.
 - **2026-07-03** — *26-27 dummy-season seed.* Added `supabase/seed_season_2627.sql` (+ its generator
   `scripts/gen-seed-2627.mjs`) to populate the 26-27 season for testing. **16-team league** → 30-game double
   round-robin vs 15 opponents, weekly Thursdays **2026-09-10 → 2027-05-06** (Christmas/krokus/Easter gaps),

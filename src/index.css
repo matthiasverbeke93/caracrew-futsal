@@ -1304,6 +1304,13 @@ button {
   line-height: 1.35;
 }
 
+/* Reserve room for the Clear RSVP + "Marked …" lines even when a tile has
+   neither, so the (bottom-anchored) RSVP buttons line up across all tiles
+   regardless of each tile's own RSVP state. */
+.panel.my-next-game-card--tile .my-next-game-footer {
+  min-height: 60px;
+}
+
 @media (max-width: 960px) {
   .my-next-games-row,
   .my-next-games-row:has(.my-next-game-card--tile:only-child),

@@ -22,7 +22,7 @@ export const GAME_FILTERS = [
   { id: "stats_missing", label: "Stats missing" },
   { id: "players_not_enough", label: "Not enough players" },
   { id: "players_just_enough", label: "Just enough players" },
-  { id: "players_right", label: "Right amount players" },
+  { id: "players_right", label: "Enough players" },
 ];
 
 export const FILTER_CONFLICTS = {
@@ -39,5 +39,5 @@ export const GAME_EXTRA_FILTERS = [
   { id: "stats_missing", label: "Stats missing" },
   { id: "players_not_enough", label: "Not enough players" },
   { id: "players_just_enough", label: "Just enough players" },
-  { id: "players_right", label: "Right amount" },
+  { id: "players_right", label: "Enough players" },
 ];

@@ -11,9 +11,18 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { SEASON_OPTIONS, DEFAULT_SEASON_SLUG, seasonLabel } from "../src/seasons.js";
 import { TEAM_NAME } from "../src/constants.js";
+import { cleanOpponentName } from "../src/utils/opponent.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+// Base URL of the deployed app, for deep-links back to each game's page.
+const SITE_BASE = (
+  process.env.SITE_URL ||
+  process.env.PUBLIC_APP_URL ||
+  process.env.VITE_SITE_URL ||
+  "https://caracrew.org"
+).replace(/\/+$/, "");
 
 const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 
@@ -86,6 +95,50 @@ function localDT(dateStr, timeStr, addHours = 0) {
   return `${y}${p(m)}${p(day)}T${p(hour)}${p(mm)}00`;
 }
 
+// --- opponent standing / difficulty (mirrors src/utils/difficulty.js) ---
+function normalizeName(name) {
+  return cleanOpponentName(name)
+    .toLowerCase()
+    .replace(/[.,]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/^k\.?\s+/, "k ")
+    .trim();
+}
+
+function findStrengthRow(opponent, strengths) {
+  if (!opponent || !strengths?.length) return null;
+  const n = normalizeName(opponent);
+  return (
+    strengths.find((s) => normalizeName(s.name) === n) ||
+    strengths.find((s) => {
+      const sn = normalizeName(s.name);
+      return sn.includes(n) || n.includes(sn);
+    }) ||
+    null
+  );
+}
+
+function difficultyLabel(position) {
+  if (position == null) return null;
+  if (position <= 3) return "Very hard";
+  if (position <= 5) return "Hard";
+  if (position <= 7) return "Medium";
+  if (position <= 9) return "Easy";
+  return "Very easy";
+}
+
+/** Home when our team is named first in the title (before "vs" or the score). */
+function isHomeGame(game) {
+  const t = String(game.title || "").toLowerCase();
+  if (!t) return null;
+  const first = t.split(/\s+vs\s+|\s+\d+\s*[-–—]\s*\d+\s+/)[0] || "";
+  return /caracrew/.test(first);
+}
+
+function gamePageUrl(game, slug) {
+  return `${SITE_BASE}/?game=${encodeURIComponent(game.id)}&season=${encodeURIComponent(slug)}`;
+}
+
 async function fetchGames(slug) {
   const url =
     `${SUPABASE_URL}/rest/v1/games?season_slug=eq.${encodeURIComponent(slug)}` +
@@ -98,7 +151,47 @@ async function fetchGames(slug) {
   return res.json();
 }
 
-function buildCalendar(slug, games, dtstamp) {
+async function fetchStrengths(slug) {
+  const url =
+    `${SUPABASE_URL}/rest/v1/opponent_strength?season_slug=eq.${encodeURIComponent(slug)}` +
+    `&select=name,current_position,current_ptn_per_match`;
+  const res = await fetch(url, {
+    headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
+  });
+  if (!res.ok) return []; // standings are optional enrichment — don't fail the feed
+  return res.json();
+}
+
+/** Human-readable, multi-line DESCRIPTION for one fixture. */
+function describeGame(g, slug, label, strengths) {
+  const opp = cleanOpponentName(g.opponent) || g.opponent || "Opponent TBD";
+  const home = isHomeGame(g);
+  const lines = [];
+
+  lines.push(`Competition: LZV Cup · ${label}`);
+  lines.push(home == null ? `Opponent: ${opp}` : `${home ? "Home vs" : "Away at"} ${opp}`);
+  if (g.location) lines.push(`Venue: ${g.location}`);
+
+  const row = findStrengthRow(g.opponent, strengths);
+  if (row && row.current_position != null) {
+    const diff = difficultyLabel(row.current_position);
+    const ppm = row.current_ptn_per_match != null ? `, ${Number(row.current_ptn_per_match).toFixed(2)} pts/match` : "";
+    lines.push(`Opponent form: ${diff} — position ${row.current_position}${ppm}`);
+  }
+
+  const scored = g.home_score != null && g.away_score != null;
+  if (scored) {
+    const outcome =
+      g.home_score > g.away_score ? "W" : g.home_score < g.away_score ? "L" : "D";
+    lines.push(`Result: ${g.home_score}–${g.away_score} (${outcome}, ${TEAM_NAME} first)`);
+  }
+
+  lines.push("");
+  lines.push(`Match page: ${gamePageUrl(g, slug)}`);
+  return lines.join("\n");
+}
+
+function buildCalendar(slug, games, strengths, dtstamp) {
   const label = seasonLabel(slug);
   const lines = [
     "BEGIN:VCALENDAR",
@@ -115,10 +208,6 @@ function buildCalendar(slug, games, dtstamp) {
     if (!g.game_date) continue;
     const opp = g.opponent || "Opponent TBD";
     const summary = g.title || `${TEAM_NAME} vs ${opp}`;
-    const scored = g.home_score != null && g.away_score != null;
-    const description = scored
-      ? `Result: ${g.home_score}–${g.away_score} (${TEAM_NAME} first).`
-      : `${TEAM_NAME} ${label} fixture.`;
     lines.push(
       "BEGIN:VEVENT",
       `UID:${escapeText(g.id)}@caracrew.org`,
@@ -127,7 +216,10 @@ function buildCalendar(slug, games, dtstamp) {
       `DTEND;TZID=Europe/Brussels:${localDT(g.game_date, g.game_time, 1)}`,
       `SUMMARY:${escapeText(summary)}`,
       g.location ? `LOCATION:${escapeText(g.location)}` : null,
-      `DESCRIPTION:${escapeText(description)}`,
+      `DESCRIPTION:${escapeText(describeGame(g, slug, label, strengths))}`,
+      `URL:${gamePageUrl(g, slug)}`,
+      `CATEGORIES:${escapeText(TEAM_NAME)},Futsal`,
+      "STATUS:CONFIRMED",
       "END:VEVENT"
     );
   }
@@ -143,8 +235,8 @@ async function main() {
     );
   }
   for (const { slug } of SEASON_OPTIONS) {
-    const games = await fetchGames(slug);
-    const ics = buildCalendar(slug, games, feedStamp(games));
+    const [games, strengths] = await Promise.all([fetchGames(slug), fetchStrengths(slug)]);
+    const ics = buildCalendar(slug, games, strengths, feedStamp(games));
     writeFileSync(join(PUBLIC_DIR, `fixtures-${slug}.ics`), ics);
     console.log(`[ics] fixtures-${slug}.ics — ${games.length} fixtures`);
     if (slug === DEFAULT_SEASON_SLUG) {

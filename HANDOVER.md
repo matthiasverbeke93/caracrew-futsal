@@ -132,7 +132,11 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
     `dist/` root, so they serve at `/fixtures-2627.ics` (live, `text/calendar`). Feeds for 25-26 (22) and
     26-27 (30) are committed. The sidebar **Subscribe** control is a `<details>` popover (`CalendarSubscribe`)
     offering Google (add-by-URL), Apple/phone (`webcal://`), and a **copyable https URL** — the last is required
-    for Outlook.com's "Subscribe from web", which rejects `webcal:` scheme.
+    for Outlook.com's "Subscribe from web", which rejects `webcal:` scheme. Each VEVENT carries rich metadata:
+    competition/season, home/away + opponent, venue, opponent form (position + pts/match, from
+    `opponent_strength`, matched like `utils/difficulty.js`), result for played games, a `URL:` + "Match page"
+    deep-link to `/?game=<id>&season=<slug>` (base from `SITE_URL`/`PUBLIC_APP_URL`/`VITE_SITE_URL`, default
+    `https://caracrew.org`), plus `CATEGORIES`/`STATUS`.
 - **2026-07-03** — *Readiness label + next-games tile alignment.*
   - Renamed the ≥7 readiness label **"Just the right amount" → "Enough players"** (`utils/game.js`
     `playerStatusLabel`), so per-game statuses read Not enough / Just enough / **Enough** players. Matched the

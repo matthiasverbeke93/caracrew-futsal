@@ -29,7 +29,13 @@ DTSTART;TZID=Europe/Brussels:20260910T210000
 DTEND;TZID=Europe/Brussels:20260910T220000
 SUMMARY:K Caracrew SK vs Hattrick
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Hattrick\nVenue: De Nekk
+ er Mechelen\nOpponent form: Very hard — position 1\, 2.60 pts/match\n\nMa
+ tch page: https://caracrew.org/?game=2627-2026-09-10-2100-hattrick&season
+ =2627
+URL:https://caracrew.org/?game=2627-2026-09-10-2100-hattrick&season=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-09-17-2100-los-dollos@caracrew.org
@@ -38,7 +44,13 @@ DTSTART;TZID=Europe/Brussels:20260917T210000
 DTEND;TZID=Europe/Brussels:20260917T220000
 SUMMARY:K Caracrew SK vs Los Dollos
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Los Dollos\nVenue: De Ne
+ kker Mechelen\nOpponent form: Very hard — position 2\, 2.40 pts/match\n\n
+ Match page: https://caracrew.org/?game=2627-2026-09-17-2100-los-dollos&se
+ ason=2627
+URL:https://caracrew.org/?game=2627-2026-09-17-2100-los-dollos&season=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-09-24-2100-fc-tzit-ni-mee@caracrew.org
@@ -47,7 +59,14 @@ DTSTART;TZID=Europe/Brussels:20260924T210000
 DTEND;TZID=Europe/Brussels:20260924T220000
 SUMMARY:K Caracrew SK vs FC Tzit Ni Mee
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs FC Tzit Ni Mee\nVenue: D
+ e Nekker Mechelen\nOpponent form: Very hard — position 3\, 2.10 pts/match
+ \n\nMatch page: https://caracrew.org/?game=2627-2026-09-24-2100-fc-tzit-n
+ i-mee&season=2627
+URL:https://caracrew.org/?game=2627-2026-09-24-2100-fc-tzit-ni-mee&season=
+ 2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-10-01-2100-fc-de-planeet@caracrew.org
@@ -56,7 +75,14 @@ DTSTART;TZID=Europe/Brussels:20261001T210000
 DTEND;TZID=Europe/Brussels:20261001T220000
 SUMMARY:K Caracrew SK vs FC De Planeet
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs FC De Planeet\nVenue: De
+  Nekker Mechelen\nOpponent form: Hard — position 4\, 2.00 pts/match\n\nMa
+ tch page: https://caracrew.org/?game=2627-2026-10-01-2100-fc-de-planeet&s
+ eason=2627
+URL:https://caracrew.org/?game=2627-2026-10-01-2100-fc-de-planeet&season=2
+ 627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-10-08-2100-futsal-opsinjoor@caracrew.org
@@ -65,7 +91,14 @@ DTSTART;TZID=Europe/Brussels:20261008T210000
 DTEND;TZID=Europe/Brussels:20261008T220000
 SUMMARY:K Caracrew SK vs Futsal Opsinjoor
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Futsal Opsinjoor\nVenue:
+  De Nekker Mechelen\nOpponent form: Hard — position 5\, 1.90 pts/match\n\
+ nMatch page: https://caracrew.org/?game=2627-2026-10-08-2100-futsal-opsin
+ joor&season=2627
+URL:https://caracrew.org/?game=2627-2026-10-08-2100-futsal-opsinjoor&seaso
+ n=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-10-15-2100-zvc-tigers@caracrew.org
@@ -74,7 +107,13 @@ DTSTART;TZID=Europe/Brussels:20261015T210000
 DTEND;TZID=Europe/Brussels:20261015T220000
 SUMMARY:K Caracrew SK vs ZVC Tigers
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs ZVC Tigers\nVenue: De Ne
+ kker Mechelen\nOpponent form: Medium — position 6\, 1.70 pts/match\n\nMat
+ ch page: https://caracrew.org/?game=2627-2026-10-15-2100-zvc-tigers&seaso
+ n=2627
+URL:https://caracrew.org/?game=2627-2026-10-15-2100-zvc-tigers&season=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-10-22-2100-fc-tripel@caracrew.org
@@ -83,7 +122,13 @@ DTSTART;TZID=Europe/Brussels:20261022T210000
 DTEND;TZID=Europe/Brussels:20261022T220000
 SUMMARY:K Caracrew SK vs FC Tripel
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs FC Tripel\nVenue: De Nek
+ ker Mechelen\nOpponent form: Medium — position 7\, 1.60 pts/match\n\nMatc
+ h page: https://caracrew.org/?game=2627-2026-10-22-2100-fc-tripel&season=
+ 2627
+URL:https://caracrew.org/?game=2627-2026-10-22-2100-fc-tripel&season=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-10-29-2100-zvc-de-mechelaars@caracrew.org
@@ -92,7 +137,14 @@ DTSTART;TZID=Europe/Brussels:20261029T210000
 DTEND;TZID=Europe/Brussels:20261029T220000
 SUMMARY:K Caracrew SK vs ZVC De Mechelaars
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs ZVC De Mechelaars\nVenue
+ : De Nekker Mechelen\nOpponent form: Easy — position 8\, 1.40 pts/match\n
+ \nMatch page: https://caracrew.org/?game=2627-2026-10-29-2100-zvc-de-mech
+ elaars&season=2627
+URL:https://caracrew.org/?game=2627-2026-10-29-2100-zvc-de-mechelaars&seas
+ on=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-11-05-2100-wille-ma-ni-kunne@caracrew.org
@@ -101,7 +153,14 @@ DTSTART;TZID=Europe/Brussels:20261105T210000
 DTEND;TZID=Europe/Brussels:20261105T220000
 SUMMARY:K Caracrew SK vs Wille ma ni kunne
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Wille ma ni kunne\nVenue
+ : De Nekker Mechelen\nOpponent form: Easy — position 9\, 1.20 pts/match\n
+ \nMatch page: https://caracrew.org/?game=2627-2026-11-05-2100-wille-ma-ni
+ -kunne&season=2627
+URL:https://caracrew.org/?game=2627-2026-11-05-2100-wille-ma-ni-kunne&seas
+ on=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-11-12-2100-fc-den-dorst@caracrew.org
@@ -110,7 +169,14 @@ DTSTART;TZID=Europe/Brussels:20261112T210000
 DTEND;TZID=Europe/Brussels:20261112T220000
 SUMMARY:K Caracrew SK vs FC Den Dorst
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs FC Den Dorst\nVenue: De 
+ Nekker Mechelen\nOpponent form: Very easy — position 10\, 1.10 pts/match\
+ n\nMatch page: https://caracrew.org/?game=2627-2026-11-12-2100-fc-den-dor
+ st&season=2627
+URL:https://caracrew.org/?game=2627-2026-11-12-2100-fc-den-dorst&season=26
+ 27
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-11-19-2100-vv-schemerboyz@caracrew.org
@@ -119,7 +185,14 @@ DTSTART;TZID=Europe/Brussels:20261119T210000
 DTEND;TZID=Europe/Brussels:20261119T220000
 SUMMARY:K Caracrew SK vs VV Schemerboyz
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs VV Schemerboyz\nVenue: D
+ e Nekker Mechelen\nOpponent form: Very easy — position 11\, 0.90 pts/matc
+ h\n\nMatch page: https://caracrew.org/?game=2627-2026-11-19-2100-vv-schem
+ erboyz&season=2627
+URL:https://caracrew.org/?game=2627-2026-11-19-2100-vv-schemerboyz&season=
+ 2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-11-26-2100-futsal-katelijne@caracrew.org
@@ -128,7 +201,14 @@ DTSTART;TZID=Europe/Brussels:20261126T210000
 DTEND;TZID=Europe/Brussels:20261126T220000
 SUMMARY:K Caracrew SK vs Futsal Katelijne
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Futsal Katelijne\nVenue:
+  De Nekker Mechelen\nOpponent form: Very easy — position 12\, 0.80 pts/ma
+ tch\n\nMatch page: https://caracrew.org/?game=2627-2026-11-26-2100-futsal
+ -katelijne&season=2627
+URL:https://caracrew.org/?game=2627-2026-11-26-2100-futsal-katelijne&seaso
+ n=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-12-03-2100-04united@caracrew.org
@@ -137,7 +217,13 @@ DTSTART;TZID=Europe/Brussels:20261203T210000
 DTEND;TZID=Europe/Brussels:20261203T220000
 SUMMARY:K Caracrew SK vs 04United
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs 04United\nVenue: De Nekk
+ er Mechelen\nOpponent form: Very easy — position 13\, 0.60 pts/match\n\nM
+ atch page: https://caracrew.org/?game=2627-2026-12-03-2100-04united&seaso
+ n=2627
+URL:https://caracrew.org/?game=2627-2026-12-03-2100-04united&season=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-12-10-2100-de-zaalduivels@caracrew.org
@@ -146,7 +232,14 @@ DTSTART;TZID=Europe/Brussels:20261210T210000
 DTEND;TZID=Europe/Brussels:20261210T220000
 SUMMARY:K Caracrew SK vs De Zaalduivels
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs De Zaalduivels\nVenue: D
+ e Nekker Mechelen\nOpponent form: Very easy — position 14\, 0.50 pts/matc
+ h\n\nMatch page: https://caracrew.org/?game=2627-2026-12-10-2100-de-zaald
+ uivels&season=2627
+URL:https://caracrew.org/?game=2627-2026-12-10-2100-de-zaalduivels&season=
+ 2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-12-17-2100-de-karpervissers@caracrew.org
@@ -155,7 +248,14 @@ DTSTART;TZID=Europe/Brussels:20261217T210000
 DTEND;TZID=Europe/Brussels:20261217T220000
 SUMMARY:K Caracrew SK vs De Karpervissers
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs De Karpervissers\nVenue:
+  De Nekker Mechelen\nOpponent form: Very easy — position 15\, 0.40 pts/ma
+ tch\n\nMatch page: https://caracrew.org/?game=2627-2026-12-17-2100-de-kar
+ pervissers&season=2627
+URL:https://caracrew.org/?game=2627-2026-12-17-2100-de-karpervissers&seaso
+ n=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-01-07-2200-de-karpervissers@caracrew.org
@@ -164,7 +264,14 @@ DTSTART;TZID=Europe/Brussels:20270107T220000
 DTEND;TZID=Europe/Brussels:20270107T230000
 SUMMARY:De Karpervissers vs K Caracrew SK
 LOCATION:Sporthal Putte
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at De Karpervissers\nVenue:
+  Sporthal Putte\nOpponent form: Very easy — position 15\, 0.40 pts/match\
+ n\nMatch page: https://caracrew.org/?game=2627-2027-01-07-2200-de-karperv
+ issers&season=2627
+URL:https://caracrew.org/?game=2627-2027-01-07-2200-de-karpervissers&seaso
+ n=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-01-14-2200-de-zaalduivels@caracrew.org
@@ -173,7 +280,14 @@ DTSTART;TZID=Europe/Brussels:20270114T220000
 DTEND;TZID=Europe/Brussels:20270114T230000
 SUMMARY:De Zaalduivels vs K Caracrew SK
 LOCATION:Sporthal Duffel
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at De Zaalduivels\nVenue: S
+ porthal Duffel\nOpponent form: Very easy — position 14\, 0.50 pts/match\n
+ \nMatch page: https://caracrew.org/?game=2627-2027-01-14-2200-de-zaalduiv
+ els&season=2627
+URL:https://caracrew.org/?game=2627-2027-01-14-2200-de-zaalduivels&season=
+ 2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-01-21-2200-04united@caracrew.org
@@ -182,7 +296,13 @@ DTSTART;TZID=Europe/Brussels:20270121T220000
 DTEND;TZID=Europe/Brussels:20270121T230000
 SUMMARY:04United vs K Caracrew SK
 LOCATION:Sporthal Willebroek
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at 04United\nVenue: Sportha
+ l Willebroek\nOpponent form: Very easy — position 13\, 0.60 pts/match\n\n
+ Match page: https://caracrew.org/?game=2627-2027-01-21-2200-04united&seas
+ on=2627
+URL:https://caracrew.org/?game=2627-2027-01-21-2200-04united&season=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-01-28-2200-futsal-katelijne@caracrew.org
@@ -191,7 +311,14 @@ DTSTART;TZID=Europe/Brussels:20270128T220000
 DTEND;TZID=Europe/Brussels:20270128T230000
 SUMMARY:Futsal Katelijne vs K Caracrew SK
 LOCATION:Heiveld St-Katelijne-Waver
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Futsal Katelijne\nVenue:
+  Heiveld St-Katelijne-Waver\nOpponent form: Very easy — position 12\, 0.8
+ 0 pts/match\n\nMatch page: https://caracrew.org/?game=2627-2027-01-28-220
+ 0-futsal-katelijne&season=2627
+URL:https://caracrew.org/?game=2627-2027-01-28-2200-futsal-katelijne&seaso
+ n=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-02-04-2200-vv-schemerboyz@caracrew.org
@@ -200,7 +327,14 @@ DTSTART;TZID=Europe/Brussels:20270204T220000
 DTEND;TZID=Europe/Brussels:20270204T230000
 SUMMARY:VV Schemerboyz vs K Caracrew SK
 LOCATION:Sporthal Bonheiden
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at VV Schemerboyz\nVenue: S
+ porthal Bonheiden\nOpponent form: Very easy — position 11\, 0.90 pts/matc
+ h\n\nMatch page: https://caracrew.org/?game=2627-2027-02-04-2200-vv-schem
+ erboyz&season=2627
+URL:https://caracrew.org/?game=2627-2027-02-04-2200-vv-schemerboyz&season=
+ 2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-02-11-2200-fc-den-dorst@caracrew.org
@@ -209,7 +343,14 @@ DTSTART;TZID=Europe/Brussels:20270211T220000
 DTEND;TZID=Europe/Brussels:20270211T230000
 SUMMARY:FC Den Dorst vs K Caracrew SK
 LOCATION:Sporthal Rijmenam
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at FC Den Dorst\nVenue: Spo
+ rthal Rijmenam\nOpponent form: Very easy — position 10\, 1.10 pts/match\n
+ \nMatch page: https://caracrew.org/?game=2627-2027-02-11-2200-fc-den-dors
+ t&season=2627
+URL:https://caracrew.org/?game=2627-2027-02-11-2200-fc-den-dorst&season=26
+ 27
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-02-25-2200-wille-ma-ni-kunne@caracrew.org
@@ -218,7 +359,14 @@ DTSTART;TZID=Europe/Brussels:20270225T220000
 DTEND;TZID=Europe/Brussels:20270225T230000
 SUMMARY:Wille ma ni kunne vs K Caracrew SK
 LOCATION:Sporthal Auwegem
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Wille ma ni kunne\nVenue
+ : Sporthal Auwegem\nOpponent form: Easy — position 9\, 1.20 pts/match\n\n
+ Match page: https://caracrew.org/?game=2627-2027-02-25-2200-wille-ma-ni-k
+ unne&season=2627
+URL:https://caracrew.org/?game=2627-2027-02-25-2200-wille-ma-ni-kunne&seas
+ on=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-03-04-2200-zvc-de-mechelaars@caracrew.org
@@ -227,7 +375,14 @@ DTSTART;TZID=Europe/Brussels:20270304T220000
 DTEND;TZID=Europe/Brussels:20270304T230000
 SUMMARY:ZVC De Mechelaars vs K Caracrew SK
 LOCATION:Sporthal Nekkerspoel
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at ZVC De Mechelaars\nVenue
+ : Sporthal Nekkerspoel\nOpponent form: Easy — position 8\, 1.40 pts/match
+ \n\nMatch page: https://caracrew.org/?game=2627-2027-03-04-2200-zvc-de-me
+ chelaars&season=2627
+URL:https://caracrew.org/?game=2627-2027-03-04-2200-zvc-de-mechelaars&seas
+ on=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-03-11-2200-fc-tripel@caracrew.org
@@ -236,7 +391,13 @@ DTSTART;TZID=Europe/Brussels:20270311T220000
 DTEND;TZID=Europe/Brussels:20270311T230000
 SUMMARY:FC Tripel vs K Caracrew SK
 LOCATION:Sporthal Tervuursesteenweg
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at FC Tripel\nVenue: Sporth
+ al Tervuursesteenweg\nOpponent form: Medium — position 7\, 1.60 pts/match
+ \n\nMatch page: https://caracrew.org/?game=2627-2027-03-11-2200-fc-tripel
+ &season=2627
+URL:https://caracrew.org/?game=2627-2027-03-11-2200-fc-tripel&season=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-03-18-2200-zvc-tigers@caracrew.org
@@ -245,7 +406,13 @@ DTSTART;TZID=Europe/Brussels:20270318T220000
 DTEND;TZID=Europe/Brussels:20270318T230000
 SUMMARY:ZVC Tigers vs K Caracrew SK
 LOCATION:Heiveld St-Katelijne-Waver
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at ZVC Tigers\nVenue: Heive
+ ld St-Katelijne-Waver\nOpponent form: Medium — position 6\, 1.70 pts/matc
+ h\n\nMatch page: https://caracrew.org/?game=2627-2027-03-18-2200-zvc-tige
+ rs&season=2627
+URL:https://caracrew.org/?game=2627-2027-03-18-2200-zvc-tigers&season=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-03-25-2200-futsal-opsinjoor@caracrew.org
@@ -254,7 +421,14 @@ DTSTART;TZID=Europe/Brussels:20270325T220000
 DTEND;TZID=Europe/Brussels:20270325T230000
 SUMMARY:Futsal Opsinjoor vs K Caracrew SK
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Futsal Opsinjoor\nVenue:
+  De Nekker Mechelen\nOpponent form: Hard — position 5\, 1.90 pts/match\n\
+ nMatch page: https://caracrew.org/?game=2627-2027-03-25-2200-futsal-opsin
+ joor&season=2627
+URL:https://caracrew.org/?game=2627-2027-03-25-2200-futsal-opsinjoor&seaso
+ n=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-04-15-2200-fc-de-planeet@caracrew.org
@@ -263,7 +437,14 @@ DTSTART;TZID=Europe/Brussels:20270415T220000
 DTEND;TZID=Europe/Brussels:20270415T230000
 SUMMARY:FC De Planeet vs K Caracrew SK
 LOCATION:Sporthal Caputsteen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at FC De Planeet\nVenue: Sp
+ orthal Caputsteen\nOpponent form: Hard — position 4\, 2.00 pts/match\n\nM
+ atch page: https://caracrew.org/?game=2627-2027-04-15-2200-fc-de-planeet&
+ season=2627
+URL:https://caracrew.org/?game=2627-2027-04-15-2200-fc-de-planeet&season=2
+ 627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-04-22-2200-fc-tzit-ni-mee@caracrew.org
@@ -272,7 +453,14 @@ DTSTART;TZID=Europe/Brussels:20270422T220000
 DTEND;TZID=Europe/Brussels:20270422T230000
 SUMMARY:FC Tzit Ni Mee vs K Caracrew SK
 LOCATION:Sporthal Battel
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at FC Tzit Ni Mee\nVenue: S
+ porthal Battel\nOpponent form: Very hard — position 3\, 2.10 pts/match\n\
+ nMatch page: https://caracrew.org/?game=2627-2027-04-22-2200-fc-tzit-ni-m
+ ee&season=2627
+URL:https://caracrew.org/?game=2627-2027-04-22-2200-fc-tzit-ni-mee&season=
+ 2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-04-29-2200-los-dollos@caracrew.org
@@ -281,7 +469,13 @@ DTSTART;TZID=Europe/Brussels:20270429T220000
 DTEND;TZID=Europe/Brussels:20270429T230000
 SUMMARY:Los Dollos vs K Caracrew SK
 LOCATION:De Nekker Mechelen
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Los Dollos\nVenue: De Ne
+ kker Mechelen\nOpponent form: Very hard — position 2\, 2.40 pts/match\n\n
+ Match page: https://caracrew.org/?game=2627-2027-04-29-2200-los-dollos&se
+ ason=2627
+URL:https://caracrew.org/?game=2627-2027-04-29-2200-los-dollos&season=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-05-06-2200-hattrick@caracrew.org
@@ -290,6 +484,12 @@ DTSTART;TZID=Europe/Brussels:20270506T220000
 DTEND;TZID=Europe/Brussels:20270506T230000
 SUMMARY:Hattrick vs K Caracrew SK
 LOCATION:Sporthal Geerdegem
-DESCRIPTION:K. Caracrew SK 26-27 fixture.
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Hattrick\nVenue: Sportha
+ l Geerdegem\nOpponent form: Very hard — position 1\, 2.60 pts/match\n\nMa
+ tch page: https://caracrew.org/?game=2627-2027-05-06-2200-hattrick&season
+ =2627
+URL:https://caracrew.org/?game=2627-2027-05-06-2200-hattrick&season=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
 END:VEVENT
 END:VCALENDAR

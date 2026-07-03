@@ -2347,10 +2347,6 @@ button {
   position: relative;
 }
 
-.calendar-subscribe {
-  position: relative;
-}
-
 .calendar-subscribe-summary {
   list-style: none;
   cursor: pointer;
@@ -2377,9 +2373,10 @@ button {
   position: absolute;
   z-index: 20;
   top: calc(100% + 6px);
-  left: 0;
+  right: 0;
+  left: auto;
   width: 260px;
-  max-width: 78vw;
+  max-width: min(78vw, 300px);
   display: flex;
   flex-direction: column;
   gap: 8px;

@@ -23,6 +23,10 @@ function CalendarSubscribe({ seasonSlug }) {
   const webcalUrl = `webcal://${host}/fixtures-${seasonSlug}.ics`;
   // Google's "add by URL" accepts a webcal/https cid.
   const googleUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}`;
+  // Outlook.com "Subscribe from web", prefilled (personal accounts; work/school users can Copy URL instead).
+  const outlookUrl = `https://outlook.live.com/calendar/0/addfromweb?url=${encodeURIComponent(
+    httpsUrl
+  )}&name=${encodeURIComponent("Caracrew fixtures")}`;
 
   const copy = async () => {
     try {
@@ -54,8 +58,16 @@ function CalendarSubscribe({ seasonSlug }) {
         <a className="calendar-subscribe-option" href={webcalUrl}>
           Apple Calendar / phone
         </a>
+        <a
+          className="calendar-subscribe-option"
+          href={outlookUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Outlook
+        </a>
         <div className="calendar-subscribe-manual">
-          <span className="calendar-subscribe-hint">Outlook &amp; others — paste this URL:</span>
+          <span className="calendar-subscribe-hint">Other apps — paste this URL:</span>
           <input
             type="text"
             className="calendar-subscribe-url"

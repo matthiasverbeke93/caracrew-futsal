@@ -21,6 +21,7 @@ import {
   sortTeamSeasonRows,
 } from "../utils/teamSeasonStats";
 import { buildLeagueTable, computeTeamRecord } from "../utils/teamRecord";
+import { buildGoldenBootRace } from "../utils/goldenBoot";
 
 function fmtPer(n) {
   if (n === 0) return "0";
@@ -109,6 +110,91 @@ const BAR_KEYS = [
   { key: "pctPlayed", label: "% played" },
 ];
 
+const GOLDEN_BOOT_METRICS = [
+  { key: "goals", label: "Goals" },
+  { key: "ga", label: "G+A" },
+];
+
+// Okabe–Ito categorical palette (colour-blind safe), one per race line.
+const RACE_COLORS = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00"];
+
+const GB_W = 760;
+const GB_H = 240;
+const GB_PAD_L = 34;
+const GB_PAD_R = 12;
+const GB_PAD_Y = 22;
+
+/** Cumulative scoring race: one line per top scorer across played fixtures. */
+function GoldenBootRaceChart({ race }) {
+  const { points, players } = race;
+  const n = points.length;
+  const max = Math.max(1, ...players.map((p) => p.total));
+  const innerW = GB_W - GB_PAD_L - GB_PAD_R;
+  const innerH = GB_H - GB_PAD_Y * 2;
+  const baseline = GB_PAD_Y + innerH;
+  const xAt = (i) => (n <= 1 ? GB_PAD_L + innerW / 2 : GB_PAD_L + (innerW * i) / (n - 1));
+  const yAt = (v) => baseline - (v / max) * innerH;
+  const labelStep = Math.max(1, Math.ceil(n / 12));
+
+  return (
+    <div className="golden-boot-chart">
+      <svg
+        className="history-line-chart golden-boot-svg"
+        viewBox={`0 0 ${GB_W} ${GB_H}`}
+        role="img"
+        aria-label="Cumulative scoring race by fixture"
+      >
+        <line x1={GB_PAD_L} y1={baseline} x2={GB_W - GB_PAD_R} y2={baseline} />
+        <text x={GB_PAD_L - 6} y={GB_PAD_Y + 4} textAnchor="end" className="history-chart-season">
+          {max}
+        </text>
+        <text x={GB_PAD_L - 6} y={baseline} textAnchor="end" className="history-chart-season">
+          0
+        </text>
+        {points.map((pt, i) =>
+          i % labelStep === 0 ? (
+            <text
+              key={pt.id}
+              x={xAt(i)}
+              y={GB_H - 4}
+              textAnchor="middle"
+              className="history-chart-season"
+            >
+              {shortDate(pt.date)}
+            </text>
+          ) : null
+        )}
+        {players.map((p, idx) => {
+          const color = RACE_COLORS[idx % RACE_COLORS.length];
+          const d = p.cumulative
+            .map((v, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`)
+            .join(" ");
+          const lastX = xAt(n - 1);
+          const lastY = yAt(p.cumulative[n - 1]);
+          return (
+            <g key={p.id}>
+              <path d={d} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" />
+              <circle cx={lastX} cy={lastY} r="3.5" fill={color} />
+            </g>
+          );
+        })}
+      </svg>
+      <ol className="golden-boot-legend">
+        {players.map((p, idx) => (
+          <li key={p.id} className="golden-boot-legend-item">
+            <span
+              className="golden-boot-swatch"
+              style={{ background: RACE_COLORS[idx % RACE_COLORS.length] }}
+            />
+            <span className="golden-boot-legend-name">{p.name}</span>
+            <span className="golden-boot-legend-total">{p.total}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 const OVERVIEW_TABS = [
   { id: "current", label: "Current season" },
   { id: "history", label: "History" },
@@ -167,6 +253,7 @@ export default function SeasonOverviewPage({
   onOpenPlayer,
 }) {
   const [barMetric, setBarMetric] = useState("pctPlayed");
+  const [goldenBootMetric, setGoldenBootMetric] = useState("goals");
   const [tableSortKey, setTableSortKey] = useState("gamesPlayed");
   const [complianceSortKey, setComplianceSortKey] = useState("complianceStars");
 
@@ -231,6 +318,11 @@ export default function SeasonOverviewPage({
   );
 
   const summary = useMemo(() => seasonPlayedSummary(games, stats), [games, stats]);
+
+  const goldenBoot = useMemo(
+    () => buildGoldenBootRace(games, stats, players, { topN: 5, metric: goldenBootMetric }),
+    [games, stats, players, goldenBootMetric]
+  );
 
   const record = useMemo(() => computeTeamRecord(games), [games]);
   const leagueTable = useMemo(
@@ -495,6 +587,33 @@ export default function SeasonOverviewPage({
           <p className="insights-empty">No played fixtures with stats yet.</p>
         ) : (
           <PlayersPerGameChart series={playersPerGame} />
+        )}
+      </section>
+
+      <section className="insights-section" aria-labelledby="overview-goldenboot-heading">
+        <div className="insights-section-head">
+          <h3 id="overview-goldenboot-heading">Golden Boot race</h3>
+          <div className="insights-toggle" role="group" aria-label="Race metric">
+            {GOLDEN_BOOT_METRICS.map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                className={goldenBootMetric === opt.key ? "active" : ""}
+                onClick={() => setGoldenBootMetric(opt.key)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="insights-section-intro">
+          Cumulative {goldenBootMetric === "ga" ? "goals + assists" : "goals"} for the top scorers,
+          fixture by fixture (played games only).
+        </p>
+        {goldenBoot.players.length === 0 ? (
+          <p className="insights-empty">No goals recorded in played fixtures yet.</p>
+        ) : (
+          <GoldenBootRaceChart race={goldenBoot} />
         )}
       </section>
 

@@ -1837,6 +1837,41 @@ button {
   background: var(--form-l);
 }
 
+/* Golden Boot race chart */
+.golden-boot-svg {
+  width: 100%;
+  height: auto;
+}
+
+.golden-boot-legend {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.golden-boot-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.golden-boot-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.golden-boot-legend-total {
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+  font-variant-numeric: tabular-nums;
+}
+
 /* League table: our row highlighted */
 .league-table .league-rank-col {
   width: 2.5em;

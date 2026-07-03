@@ -14,6 +14,65 @@ const RSVP_CHIP = {
   if_needed: { label: "You are marked If needed", short: "If needed", className: "my-rsvp-maybe" },
 };
 
+/** Calendar subscribe popover: Google/Apple one-click + a copyable https URL for Outlook & others. */
+function CalendarSubscribe({ seasonSlug }) {
+  const [copied, setCopied] = useState(false);
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const host = typeof window !== "undefined" ? window.location.host : "";
+  const httpsUrl = `${origin}/fixtures-${seasonSlug}.ics`;
+  const webcalUrl = `webcal://${host}/fixtures-${seasonSlug}.ics`;
+  // Google's "add by URL" accepts a webcal/https cid.
+  const googleUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}`;
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(httpsUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard blocked (e.g. non-secure context) — the readonly field stays selectable.
+    }
+  };
+
+  return (
+    <details className="calendar-subscribe">
+      <summary
+        className="calendar-subscribe-summary"
+        title="Add these fixtures to your calendar app"
+      >
+        Subscribe
+      </summary>
+      <div className="calendar-subscribe-menu">
+        <a
+          className="calendar-subscribe-option"
+          href={googleUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Google Calendar
+        </a>
+        <a className="calendar-subscribe-option" href={webcalUrl}>
+          Apple Calendar / phone
+        </a>
+        <div className="calendar-subscribe-manual">
+          <span className="calendar-subscribe-hint">Outlook &amp; others — paste this URL:</span>
+          <input
+            type="text"
+            className="calendar-subscribe-url"
+            readOnly
+            value={httpsUrl}
+            onFocus={(e) => e.target.select()}
+            aria-label="Calendar subscription URL"
+          />
+          <button type="button" className="calendar-subscribe-copy" onClick={copy}>
+            {copied ? "Copied!" : "Copy URL"}
+          </button>
+        </div>
+      </div>
+    </details>
+  );
+}
+
 function userHasMotmVoteForGame(gameId, motmVotes, voterUserId) {
   if (!voterUserId || !motmVotes?.length) return false;
   return motmVotes.some((v) => v.game_id === gameId && v.voter_key === voterUserId);
@@ -202,15 +261,7 @@ export default function GameSidebar({
             Schedule
           </h2>
           <div className="sidebar-toolbar-actions">
-            {typeof window !== "undefined" && (
-              <a
-                className="calendar-subscribe-link"
-                href={`webcal://${window.location.host}/fixtures-${seasonSlug}.ics`}
-                title="Subscribe to these fixtures in your calendar app (Google, Apple, Outlook)"
-              >
-                Subscribe
-              </a>
-            )}
+            <CalendarSubscribe seasonSlug={seasonSlug} />
             <button
               className="calendar-toggle-button"
               type="button"

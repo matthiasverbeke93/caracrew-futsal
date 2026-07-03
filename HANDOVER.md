@@ -129,7 +129,10 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
     `.github/workflows/sync-ics.yml` (daily + dispatch + on-script-change) regenerates and commits the feeds —
     **needs a `SUPABASE_ANON_KEY` repo secret** (`SUPABASE_URL` already exists). UI: a **Subscribe** link in the
     sidebar toolbar (`GameSidebar`) → `webcal://<host>/fixtures-<season>.ics`. Vite copies `public/*.ics` to
-    `dist/` root, so they serve at `/fixtures-2627.ics`. Feeds for 25-26 (22) and 26-27 (30) are committed.
+    `dist/` root, so they serve at `/fixtures-2627.ics` (live, `text/calendar`). Feeds for 25-26 (22) and
+    26-27 (30) are committed. The sidebar **Subscribe** control is a `<details>` popover (`CalendarSubscribe`)
+    offering Google (add-by-URL), Apple/phone (`webcal://`), and a **copyable https URL** — the last is required
+    for Outlook.com's "Subscribe from web", which rejects `webcal:` scheme.
 - **2026-07-03** — *Readiness label + next-games tile alignment.*
   - Renamed the ≥7 readiness label **"Just the right amount" → "Enough players"** (`utils/game.js`
     `playerStatusLabel`), so per-game statuses read Not enough / Just enough / **Enough** players. Matched the

@@ -2344,23 +2344,100 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
 
-.calendar-subscribe-link {
+.calendar-subscribe {
+  position: relative;
+}
+
+.calendar-subscribe-summary {
+  list-style: none;
+  cursor: pointer;
   border-radius: 999px;
   padding: 7px 12px;
   font-size: 12px;
   font-weight: 600;
-  text-decoration: none;
   color: var(--accent-strong, #0b5138);
   background: var(--accent-muted, rgba(20, 108, 67, 0.1));
   border: 1px solid var(--accent-muted, rgba(20, 108, 67, 0.2));
   white-space: nowrap;
 }
 
-.calendar-subscribe-link:hover {
+.calendar-subscribe-summary::-webkit-details-marker {
+  display: none;
+}
+
+.calendar-subscribe-summary:hover {
   background: var(--accent);
   color: var(--on-accent);
+}
+
+.calendar-subscribe-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 260px;
+  max-width: 78vw;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface-panel, #fff);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: var(--shadow-panel, 0 10px 30px rgba(15, 23, 42, 0.14));
+}
+
+.calendar-subscribe-option {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text-strong, #0f172a);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.calendar-subscribe-option:hover {
+  background: var(--accent-muted, rgba(20, 108, 67, 0.12));
+}
+
+.calendar-subscribe-manual {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--border-subtle, #e2e8f0);
+  padding-top: 8px;
+}
+
+.calendar-subscribe-hint {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.calendar-subscribe-url {
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  width: 100%;
+}
+
+.calendar-subscribe-copy {
+  align-self: flex-start;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-accent, #fff);
+  background: var(--accent);
+  border: 1px solid var(--accent);
 }
 
 .calendar-panel {

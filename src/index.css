@@ -2340,6 +2340,29 @@ button {
   font-size: 12px;
 }
 
+.sidebar-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-subscribe-link {
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--accent-strong, #0b5138);
+  background: var(--accent-muted, rgba(20, 108, 67, 0.1));
+  border: 1px solid var(--accent-muted, rgba(20, 108, 67, 0.2));
+  white-space: nowrap;
+}
+
+.calendar-subscribe-link:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
 .calendar-panel {
   margin-bottom: 14px;
   border: 1px solid #e2e8f0;

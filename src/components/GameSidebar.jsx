@@ -201,15 +201,26 @@ export default function GameSidebar({
           <h2 id="fixtures-heading" className="sidebar-title">
             Schedule
           </h2>
-          <button
-            className="calendar-toggle-button"
-            type="button"
-            aria-expanded={showCalendar}
-            aria-controls="fixtures-scroll-region"
-            onClick={() => setShowCalendar((prev) => !prev)}
-          >
-            {showCalendar ? "List" : "Calendar"}
-          </button>
+          <div className="sidebar-toolbar-actions">
+            {typeof window !== "undefined" && (
+              <a
+                className="calendar-subscribe-link"
+                href={`webcal://${window.location.host}/fixtures-${seasonSlug}.ics`}
+                title="Subscribe to these fixtures in your calendar app (Google, Apple, Outlook)"
+              >
+                Subscribe
+              </a>
+            )}
+            <button
+              className="calendar-toggle-button"
+              type="button"
+              aria-expanded={showCalendar}
+              aria-controls="fixtures-scroll-region"
+              onClick={() => setShowCalendar((prev) => !prev)}
+            >
+              {showCalendar ? "List" : "Calendar"}
+            </button>
+          </div>
         </div>
 
         <div className="filter-status-row" role="group" aria-label="Filter by match status">

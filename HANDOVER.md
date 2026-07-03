@@ -112,6 +112,24 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-07-03** — *Three Stats/UX features: season record, Golden Boot race, calendar feed.*
+  - **Season record & projected league table** (`utils/teamRecord.js` + tests): `computeTeamRecord` (W-D-L,
+    GF/GA, GD, points at 3-1-0, ppg, win%, chronological results) and `buildLeagueTable` (LZV opponent snapshot
+    with our computed pts/match inserted + ranked). Rendered at the top of the Stats page (`SeasonOverviewPage`,
+    current tab) as a KPI card + results timeline + a highlighted league table. `opponentStrengths` now threads
+    from `App` into the page.
+  - **Golden Boot race** (`utils/goldenBoot.js` + tests): `buildGoldenBootRace` builds monotonic cumulative
+    per-player scoring across played fixtures for the top 5, with a **Goals / G+A** toggle. Drawn as a multi-line
+    SVG (`GoldenBootRaceChart`, Okabe–Ito colour-blind-safe palette + legend with totals). Ungated like the
+    squad-size chart (reads per-game stats, so it works for 25-26 too).
+  - **Calendar subscription (.ics)**: `scripts/gen-ics.mjs` (`npm run ics:gen`) writes `public/fixtures-<slug>.ics`
+    (+ `fixtures.ics` mirroring the default season) from the public REST endpoint (anon key, no service role).
+    RFC-5545 output with a Europe/Brussels VTIMEZONE and line folding; `DTSTAMP` is derived from the latest
+    fixture date (stable, so scheduled regens only diff when fixtures change). New workflow
+    `.github/workflows/sync-ics.yml` (daily + dispatch + on-script-change) regenerates and commits the feeds —
+    **needs a `SUPABASE_ANON_KEY` repo secret** (`SUPABASE_URL` already exists). UI: a **Subscribe** link in the
+    sidebar toolbar (`GameSidebar`) → `webcal://<host>/fixtures-<season>.ics`. Vite copies `public/*.ics` to
+    `dist/` root, so they serve at `/fixtures-2627.ics`. Feeds for 25-26 (22) and 26-27 (30) are committed.
 - **2026-07-03** — *Readiness label + next-games tile alignment.*
   - Renamed the ≥7 readiness label **"Just the right amount" → "Enough players"** (`utils/game.js`
     `playerStatusLabel`), so per-game statuses read Not enough / Just enough / **Enough** players. Matched the

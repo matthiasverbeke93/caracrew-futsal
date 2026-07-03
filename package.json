@@ -14,7 +14,8 @@
     "sync:lzv:dryrun": "node scripts/sync-lzv-dryrun.mjs",
     "sync:palmares": "node scripts/sync-palmares.mjs",
     "sync:palmares:dryrun": "node scripts/sync-palmares-dryrun.mjs",
-    "digest:weekly": "node scripts/send-weekly-digest.mjs"
+    "digest:weekly": "node scripts/send-weekly-digest.mjs",
+    "ics:gen": "node scripts/gen-ics.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",

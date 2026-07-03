@@ -1,0 +1,49 @@
+name: Sync calendar feeds
+
+on:
+  schedule:
+    # Daily 05:30 UTC — refresh the .ics feeds if fixtures/scores changed.
+    - cron: "30 5 * * *"
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - "scripts/gen-ics.mjs"
+      - "src/seasons.js"
+      - "src/constants.js"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Generate calendar feeds
+        run: node scripts/gen-ics.mjs
+        env:
+          # Reads are public; the anon (publishable) key is enough. Set these as repo
+          # secrets (SUPABASE_URL already exists for the other sync jobs).
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Commit feeds if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/fixtures*.ics
+          if git diff --staged --quiet; then
+            echo "No fixture changes — feeds unchanged."
+          else
+            git commit -m "chore: refresh calendar feeds [skip ci]"
+            git push
+          fi

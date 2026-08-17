@@ -106,11 +106,24 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   ran and was verified: `games` 0, `opponent_strength` 0, no orphaned child rows anywhere, and 25-26 still
   intact at 22 games / 11 opponents. The `.ics` feeds were regenerated, so 26-27 publishes a valid empty
   calendar rather than fake fixtures.
-- **When the official calendar arrives, in this order:** load the real fixtures into `games` with
-  `season_slug = '2627'` (SQL editor — the anon key cannot write to `games`); then `npm run sync:palmares`
-  (or wait for the monthly job) to rebuild `opponent_strength`, which drives the sidebar difficulty ratings
-  and the projected league table; then `npm run ics:gen` and commit the feeds. Note `ics:gen` reads
-  `process.env` and does **not** load `.env` — locally, `set -a; . ./.env; set +a` first.
+- **When the official calendar arrives → follow [`CALENDAR-IMPORT.md`](./CALENDAR-IMPORT.md)**, a step-by-step
+  runbook written 2026-08-17 with every fact verified against the live site and DB. Headlines: LZV publishes an
+  **official per-team iCalendar feed** (`https://www.lzvcup.be/icalendar.php?id=742`) that is the right import
+  source and that no existing script uses; **fixtures must be inserted manually** because `sync-lzv.mjs` only
+  updates scores on rows that already exist; `title` is the **only** store of home/away; and after go-live the
+  two traps are the score sync's exact-date matching and reschedules (edit in place, never re-import, or every
+  RSVP is orphaned).
+- ⏳ **As of 2026-08-17 the calendar is NOT published** — the LZV team page still reads *"Voor deze ploeg zijn
+  nog geen gegevens bekend voor het huidige seizoen"* and the official feed returns 0 events. Team id **742**
+  is still valid.
+- 🔴 **OPEN DATA BUG (25-26, found 2026-08-17): the 2025-10-14 ZVC Tigers result is stored inverted.** The
+  `title` reads `ZVC Tigers 10 - 1 K Caracrew SK` (a 1-10 defeat) but the row stores `home_score=10,
+  away_score=1`, and `home_score` is by convention **our** goals — so the app counts it as a **10-1 win**. That
+  is 3 phantom points and an 18-goal swing in the season record card, the projected league table and win%.
+  An audit of all 22 scored 25-26 games found **this one row only** (20 consistent, 1 unparseable title), so
+  the "us first" convention itself is sound. Needs a human call on which side is right — LZV had no 25-26 data
+  left to check against. Fix once decided:
+  `update games set home_score = 1, away_score = 10 where id = '2526-2025-10-14-2100-zvc-tigers';`
 - ⚠ **Everything 26-27 reads empty until then** — sidebar has no fixtures, Stats page charts show their
   empty states, no difficulty ratings. That is expected, not a bug. Verified safe 2026-08-17: every stats
   util returns zeroed/empty structures (no division-by-zero) and every chart on the Stats page has an empty
@@ -135,6 +148,56 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-17** — *Calendar importer + a general bug sweep.*
+  - **New: `npm run calendar:import`** (`scripts/import-lzv-calendar.mjs`, logic in
+    `src/utils/lzvCalendar.js`, **34 unit tests**). Reads LZV's official iCalendar feed, previews the fixture
+    table, writes idempotent SQL. Handles folded lines, escaped text, `TZID` **and** `Z`/UTC DTSTARTs
+    (DST-verified for CEST *and* CET), all-day events, id collisions. The SQL never deletes and its upsert
+    never touches the scores — deliberately unlike the retired seed. It **refuses to emit SQL on any
+    ambiguity** (unknown separator, our team on both/neither side, foreign TZID, no kickoff time) because the
+    feed's SUMMARY layout could not be observed while LZV had nothing published. Verified end-to-end against
+    the live empty feed and a synthetic one.
+  - 🐛 **FIXED — `isHomeGame()` reported every `" - "` separated title as HOME, including away fixtures.** Its
+    regex only knew `" vs "` and score separators; with neither present, `split` returned the whole string and
+    `/caracrew/` matched somewhere in it, so the answer was always `true`. `"Futsal Opsinjoor - K Caracrew SK"`
+    (away) resolved to home. Replaced with the shared `isHomeFromTitle()` in `src/utils/lzvCalendar.js`, which
+    reuses `splitSummary` (it treats a score as a separator too, so both existing title shapes still work) and
+    returns **null instead of guessing**. Regenerating the feeds afterwards produced a **byte-identical**
+    `fixtures-2526.ics`, proving the fix changed no current output — only one live row uses that form and it
+    happened to be home. 5 regression tests, including the exact title that exposed it.
+  - **Data sweep across every table** (duplicate fixtures, orphaned/unknown FKs, duplicate
+    attendance/stats/votes, half-set scores, negative scores, blank/duplicate player names, missing
+    time/location/title, opponents with no strength row, substring-colliding opponent names): **clean apart
+    from the two title/score issues already listed.** 22 games, 13 players, 36 attendance, 10 stats, 1 vote.
+  - **Two findings left as decisions, both recorded in `CALENDAR-IMPORT.md` §2b/§2c** because they bite at
+    go-live: the difficulty bands are hardcoded for a ~12-team league (a 16-team league puts 44% of the
+    division in "Very easy", including mid-table 10th), and a missing `opponent_strength` row lets a
+    substring-sibling team's rating be shown instead of none.
+  - **Noted, not changed:** `isMotmVotingOpen()` gates on `isPlayed()`, which is day-granular, so for a 21:00
+    kickoff the designed window (kickoff + 2h = 23:00) stays shut until midnight — roughly the first hour, and
+    the likeliest hour for people to vote, is lost. 22:00 away kickoffs are unaffected. Related wart: the
+    function accepts `nowMs` but the `isPlayed` gate inside it ignores it, so the parameter gives a misleading
+    sense of injectability and the behaviour can't be fully unit-tested.
+- **2026-08-17** — *Calendar-import runbook + a 25-26 score audit.* Wrote
+  **[`CALENDAR-IMPORT.md`](./CALENDAR-IMPORT.md)** so the go-live is mechanical. What the investigation turned
+  up, none of it previously written down:
+  - **LZV publishes an official per-team iCalendar feed** — `https://www.lzvcup.be/icalendar.php?id=742`,
+    live, `text/calendar`, currently 0 events. Structured `DTSTART`/`SUMMARY`/`LOCATION` — the right import
+    source, and nothing in the repo uses it.
+  - **`sync-lzv.mjs` cannot bootstrap a calendar.** It only updates `home_score`/`away_score` on rows that
+    already exist, and only parses lines that already carry a score, so it never sees upcoming fixtures.
+    Fixture insertion is unavoidably a separate one-off.
+  - **`title` is the sole store of home/away** (`isHomeGame()` splits on `" vs "` or a score and looks for
+    "caracrew" in the first half). There is no home/away column, `location` is not a proxy for it (De Nekker
+    hosts other teams, so we are sometimes the away side at our own venue), and nothing in `src/` reads
+    `title` — only the ICS generator does, so an error is invisible in the app and shows up only in
+    subscribers' calendars.
+  - `game_id` encodes the date, so **a reschedule must be edited in place** — re-importing creates a second
+    row and orphans every RSVP, since four tables FK to `game_id`.
+  - `weekly-digest.yml` passes `vars.LZV_SEASON_SLUG` with **no fallback** while the other two workflows
+    default to `'2627'`. Set the repo var explicitly.
+  - **Found a real data bug**: the 2025-10-14 ZVC Tigers result is stored inverted (counted as a 10-1 win
+    instead of a 1-10 defeat). Audited all 22 scored 25-26 rows — only that one. See Current state.
 - **2026-08-17** — *Untrack `.env`.* It was tracked despite being in `.gitignore` (committed before the rule
   existed; gitignore does not retroactively untrack), so it was being published on every push.
   `git rm --cached .env` — the local file is untouched and now genuinely ignored. Nothing depended on the

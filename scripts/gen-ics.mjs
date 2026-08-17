@@ -12,6 +12,7 @@ import { dirname, join } from "node:path";
 import { SEASON_OPTIONS, DEFAULT_SEASON_SLUG, seasonLabel } from "../src/seasons.js";
 import { TEAM_NAME } from "../src/constants.js";
 import { cleanOpponentName } from "../src/utils/opponent.js";
+import { isHomeFromTitle } from "../src/utils/lzvCalendar.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -127,12 +128,10 @@ function difficultyLabel(position) {
   return "Very easy";
 }
 
-/** Home when our team is named first in the title (before "vs" or the score). */
+/** Home when our team is named first in the title. Shared with the calendar importer so both
+ *  agree on how a title is split — see src/utils/lzvCalendar.js for why this is not inlined. */
 function isHomeGame(game) {
-  const t = String(game.title || "").toLowerCase();
-  if (!t) return null;
-  const first = t.split(/\s+vs\s+|\s+\d+\s*[-–—]\s*\d+\s+/)[0] || "";
-  return /caracrew/.test(first);
+  return isHomeFromTitle(game.title);
 }
 
 function gamePageUrl(game, slug) {

@@ -90,14 +90,37 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
 - **Optimistic writes.** All mutations in `useFutsalData` update state first and roll back on error. Keep new
   writes to that pattern (snapshot → mutate → on error restore + `notify(...)` toast + `loadAll()`).
 - **Line endings:** repo is LF; on this Windows workspace git prints harmless `LF will be replaced by CRLF`
-  warnings on add. Ignore them.
+  warnings on add. Ignore them. **Exception — `*.ics` is pinned to `-text` in `.gitattributes`** (added
+  2026-08-17): RFC 5545 mandates CRLF and `gen-ics.mjs` emits it, but `core.autocrlf=true` was normalizing
+  the feeds to LF on every Windows commit while the Linux CI runner stored CRLF — a whole-file churn on all
+  three feeds each sync, and a real risk of shipping an LF feed that strict clients (Outlook) reject.
+  **Don't remove that rule, and don't "fix" the .ics files to LF.**
 - **`file:` there is none** — single package, plain npm. No monorepo/workspaces.
 - **Web fonts** come from Google Fonts (`index.html`); offline they fall back to a system sans — fine, just less
   distinctive. **Header is static** (scrolls away) by the user's choice — not sticky/fixed.
 - **No component uses `React.memo`.** So memoizing callbacks in `useFutsalData` buys nothing on its own — don't
   add `useCallback` there expecting a win without also memoizing the heavy children (profile first).
 
-## Current state (as of 2026-07-02)
+## Current state (as of 2026-08-17)
+- **The 26-27 dummy season is GONE and 26-27 is now EMPTY, awaiting the official LZV calendar.** The wipe
+  ran and was verified: `games` 0, `opponent_strength` 0, no orphaned child rows anywhere, and 25-26 still
+  intact at 22 games / 11 opponents. The `.ics` feeds were regenerated, so 26-27 publishes a valid empty
+  calendar rather than fake fixtures.
+- **When the official calendar arrives, in this order:** load the real fixtures into `games` with
+  `season_slug = '2627'` (SQL editor — the anon key cannot write to `games`); then `npm run sync:palmares`
+  (or wait for the monthly job) to rebuild `opponent_strength`, which drives the sidebar difficulty ratings
+  and the projected league table; then `npm run ics:gen` and commit the feeds. Note `ics:gen` reads
+  `process.env` and does **not** load `.env` — locally, `set -a; . ./.env; set +a` first.
+- ⚠ **Everything 26-27 reads empty until then** — sidebar has no fixtures, Stats page charts show their
+  empty states, no difficulty ratings. That is expected, not a bug. Verified safe 2026-08-17: every stats
+  util returns zeroed/empty structures (no division-by-zero) and every chart on the Stats page has an empty
+  guard; the projected league table self-hides (`leagueTable.length > 1`, and with no opponents it is 1).
+- ✅ **The `SUPABASE_ANON_KEY` secret question from 2026-07-03 is RESOLVED — it was added.** `sync-ics.yml`
+  works: `origin/main` carries `chore: refresh calendar feeds [skip ci]` commits from 2026-07-03 and
+  2026-08-02. So the feeds **self-heal daily** and the manual `ics:gen` above is belt-and-braces, not the
+  only path. Corollary: the 30 dummy fixtures were being re-published daily right up to this wipe.
+
+## Earlier state (as of 2026-07-02)
 - **Refined Matchday UI**: light minimalistic single-row header, **deep-green** accent, Inter/Space Grotesk,
   calm canvas. (Earlier in the day this was a dark ink header + amber accent — since changed per the user.)
 - **Header** (one row): team name + a single **season dropdown** (all seasons, defaults to current) + FORM chips
@@ -112,6 +135,45 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-17** — *Retire the 26-27 dummy season (official calendar imminent).*
+  - **Census first** (read-only, anon key, via the public REST API): 2627 held **30 games, 15
+    `opponent_strength`, 61 `attendance`, 3 `guest_players`, 0 `player_stats`, 0 `motm_votes`**, fixture
+    window 2026-09-10 → 2027-05-06, **0 fixtures scored**. Diffing the live `attendance` against the seed
+    file's `(game_id, player_id)` pairs showed **60 seeded + 1 real** — Matthias's own `if_needed` RSVP on
+    the dummy opener, made 2026-07-03 while testing. So nothing of value is lost. 2526 (22 games / 11
+    opponents) is not referenced by any of this.
+  - **Pre-flight check that mattered:** 2627 is `DEFAULT_SEASON_SLUG`, so a wipe empties the landing view
+    for everyone. Probed every stats util with empty/undefined inputs — `computeTeamRecord`,
+    `buildLeagueTable`, `buildGoldenBootRace`, `buildMonthlyTeamGaSeries`, `buildPlayersPerGameSeries`,
+    `seasonPlayedSummary`, `buildTeamSeasonPlayerRows`, `sortTeamSeasonRows` — **all return zeroed/empty
+    structures, none throw**, and `SeasonOverviewPage` guards each chart on `length === 0`. Empty season
+    degrades gracefully; no defensive code was needed.
+  - `supabase/clear_season_2627.sql` **upgraded**: wrapped in `begin/commit` (so a mid-way error rolls
+    back rather than half-clearing), documented as SQL-editor-only with the reason, and given a final
+    verification `select` that must show six zeros plus 2526 still at 22/11. Delete set unchanged — it
+    already matched the seed's own clear block exactly.
+  - `supabase/seed_season_2627.sql` **deleted**. It began by deleting every 2627 row before re-inserting
+    dummies, so leaving it next to a real calendar was a loaded footgun. `scripts/gen-seed-2627.mjs` is
+    kept (a test env may need repopulating) with a **RETIRED** header spelling out that hazard.
+  - **Wipe executed by the user in the SQL editor, then verified from here** (read-only): 2627 at 0 games /
+    0 opponents, 2526 still 22/11, and an anti-join of all four child tables against the surviving game ids
+    found **0 orphans** (36 attendance / 10 player_stats / 0 guests / 1 motm remain, all 2526).
+  - **`.ics` feeds regenerated** (`npm run ics:gen`): `fixtures-2627.ics` and its default-season mirror
+    `fixtures.ics` are now valid **empty** `VCALENDAR`s (−940 lines) — subscribers keep the subscription and
+    the fake events simply vanish, which is why the feeds were regenerated rather than deleted.
+    `fixtures-2526.ics` did **not** change, confirming the stable-`DTSTAMP` design works. Gotcha: `ics:gen`
+    reads `process.env` only (no dotenv) — locally do `set -a; . ./.env; set +a` first, else it exits
+    "Missing SUPABASE_URL/ANON_KEY".
+  - **Found while pushing: the `.ics` feeds were caught in a CRLF/LF ping-pong.** `origin/main` had two
+    `chore: refresh calendar feeds` commits (so the `SUPABASE_ANON_KEY` secret *does* exist and the daily job
+    works). Their diff touched all 1357 lines of all three feeds, but the content was identical — the CI
+    runner stores CRLF while `core.autocrlf=true` made this box store LF. Not cosmetic: RFC 5545 requires
+    CRLF, so a Windows-committed feed could reach subscribers LF-normalized. Fixed with a `.gitattributes`
+    pinning `*.ics -text`. Proof it really was only line endings: once pinned, our regenerated
+    `fixtures-2526.ics` matched `origin/main` byte-for-byte and dropped out of the diff.
+  - Rebased onto those two remote commits; conflicts were confined to the 2627 feeds and were resolved by
+    **regenerating** them (they are build artefacts — never hand-merge ICS text).
+  - Gates: `npm run lint` clean, `npm test` 33/33, `npm run build` OK.
 - **2026-07-03** — *Three Stats/UX features: season record, Golden Boot race, calendar feed.*
   - **Season record & projected league table** (`utils/teamRecord.js` + tests): `computeTeamRecord` (W-D-L,
     GF/GA, GD, points at 3-1-0, ppg, win%, chronological results) and `buildLeagueTable` (LZV opponent snapshot

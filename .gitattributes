@@ -1,0 +1,6 @@
+# Calendar feeds: RFC 5545 requires CRLF line endings, and scripts/gen-ics.mjs emits CRLF.
+# Without this rule, core.autocrlf=true normalizes them to LF when committing from Windows
+# while the Linux CI runner (sync-ics.yml) stores CRLF — which churns all three feeds
+# whole-file on every sync, and risks an LF-normalized feed reaching subscribers, where
+# strict clients (Outlook in particular) can reject it. Keep the bytes exactly as generated.
+*.ics -text

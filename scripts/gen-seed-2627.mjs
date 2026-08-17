@@ -1,6 +1,14 @@
-// Deterministic generator for the 26-27 dummy-season seed SQL.
+// Deterministic generator for the 26-27 DUMMY-season seed SQL.
 // Output: supabase/seed_season_2627.sql  (run in Supabase SQL editor — bypasses RLS).
 // All fixtures are UPCOMING: no scores, no player_stats, no MOTM.
+//
+// ⚠ RETIRED 2026-08-17 — the official 26-27 LZV calendar supersedes this.
+// The dummy season was wiped (supabase/clear_season_2627.sql) and the generated
+// supabase/seed_season_2627.sql was DELETED on purpose: its first statements delete every
+// 2627 row, so running it against the real calendar would destroy it. Kept only so a
+// throwaway/test environment can be repopulated. Before ever running the output again,
+// confirm you are NOT pointed at production. The fixtures it invents are synthetic
+// (a generated 16-team round-robin) and are not the real calendar.
 
 const SEASON = "2627";
 const HOME_VENUE = "De Nekker Mechelen";

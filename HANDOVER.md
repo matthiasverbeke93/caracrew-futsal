@@ -16,7 +16,7 @@ Deployed as a static build (GitHub repo: `matthiasverbeke93/caracrew-futsal`, br
 ## Run / check
 ```bash
 npm install
-cp .env.example .env      # needs VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY (a real .env is already present)
+cp .env.example .env      # needs VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY (present on this box, NOT in git)
 npm run dev               # http://localhost:3000
 npm run lint              # eslint (flat config) — must stay clean
 npm run build             # vite build → dist/  (dist is gitignored)
@@ -135,6 +135,18 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-17** — *Untrack `.env`.* It was tracked despite being in `.gitignore` (committed before the rule
+  existed; gitignore does not retroactively untrack), so it was being published on every push.
+  `git rm --cached .env` — the local file is untouched and now genuinely ignored. Nothing depended on the
+  committed copy: the workflows read `secrets.SUPABASE_URL` / `secrets.SUPABASE_ANON_KEY`, and the only
+  `.env` mentions in `scripts/` are comments. **A fresh clone now needs `cp .env.example .env`** (README
+  already said so).
+  ⚠ **The two values remain in git history** — untracking does not purge past commits. That is accepted, not
+  overlooked: both are `VITE_`-prefixed and therefore compiled into the public client bundle already, so
+  nothing secret was exposed. The point of untracking is forward-looking — `.env.example` documents
+  `RESEND_API_KEY` as belonging in `.env`, and while the file was tracked a routine `git add -A` would have
+  published a real secret. **If a genuine secret ever does land in a commit, untracking is not enough** —
+  that needs a history rewrite (git-filter-repo/BFG) plus a force-push and a key rotation.
 - **2026-08-17** — *Retire the 26-27 dummy season (official calendar imminent).*
   - **Census first** (read-only, anon key, via the public REST API): 2627 held **30 games, 15
     `opponent_strength`, 61 `attendance`, 3 `guest_players`, 0 `player_stats`, 0 `motm_votes`**, fixture

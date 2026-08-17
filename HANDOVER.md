@@ -84,6 +84,19 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   (`MIN_PLAYERS_WARNING`, `JUST_RIGHT_PLAYERS`).
 
 ## Gotchas
+- 🔴 **`.env` IS TRACKED ON PURPOSE — do not untrack it until the deploy platform has the two variables.**
+  It is listed in `.gitignore` but committed anyway, which looks like an accident and is not. **The deploy
+  pipeline is not configured anywhere in this repo** (no wrangler/netlify/vercel config, no deploy workflow —
+  only the four sync workflows), it builds from the repo, and the committed `.env` is its *only* source of
+  `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. `src/lib/supabase.jsx:6` throws at module load when they are
+  missing — a top-level throw in the entry chunk — so the app never mounts: HTML serves 200 and the page is
+  blank. **This actually happened on 2026-08-17** (see the session log). Both values are `VITE_`-prefixed and
+  therefore compiled into the public client bundle anyway, so nothing is kept secret by removing the file.
+  To do it properly: set the two variables in the deploy platform, deploy, confirm a Supabase URL is still
+  baked into the served bundle, and only then untrack.
+  **Diagnostic if the page ever goes blank again:**
+  `curl -s https://caracrew.org/ | grep -oE '/assets/index-[A-Za-z0-9_-]+\.js'` then
+  `curl -s "https://caracrew.org<asset>" | grep -c 'supabase\.co'` — `0` means the build had no env.
 - **Dates are local-day strings, not Date math.** `isPlayed`/editable checks compare `game_date` (`YYYY-MM-DD`)
   against a locally-formatted "today" string. This is intentional (fixes an earlier UTC off-by-one). Don't
   "fix" it by switching to UTC `Date` comparisons.
@@ -198,7 +211,18 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
     default to `'2627'`. Set the repo var explicitly.
   - **Found a real data bug**: the 2025-10-14 ZVC Tigers result is stored inverted (counted as a 10-1 win
     instead of a 1-10 defeat). Audited all 22 scored 25-26 rows — only that one. See Current state.
-- **2026-08-17** — *Untrack `.env`.* It was tracked despite being in `.gitignore` (committed before the rule
+- **2026-08-17** — *Took caracrew.org down by untracking `.env`, reverted.* The site served HTTP 200 with a
+  blank page. Cause: `87b4d43` untracked `.env`, the deploy pipeline builds from the repo and had no env vars of
+  its own, so the bundle was built without `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`, and
+  `src/lib/supabase.jsx:6` throws at module load, so nothing mounted. Diagnosed by comparing the deployed bundle
+  against a local build: the deployed one had **no** `*.supabase.co` string in it. Reverted in `b85bce0` rather
+  than fixing forward, because reverting restored service immediately; recovery confirmed by polling until the
+  served asset hash flipped and the URL reappeared, then checking all assets and all three feeds return 200.
+  **Why the pre-flight check missed it:** I grepped `.github/workflows/` and `scripts/` for `.env` dependants and
+  found only comments. But **the deploy pipeline is not in the repo at all**, so the one consumer that mattered
+  was invisible to that grep. The check should have been "does the *deployed* bundle still contain a Supabase
+  URL after this change", not "does anything in-repo read the file". Recorded as a gotcha above.
+- **2026-08-17** — *Untrack `.env`.* ⚠ **Reverted the same day — see the entry above. Do not redo this.** It was tracked despite being in `.gitignore` (committed before the rule
   existed; gitignore does not retroactively untrack), so it was being published on every push.
   `git rm --cached .env` — the local file is untouched and now genuinely ignored. Nothing depended on the
   committed copy: the workflows read `secrets.SUPABASE_URL` / `secrets.SUPABASE_ANON_KEY`, and the only

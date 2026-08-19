@@ -114,7 +114,27 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
 - **No component uses `React.memo`.** So memoizing callbacks in `useFutsalData` buys nothing on its own — don't
   add `useCallback` there expecting a win without also memoizing the heavy children (profile first).
 
-## Current state (as of 2026-08-17)
+## Current state (as of 2026-08-19)
+- 🟡 **The official 26-27 calendar is PARSED AND VERIFIED, but NOT YET IN THE DB — one manual step is
+  outstanding.** LZV published on/before 2026-08-19. `supabase/fixtures_2627.sql` holds the 21 fixtures;
+  **someone with SQL-editor access has to paste and run it** (the anon key cannot write to `games`).
+  Until then 26-27 still reads empty in the app. After running it, the follow-ups are:
+  `npm run sync:palmares` (thin until results exist), regenerate + commit the `.ics` feeds, and set the repo
+  var `LZV_SEASON_SLUG=2627`.
+- **The season: 21 fixtures, 2026-09-06 → 2027-05-09, 5e Klasse Mechelen, 12 teams.** 11 home / 10 away —
+  the **22nd fixture (away at Bankzitters United) is marked "Nog te plannen"** by the league, so the
+  double round-robin is incomplete on LZV's side, not ours. Re-running the importer once it is scheduled
+  adds that row (the SQL upserts and never deletes).
+- **The home venue moved: De Nekker → `Winketkaai Mechelen`.** Also note **2027-04-24 at Winketkaai is an
+  away game** — the documented "location is not a home/away proxy" trap, now real in the data.
+- **Opponents largely turned over from 25-26.** In: VT 09, Oranje Duivels, Jan Breydel, Bankzitters United,
+  Knallende Knapen. Out: Futsal Opsinjoor, FC Tzit Ni Mee, Hattrick, Los Dollos, FC De Planeet. Kept: VV
+  Schemerboyz, De Karpervissers, 04United, ZVC Tigers, Wille ma ni kunne, FC Tripel.
+- ✅ **The two CALENDAR-IMPORT.md worries both came out clean against the real list**: 12 teams is what
+  `difficulty.js`'s bands were tuned for (no re-banding), and no opponent name is a substring of another
+  (no borrowed-rating risk).
+
+### Superseded (as of 2026-08-17)
 - **The 26-27 dummy season is GONE and 26-27 is now EMPTY, awaiting the official LZV calendar.** The wipe
   ran and was verified: `games` 0, `opponent_strength` 0, no orphaned child rows anywhere, and 25-26 still
   intact at 22 games / 11 opponents. The `.ics` feeds were regenerated, so 26-27 publishes a valid empty
@@ -161,6 +181,28 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-19** — *The official 26-27 calendar went live; imported it (DB load still pending).*
+  - **The importer refused all 21 fixtures on first run, exactly as it was designed to.** LZV's SUMMARY
+    separator is a **bare, unpadded hyphen** (`VT 09-K Caracrew SK`) and every separator in the list was
+    space-padded. The refusal was the feature working — it is the case §1 of CALENDAR-IMPORT.md predicted.
+  - **Fixed it without the obvious-but-wrong fix.** Adding `"-"` to `SUMMARY_SEPARATORS` would split
+    `ZVC St-Katelijne-Waver` at its first hyphen. Instead `splitOnBareHyphen()` makes **our own name the
+    arbiter**: a hyphen is the separator only if "caracrew" lands on exactly one side; if several hyphens
+    qualify it prefers the one whose our-side is exactly our team name, else it still returns null and the
+    fixture gets reported. So the no-guessing contract survives.
+  - **Added `normalizeLocation()`** — the feed gives `Venue, Street 12, City`, the table stores `Venue City`.
+    Keeping the first + last comma part reproduces the existing 25-26 spelling **exactly** for four of the
+    five venues in the feed, which is why it is trustworthy rather than a guess at a format.
+  - **Regression evidence for both:** regenerating the feeds left `fixtures-2526.ics` **byte-identical**, so
+    no existing home/away call moved. 73 tests pass (13 new), lint clean.
+  - **Verified home/away independently**, since it is invisible in the app: parsed the team-overview HTML and
+    compared all 21 fixtures — home team, away team *and* kickoff — against the feed. Full match. Also
+    confirms the UTC→Europe/Brussels conversion, including the 2027-03-27 fixture that sits one day before
+    DST starts.
+  - **Wrote `supabase/fixtures_2627.sql`** (21 fixtures). ⚠ **NOT YET RUN — needs the Supabase SQL editor.**
+  - **Findings recorded in Current state / CALENDAR-IMPORT.md:** the 22nd fixture is unscheduled by the
+    league ("Nog te plannen"), the home venue moved to Winketkaai, one away game is *at* Winketkaai, and the
+    §2b/§2c worries both came out clean (12 teams, no substring-colliding opponent names).
 - **2026-08-17** — *Calendar importer + a general bug sweep.*
   - **New: `npm run calendar:import`** (`scripts/import-lzv-calendar.mjs`, logic in
     `src/utils/lzvCalendar.js`, **34 unit tests**). Reads LZV's official iCalendar feed, previews the fixture

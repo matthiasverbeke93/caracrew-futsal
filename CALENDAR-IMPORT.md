@@ -1,7 +1,26 @@
 # Loading the official 26-27 LZV calendar
 
-> Written 2026-08-17, while 26-27 sits **empty** on purpose (the dummy season was wiped). Follow this the day
-> LZV publishes. Nothing here needs re-deriving — the facts were verified against the live site and the DB.
+> Written 2026-08-17, while 26-27 sat **empty** on purpose (the dummy season was wiped).
+>
+> ## ✅ 2026-08-19 — LZV PUBLISHED. The run happened; this is now a record of it, plus the runbook for 27-28.
+>
+> **What the live feed turned out to be** (none of it guessable while the feed was empty):
+> - **21 fixtures, 2026-09-06 → 2027-05-09**, division **5e Klasse Mechelen**, **12 teams** (11 opponents + us).
+> - **The 22nd fixture — away at Bankzitters United — is not scheduled yet.** The team page marks it
+>   *"Nog te plannen"*, so the double round-robin is 21/22 for now. The import SQL is an upsert that never
+>   deletes, so **re-running `npm run calendar:import` once LZV schedules it just adds the 22nd row.**
+> - 🔴 **The SUMMARY separator is a BARE, UNPADDED hyphen** — `VT 09-K Caracrew SK`. §1's prediction was
+>   right: the importer refused all 21 with `unknown-summary-format`. Fixed (see §1a), do not re-break it.
+> - 🔴 **The home venue changed: De Nekker → `Winketkaai Mechelen`.** All 11 home games are there. And the
+>   §1 trap fired for real — **2027-04-24 at Winketkaai is an AWAY game** (`FC Tripel vs K. Caracrew SK`),
+>   so `location` is still not a home/away proxy.
+> - **LOCATION is a 3-part address** (`IHAM, Bautersemstraat 57 , Mechelen`) where the rows store `IHAM
+>   Mechelen`. Now normalized by `normalizeLocation` (see §1a).
+> - **§2b is moot and §2c is clean** — 12 teams is exactly what the difficulty bands were tuned for, and no
+>   opponent name is a substring of another. Both re-verified against the real list. No re-banding needed.
+> - **Home/away was verified independently** by parsing the team-overview HTML and comparing all 21 fixtures
+>   (home team, away team, kickoff) against the feed — full match. Worth repeating next season, because
+>   home/away is invisible in the app.
 
 ## 0. Is the calendar out yet?
 
@@ -14,6 +33,8 @@ curl -s "https://www.lzvcup.be/teams/overview/742" | grep -o "nog geen gegevens 
 # b) LZV publishes an OFFICIAL iCalendar feed per team. Empty today; VEVENTs appear on publication.
 curl -s "https://www.lzvcup.be/icalendar.php?id=742" | grep -c "BEGIN:VEVENT"
 ```
+
+*As of 2026-08-19 check (a) returns nothing (the page is published) and check (b) returns 21.*
 
 **Use feed (b) as the import source.** It is `text/calendar`, keyed to our team id (742), and carries exactly
 the fields `games` needs — `DTSTART` (date + time), `SUMMARY` (both team names, so home/away order),
@@ -69,6 +90,25 @@ first half. Consequences:
   form and it keeps working after scores arrive.
 - Nothing in `src/` reads `title` — it is consumed by the ICS generator only. So a mistake is invisible in the
   app and only shows up in people's calendars.
+
+## 1a. What the real feed needed (2026-08-19) — two parser fixes
+
+Both live in `src/utils/lzvCalendar.js` and are covered by tests. Don't undo them:
+
+- **Bare-hyphen separator.** LZV writes `K Caracrew SK-VV Schemerboyz`, with no spaces. Adding `"-"` to
+  `SUMMARY_SEPARATORS` would have been wrong — it splits `ZVC St-Katelijne-Waver` at the first hyphen. Instead
+  `splitOnBareHyphen()` lets **our own name arbitrate**: a hyphen counts as the separator only if it puts
+  "caracrew" on exactly one side, and if several hyphens qualify it prefers the one whose our-side is exactly
+  our team name — otherwise it still returns null and the fixture is reported. So a hyphenated opponent name
+  stays safe.
+- **`normalizeLocation()`.** Turns the feed's `Venue, Street 12, City` into the `Venue City` form the table
+  already uses, by keeping the first and last comma-separated part. This reproduces the 25-26 spelling
+  **exactly** for four of the five 26-27 venues (`IHAM Mechelen`, `Heiveld St-Katelijne-Waver`, `Kouter Leest`,
+  `SportCube Eppegem`), which is what makes it trustworthy — it is not a guess at a format, it round-trips to
+  the strings already in the DB.
+
+Regression evidence: regenerating the feeds after the change left `fixtures-2526.ics` **byte-identical**, so
+no existing home/away call moved.
 
 ## 2. Opponent strength (difficulty ratings + projected table)
 

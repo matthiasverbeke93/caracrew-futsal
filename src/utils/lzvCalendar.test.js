@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildInsertSql,
   isHomeFromTitle,
+  normalizeLocation,
   parseDtStart,
   parseIcs,
   slugifyOpponent,
@@ -115,6 +116,60 @@ describe("splitSummary", () => {
   it("returns null when nothing matches", () => {
     expect(splitSummary("Caracrew match")).toBeNull();
     expect(splitSummary("")).toBeNull();
+  });
+
+  // LZV's live 26-27 feed turned out to use a bare, unpadded hyphen. See the 2026-08-19 session log.
+  it("splits the bare unpadded hyphen LZV actually uses", () => {
+    expect(splitSummary("VT 09-K Caracrew SK")).toMatchObject({
+      left: "VT 09",
+      right: "K Caracrew SK",
+      separator: "-",
+    });
+    expect(splitSummary("K Caracrew SK-Wille ma ni kunne")).toMatchObject({
+      left: "K Caracrew SK",
+      right: "Wille ma ni kunne",
+    });
+  });
+
+  it("picks the right hyphen when the opponent name contains one", () => {
+    expect(splitSummary("K Caracrew SK-ZVC St-Katelijne-Waver")).toMatchObject({
+      left: "K Caracrew SK",
+      right: "ZVC St-Katelijne-Waver",
+    });
+    expect(splitSummary("ZVC St-Katelijne-Waver-K Caracrew SK")).toMatchObject({
+      left: "ZVC St-Katelijne-Waver",
+      right: "K Caracrew SK",
+    });
+  });
+
+  it("refuses a bare-hyphen split it cannot attribute to our team", () => {
+    expect(splitSummary("Hattrick-Los Dollos")).toBeNull(); // we are on neither side
+    expect(splitSummary("Caracrew A-Caracrew B")).toBeNull(); // on both sides
+    expect(splitSummary("-K Caracrew SK")).toBeNull(); // empty side
+  });
+});
+
+describe("normalizeLocation", () => {
+  it("reduces the feed's three-part address to the stored 'Venue City' form", () => {
+    // Exactly the five venues in the live 26-27 feed; four of them already exist in 25-26 rows.
+    expect(normalizeLocation("Winketkaai, Winketkaai 39, Mechelen")).toBe("Winketkaai Mechelen");
+    expect(normalizeLocation("IHAM, Bautersemstraat 57 , Mechelen")).toBe("IHAM Mechelen");
+    expect(normalizeLocation("Heiveld, Dreefvelden 1, St-Katelijne-Waver")).toBe(
+      "Heiveld St-Katelijne-Waver"
+    );
+    expect(normalizeLocation("Kouter, Dorpstraat 67, Leest")).toBe("Kouter Leest");
+    expect(normalizeLocation("SportCube, Waterleestweg 14, Eppegem")).toBe("SportCube Eppegem");
+  });
+
+  it("passes through a value that is already in the stored form", () => {
+    expect(normalizeLocation("De Nekker Mechelen")).toBe("De Nekker Mechelen");
+  });
+
+  it("handles two parts, empty parts and blanks", () => {
+    expect(normalizeLocation("Kouter, Leest")).toBe("Kouter Leest");
+    expect(normalizeLocation("Kouter,, Leest")).toBe("Kouter Leest");
+    expect(normalizeLocation("  ")).toBeNull();
+    expect(normalizeLocation(null)).toBeNull();
   });
 });
 
@@ -326,7 +381,8 @@ describe("toGameRows", () => {
     );
     const { rows, problems } = toGameRows(parseIcs(raw));
     expect(problems).toEqual([]);
-    expect(rows[0].location).toBe("De Nekker, Nekkerspoelstraat 21");
+    // Unfolded + unescaped to "De Nekker, Nekkerspoelstraat 21", then reduced to the stored venue form.
+    expect(rows[0].location).toBe("De Nekker Nekkerspoelstraat 21");
   });
 
   it("returns nothing for the empty feed LZV serves before publication", () => {

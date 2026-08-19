@@ -14,8 +14,50 @@
 const OUR_TEAM_PATTERN = /caracrew/i;
 
 /** Separators LZV might use between the two team names, longest/most explicit first.
- *  All are space-padded so hyphenated place names (St-Katelijne-Waver) can't split by accident. */
+ *  All are space-padded so hyphenated place names (St-Katelijne-Waver) can't split by accident.
+ *  The feed's ACTUAL separator turned out to be a bare, unpadded "-" ("VT 09-K Caracrew SK") — that
+ *  one is too dangerous to put in this list (it would split "St-Katelijne-Waver"), so it is handled
+ *  separately by `splitOnBareHyphen` below, which only accepts a split our team name vouches for. */
 const SUMMARY_SEPARATORS = [" vs. ", " vs ", " v. ", " v ", " - ", " – ", " — "];
+
+/** Our team name reduced to letters+digits, for exact identity checks ("K. Caracrew SK" == "K Caracrew SK"). */
+const OUR_TEAM_KEY = "kcaracrewsk";
+
+function teamKey(name) {
+  return String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/**
+ * Split on a bare, unpadded hyphen — LZV's real separator, e.g. "K Caracrew SK-VV Schemerboyz".
+ *
+ * Splitting on every "-" blindly is unsafe: a hyphenated club or place name (ZVC St-Katelijne-Waver)
+ * would break at the wrong hyphen. So instead of trusting position, we let our own name arbitrate —
+ * a hyphen is only a team separator if it puts "caracrew" on exactly ONE side. When several hyphens
+ * pass that test, prefer the one where our side is exactly our team name and nothing else; if that
+ * still leaves a tie, return null so the caller reports it rather than guessing.
+ */
+function splitOnBareHyphen(s) {
+  const candidates = [];
+  for (let i = s.indexOf("-"); i !== -1; i = s.indexOf("-", i + 1)) {
+    const left = s.slice(0, i).trim();
+    const right = s.slice(i + 1).trim();
+    if (!left || !right) continue;
+    const oursLeft = OUR_TEAM_PATTERN.test(left);
+    if (oursLeft === OUR_TEAM_PATTERN.test(right)) continue; // both sides or neither — not the separator
+    candidates.push({ left, right, separator: "-", ours: oursLeft ? left : right });
+  }
+  if (candidates.length === 0) return null;
+
+  const pick =
+    candidates.length === 1
+      ? candidates[0]
+      : (() => {
+          const exact = candidates.filter((c) => teamKey(c.ours) === OUR_TEAM_KEY);
+          return exact.length === 1 ? exact[0] : null;
+        })();
+  if (!pick) return null;
+  return { left: pick.left, right: pick.right, separator: pick.separator };
+}
 
 /** Unfold RFC-5545 folded lines: a CRLF (or LF) followed by one space/tab continues the previous line. */
 export function unfoldIcs(text) {
@@ -149,6 +191,25 @@ export function slugifyOpponent(name) {
     .replace(/^-+|-+$/g, "");
 }
 
+/**
+ * Reduce LZV's LOCATION to the venue spelling the `games` table already uses.
+ *
+ * The feed gives "Venue, Street 12, City" ("IHAM, Bautersemstraat 57 , Mechelen"); every existing row
+ * stores "Venue City" ("IHAM Mechelen"). Keeping the first and last comma-separated part reproduces the
+ * 25-26 spelling exactly for every venue in the 26-27 feed, so the score sync and the ICS generator see
+ * the same venue strings they always have. Anything without a comma is passed through untouched.
+ */
+export function normalizeLocation(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return null;
+  const parts = s
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (parts.length < 2) return parts[0] || null;
+  return `${parts[0]} ${parts[parts.length - 1]}`;
+}
+
 /** Split a SUMMARY into the two team names. Returns null when no separator applies cleanly. */
 export function splitSummary(summary) {
   const s = String(summary || "").trim();
@@ -160,7 +221,7 @@ export function splitSummary(summary) {
     const right = s.slice(idx + sep.length).trim();
     if (left && right) return { left, right, separator: sep };
   }
-  return null;
+  return splitOnBareHyphen(s);
 }
 
 /**
@@ -229,7 +290,9 @@ export function toGameRows(events, options = {}) {
       problems.push({
         kind: "unknown-summary-format",
         label,
-        detail: `no known separator (${SUMMARY_SEPARATORS.map((s) => `"${s}"`).join(", ")}) in "${ev.SUMMARY ?? ""}"`,
+        detail:
+          `no usable separator (${SUMMARY_SEPARATORS.map((x) => `"${x}"`).join(", ")}, or a bare "-" ` +
+          `with our team on exactly one side) in "${ev.SUMMARY ?? ""}"`,
       });
       return;
     }
@@ -276,7 +339,7 @@ export function toGameRows(events, options = {}) {
       opponent,
       game_date: when.date,
       game_time: time.length === 5 ? `${time}:00` : time,
-      location: ev.LOCATION ? ev.LOCATION.trim() : null,
+      location: normalizeLocation(ev.LOCATION),
       // title is the ONLY store of home/away — see CALENDAR-IMPORT.md §1.
       title: isHome ? `${teamName} vs ${opponent}` : `${opponent} vs ${teamName}`,
       is_home: isHome, // not a DB column; carried for the preview/verification only

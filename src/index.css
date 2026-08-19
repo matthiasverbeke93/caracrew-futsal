@@ -2654,7 +2654,7 @@ button {
   align-items: center;
 }
 
-.mini-counts span:not(.my-rsvp-chip):not(.result-chip-mini):not(.mini-diff) {
+.mini-counts span:not(.my-rsvp-chip):not(.result-chip-mini):not(.mini-diff):not(.attendance-count-chip) {
   background: rgba(15, 23, 42, 0.06);
   border-radius: 999px;
   padding: 4px 8px;
@@ -2672,6 +2672,40 @@ button {
 .mini-counts .my-rsvp-chip {
   min-width: 40px;
   text-align: center;
+}
+
+/* Headcount on a still-to-be-played fixture: the number is the point, the
+   readiness label next to it says whether it is enough. Accent tint rather than
+   a tone colour — the card/calendar background already carries the readiness
+   tone, so a second traffic light here would just be noise. */
+.attendance-count-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: var(--accent-muted);
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.attendance-count-chip strong {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Calendar rows are one line — keep the chip as narrow as the number needs. */
+.attendance-count-chip--compact {
+  padding: 2px 7px;
+  gap: 2px;
+}
+
+.attendance-count-chip--compact strong {
+  font-size: 12px;
 }
 
 .my-rsvp-chip {

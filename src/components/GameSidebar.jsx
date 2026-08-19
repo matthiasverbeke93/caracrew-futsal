@@ -8,6 +8,8 @@ import { useLayoutEffect, useMemo, useState } from "react";
 
 const STATUS_SEGMENT_IDS = ["all", "upcoming", "played"];
 
+const EMPTY_COUNTS = { playing: 0, ifNeeded: 0, responses: 0 };
+
 const RSVP_CHIP = {
   playing: { label: "You are marked In", short: "In", className: "my-rsvp-in" },
   cant: { label: "You are marked Out", short: "Out", className: "my-rsvp-out" },
@@ -143,6 +145,28 @@ function MyRsvpChip({ game, currentPlayerId, played, myRow, motmVotes, voterUser
   );
 }
 
+/**
+ * Headcount for a fixture that is still to be played: how many are marked In.
+ * Only rendered once somebody has actually answered — in practice that is the
+ * next 3 fixtures, the only ones open for RSVP. `if needed` is shown alongside
+ * because those players decide whether a thin squad turns out.
+ */
+function AttendanceCountChip({ playing, ifNeeded, responses, played, compact = false }) {
+  if (played || !responses) return null;
+  const title = `${playing} marked In${ifNeeded ? `, ${ifNeeded} if needed` : ""} · ${responses} response${
+    responses === 1 ? "" : "s"
+  }`;
+  return (
+    <span
+      className={`attendance-count-chip${compact ? " attendance-count-chip--compact" : ""}`}
+      title={title}
+    >
+      <strong>{playing}</strong> in
+      {ifNeeded > 0 ? (compact ? ` +${ifNeeded}` : ` +${ifNeeded} if needed`) : ""}
+    </span>
+  );
+}
+
 function formatCalendarMonthLabel(yyyyMm) {
   if (!yyyyMm || yyyyMm.length < 7) return yyyyMm || "";
   const d = new Date(`${yyyyMm}-01T12:00:00`);
@@ -228,6 +252,25 @@ export default function GameSidebar({
     }
     return m;
   }, [attendance, currentPlayerId]);
+
+  /** playing / if-needed / total-responses per game, roster + guests, in one pass. */
+  const countsByGameId = useMemo(() => {
+    const m = new Map();
+    const bump = (gameId, status) => {
+      if (!gameId) return;
+      let c = m.get(gameId);
+      if (!c) {
+        c = { playing: 0, ifNeeded: 0, responses: 0 };
+        m.set(gameId, c);
+      }
+      c.responses += 1;
+      if (status === "playing") c.playing += 1;
+      else if (status === "if_needed") c.ifNeeded += 1;
+    };
+    for (const row of attendance) bump(row.game_id, row.status);
+    for (const row of guestPlayers) bump(row.game_id, row.status);
+    return m;
+  }, [attendance, guestPlayers]);
 
   const showSidebarMatchStats = activeMainTab !== "stats";
   const statusSegment = getStatusSegment(gameFilters);
@@ -351,12 +394,8 @@ export default function GameSidebar({
                   <h3>{formatCalendarMonthLabel(month)}</h3>
                   <div className="calendar-game-list">
                     {monthGames.map((game) => {
-                      const gameRows = attendance.filter((a) => a.game_id === game.id);
-                      const gameGuestRows = guestPlayers.filter((p) => p.game_id === game.id);
-                      const playing =
-                        gameRows.filter((a) => a.status === "playing").length +
-                        gameGuestRows.filter((p) => p.status === "playing").length;
-                      const responses = gameRows.length + gameGuestRows.length;
+                      const { playing, ifNeeded, responses } =
+                        countsByGameId.get(game.id) ?? EMPTY_COUNTS;
                       const status = gameStatusById[game.id];
                       const playedCal = status?.played;
                       const tone =
@@ -392,6 +431,15 @@ export default function GameSidebar({
                               </span>
                             )}
                             <strong>{cleanOpponentName(game.opponent)}</strong>
+                            {showSidebarMatchStats && (
+                              <AttendanceCountChip
+                                playing={playing}
+                                ifNeeded={ifNeeded}
+                                responses={responses}
+                                played={playedCal}
+                                compact
+                              />
+                            )}
                             {currentPlayerId || voterUserId ? (
                               <MyRsvpChip
                                 game={game}
@@ -415,12 +463,8 @@ export default function GameSidebar({
           {!showCalendar &&
             !loading &&
             games.map((game) => {
-              const gameRows = attendance.filter((a) => a.game_id === game.id);
-              const gameGuestPlayers = guestPlayers.filter((p) => p.game_id === game.id);
-              const playing =
-                gameRows.filter((a) => a.status === "playing").length +
-                gameGuestPlayers.filter((p) => p.status === "playing").length;
-              const responses = gameRows.length + gameGuestPlayers.length;
+              const { playing, ifNeeded, responses } =
+                countsByGameId.get(game.id) ?? EMPTY_COUNTS;
               const status = gameStatusById[game.id];
 
               const played = status?.played;
@@ -485,6 +529,14 @@ export default function GameSidebar({
                         voterUserId={voterUserId}
                       />
                     ) : null}
+                    {showSidebarMatchStats && !played && (
+                      <AttendanceCountChip
+                        playing={playing}
+                        ifNeeded={ifNeeded}
+                        responses={responses}
+                        played={played}
+                      />
+                    )}
                     {showSidebarMatchStats && !played && (
                       <span>{playerStatusLabel(playing, responses)}</span>
                     )}

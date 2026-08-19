@@ -319,6 +319,21 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-19** — *Sidebar now shows the actual headcount for fixtures that are open for RSVP.*
+  - The sidebar only ever showed the *qualitative* readiness ("Just enough players") in list view, and
+    **nothing at all** in calendar view — so you could see a fixture was thin but not by how much.
+    Added `AttendanceCountChip` in `GameSidebar.jsx`: `7 in` (+ `+2 if needed`, compacted to `+2` in the
+    calendar rows), with the full breakdown in the `title`.
+  - **Gate is `!played && responses > 0`, not "the next 3 games".** Only the next 3 fixtures are open for
+    RSVP (`isAttendanceEditable`), so having responses *is* the next-3 condition — deriving it keeps the
+    chip correct if that window ever changes, and keeps later fixtures from rendering a meaningless `0 in`.
+  - Chip is tinted `--accent-muted`/`--accent-strong`, deliberately **not** a tone colour: the card
+    background (list) and row background (calendar) already carry the readiness traffic light.
+  - While in there, replaced the two per-game `attendance.filter(...)` / `guestPlayers.filter(...)` passes
+    (one in each render branch) with a single `countsByGameId` memo — same numbers, one pass instead of
+    O(games x attendance), and the two branches no longer duplicate the counting rules.
+  - Verified: `lint` clean, `test` 89/89, `build` OK. **Not eyeballed** — no browser automation here, so
+    the visual check is on the user.
 - **2026-08-19** — *Full pre-share review. One critical security hole, two real bugs.*
   - 🔴 **Found — and the same day closed and verified — that the anon key could write to `games`,
     `players`, `attendance`, `player_stats`, including `players.is_admin`.** Full detail in Current

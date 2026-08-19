@@ -115,12 +115,27 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   add `useCallback` there expecting a win without also memoizing the heavy children (profile first).
 
 ## Current state (as of 2026-08-19)
-- 🟡 **The official 26-27 calendar is PARSED AND VERIFIED, but NOT YET IN THE DB — one manual step is
-  outstanding.** LZV published on/before 2026-08-19. `supabase/fixtures_2627.sql` holds the 21 fixtures;
-  **someone with SQL-editor access has to paste and run it** (the anon key cannot write to `games`).
-  Until then 26-27 still reads empty in the app. After running it, the follow-ups are:
-  `npm run sync:palmares` (thin until results exist), regenerate + commit the `.ics` feeds, and set the repo
-  var `LZV_SEASON_SLUG=2627`.
+- ✅ **The official 26-27 calendar is LOADED AND VERIFIED.** LZV published on/before 2026-08-19; the user ran
+  `supabase/fixtures_2627.sql` in the SQL editor the same day. Verified read-only afterwards: **21 rows**,
+  every `id` consistent with its own date/time/opponent, no duplicate ids or `(date, opponent)` pairs, no
+  null `game_time`/`location`, every `title` carries the team, all scores still null, 11 opponents, span
+  2026-09-06 → 2027-05-09, **2526 untouched at 22**, and no child-table rows point at 2627 yet.
+  `.ics` feeds regenerated (21 VEVENTs, CRLF intact) and committed.
+- 🔴 **STILL TO DO: set the repo var `LZV_SEASON_SLUG=2627`.** `weekly-digest.yml` passes it with **no
+  fallback** (the other workflows default to `'2627'`), so the digest is the one job that misbehaves without it.
+- ⚠ **DO NOT run `npm run sync:palmares` yet — and the 1 Sept cron will do it for you anyway.** The
+  runbook predicted standings would be *thin or empty* before results exist. The reality is worse: LZV
+  already serves a **full 12-team table in which every team has `ptn/m = 0`** — nobody has played. The
+  positions (Oranje Duivels 1, Knallende Knapen 2, ZVC Tigers 3 … Bankzitters United 12) are an arbitrary
+  ordering of an all-zero table, not a strength signal. `getDifficulty()` gates only on
+  `current_position != null` and has **no zero-games guard**, so syncing paints confident difficulty labels
+  over the whole fixture list — "Very hard" for Knallende Knapen, who were relegated 12th of 4e Klasse last
+  season, and "Very easy" for Bankzitters United, a brand-new team (id 2668) with no history at all.
+  **`sync-palmares.yml` fires `30 6 1 * *`, i.e. 1 Sept 06:30 UTC — before the season opener on 6 Sept** — so
+  this lands automatically and self-corrects only on the 1 Oct run. Left as a decision, not silently changed.
+  A proper guard is not a one-liner: `opponent_strength` persists `current_position` and
+  `current_ptn_per_match` but **not `played`**, and `ptn/m = 0` cannot distinguish "no games" from "winless",
+  so the fix needs the standings' `played` column persisted first.
 - **The season: 21 fixtures, 2026-09-06 → 2027-05-09, 5e Klasse Mechelen, 12 teams.** 11 home / 10 away —
   the **22nd fixture (away at Bankzitters United) is marked "Nog te plannen"** by the league, so the
   double round-robin is incomplete on LZV's side, not ours. Re-running the importer once it is scheduled
@@ -200,6 +215,13 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
     confirms the UTC→Europe/Brussels conversion, including the 2027-03-27 fixture that sits one day before
     DST starts.
   - **Wrote `supabase/fixtures_2627.sql`** (21 fixtures). ⚠ **NOT YET RUN — needs the Supabase SQL editor.**
+  - **Then the user ran the SQL.** Verified the load read-only (21 rows, ids self-consistent, no dupes, no
+    nulls, scores null, 2526 intact, no orphaned children), regenerated the `.ics` feeds (21 VEVENTs, CRLF
+    intact, `fixtures-2526.ics` unchanged) and spot-checked the awkward event: 2027-04-24 at our own
+    Winketkaai hall correctly reads **"Away at FC Tripel"**.
+  - ⚠ **New finding — palmares would poison the difficulty ratings if synced now.** See Current state: LZV
+    serves a full standings table with `ptn/m = 0` for all 12 teams, and `getDifficulty()` has no
+    zero-games guard. The 1 Sept cron will write it automatically, before the 6 Sept opener.
   - **Findings recorded in Current state / CALENDAR-IMPORT.md:** the 22nd fixture is unscheduled by the
     league ("Nog te plannen"), the home venue moved to Winketkaai, one away game is *at* Winketkaai, and the
     §2b/§2c worries both came out clean (12 teams, no substring-colliding opponent names).

@@ -38,6 +38,27 @@ function findStrengthRow(opponent, strengths) {
   );
 }
 
+/**
+ * Is this row's `current_position` worth believing?
+ *
+ * LZV publishes the full standings table from day one, with every team on
+ * 0 played / 0 points. The resulting order is arbitrary, so rating from it
+ * produces confident nonsense — a side relegated last season shown "Very hard",
+ * a brand-new team with no history shown "Very easy". `current_ptn_per_match`
+ * cannot be used to detect this: 0 means both "no games" and "lost them all".
+ *
+ *   null/undefined -> unknown (row pre-dates the column); trust it, as before.
+ *   0              -> season has not started; the position means nothing.
+ *   > 0            -> real standings.
+ *
+ * When this returns false getDifficulty falls through to the manual standings
+ * for the season, and if those are empty it returns null and the UI simply
+ * shows no rating — which is the honest answer until results exist.
+ */
+function hasUsableStandings(row) {
+  return row?.current_played !== 0;
+}
+
 function levelFromPosition(position) {
   if (position == null) return null;
   if (position <= 3) return { level: 5, label: "Very hard", className: "diff-very-hard" };
@@ -79,7 +100,7 @@ function summariseHistory(history) {
 export function getDifficulty(opponent, strengths, seasonSlug) {
   const row = findStrengthRow(opponent, strengths);
 
-  if (row && row.current_position != null) {
+  if (row && row.current_position != null && hasUsableStandings(row)) {
     const lvl = levelFromPosition(row.current_position);
     const summary = summariseHistory(row.history);
     const lastSeason = Array.isArray(row.history) && row.history.length > 0

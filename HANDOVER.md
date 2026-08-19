@@ -183,6 +183,69 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   `.ics` feeds regenerated (21 VEVENTs, CRLF intact) and committed.
 - 🔴 **STILL TO DO: set the repo var `LZV_SEASON_SLUG=2627`.** `weekly-digest.yml` passes it with **no
   fallback** (the other workflows default to `'2627'`), so the digest is the one job that misbehaves without it.
+- 🔴 **RUN `supabase/opponent_strength_played.sql` BEFORE THE NEXT PALMARES SYNC (cron: 1 Sept
+  06:30 UTC).** `sync-palmares.mjs` now writes a `current_played` column that does not exist yet.
+  Until the migration runs, every upsert fails with "column does not exist" and the job logs errors
+  and updates nothing. It fails *safely* — no bad data is written — but it does nothing useful either.
+- ✅ **The palmares difficulty problem is fixed in code (2026-08-19).** LZV publishes the full
+  12-team table from day one with **every team on 0 played / 0 points** — verified against the live
+  page, all 12 parse as `played = 0`. The ordering is arbitrary, so rating from it produced
+  confident nonsense: Knallende Knapen (relegated 12th of 4e Klasse last season) read **"Very
+  hard"**, Bankzitters United (brand new, no history at all) read **"Very easy"**.
+  `current_ptn_per_match` could not detect this — 0 means both "no games" and "lost them all" — so
+  the fix persists the standings' `played` count and gates on it:
+  `null` = unknown, trust as before (every 25-26 row, so nothing regresses); `0` = season not
+  started, show **no rating at all**; `>0` = rate normally. `computeStrengthScore` also skips the
+  current season at 0 played, which otherwise contributed a 0 component at weight 0.55 and
+  flattened every opponent's score. 9 tests, including the real 26-27 table.
+  **Net effect: the difficulty chip is simply hidden until results exist, and returns by itself
+  after the first round** — no need to block the cron or remember to undo anything.
+
+## Fixed in the review (all committed, gates green: lint, 80 tests, build)
+- 🐛 **MOTM voting opened at midnight, not after the match.** `isMotmVotingOpen` was gated on
+  `isPlayed()`, which is day-granular (`game_date < today`), so the window stayed shut until 00:00.
+  A 21:00 home game lost its 23:00–00:00 hour; the 26-27 calendar's 18:00/19:00/19:30/20:00 away
+  kickoffs would have lost **2–4 hours each** — the hours right after the whistle, when people
+  actually vote. The gate was pure subtraction: `nowMs >= openAt` (kickoff + 2h) already implies the
+  game kicked off. Removed from `isMotmVotingOpen` and `countPlayerMotmWins`, which also makes the
+  injected `nowMs` honoured throughout so the window is finally testable. 5 regression tests.
+- 🐛 **A fresh season rendered as a wall of red.** With no RSVPs, every fixture showed
+  `readinessClass(0)` → red "Not enough players", and the panel said "only 0 marked In" — alarming
+  and untrue, since nobody had been asked. `readinessClass`/`playerStatusLabel` now take an optional
+  `responses` count and report a neutral **"No responses yet"** at zero; the low-count warning box
+  only fires once somebody has answered. Thresholds are unchanged once responses exist, and a game
+  where everyone answered "Out" still goes red. 4 tests.
+- **`saveStat` had no time-window guard** — it checked ownership but not the freeze, unlike
+  `saveAttendance`. `StatsTab` already disables the inputs (the freeze is absolute, admins included),
+  so this only closed the UI/write gap.
+- **Claim cancellation failed silently** — the one write with no toast. Now matches the rest.
+- **`npm audit`: 4 dev-only vulnerabilities → 0.** Transitive (postcss, nanoid, brace-expansion,
+  @babel/core), fixed semver-compatibly; vite 8 / vitest 4 majors deliberately unchanged.
+  Production dependencies were already clean.
+
+## Reviewed and found sound (don't re-audit)
+- **RLS *intent* is right** — the model in `auth_ownership.sql` is correct; the live DB had drifted
+  from it. `motm_votes` has `unique (game_id, voter_key)`, so one vote per user per game is enforced
+  in the schema, not just the UI. `players_auth_user_id_unique` prevents one account linking to two
+  players.
+- **The stats page survives the new season's exact shape** — probed every util with 21 fixtures,
+  all scores null, no stats/attendance: all return zeroed/empty structures, none throw.
+- **The claim/onboarding flow** handles all four banner states and correctly offers only unclaimed
+  players, with a sensible empty state. Note only **2 of 13** roster rows are currently unclaimed
+  (Cédric Vaessen, Bart Moyens) — anyone new needs an admin to add their row first.
+- **Known and accepted, not bugs:** attendance/stats time windows are UI-only (RLS scopes writes to
+  your own row but not to a window) — fine for a team app; `gameStatusById` is O(games x attendance),
+  trivial at this scale.
+
+## Superseded — state as of earlier on 2026-08-19
+- ✅ **The official 26-27 calendar is LOADED AND VERIFIED.** LZV published on/before 2026-08-19; the user ran
+  `supabase/fixtures_2627.sql` in the SQL editor the same day. Verified read-only afterwards: **21 rows**,
+  every `id` consistent with its own date/time/opponent, no duplicate ids or `(date, opponent)` pairs, no
+  null `game_time`/`location`, every `title` carries the team, all scores still null, 11 opponents, span
+  2026-09-06 → 2027-05-09, **2526 untouched at 22**, and no child-table rows point at 2627 yet.
+  `.ics` feeds regenerated (21 VEVENTs, CRLF intact) and committed.
+- 🔴 **STILL TO DO: set the repo var `LZV_SEASON_SLUG=2627`.** `weekly-digest.yml` passes it with **no
+  fallback** (the other workflows default to `'2627'`), so the digest is the one job that misbehaves without it.
 - ⚠ **DO NOT run `npm run sync:palmares` yet — and the 1 Sept cron will do it for you anyway.** The
   runbook predicted standings would be *thin or empty* before results exist. The reality is worse: LZV
   already serves a **full 12-team table in which every team has `ptn/m = 0`** — nobody has played. The

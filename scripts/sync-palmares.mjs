@@ -163,7 +163,11 @@ function computeStrengthScore(parsed) {
   let totalWeight = 0;
   const seasons = [];
 
-  if (parsed.currentPosition != null) {
+  // Skip the current season while it has no results. Its ptn/match is 0 for
+  // everyone, which would otherwise contribute a 0 component at weight 0.55 and
+  // flatten every opponent's score. With it skipped the number comes from
+  // history alone, which is at least real.
+  if (parsed.currentPosition != null && parsed.currentPlayed !== 0) {
     seasons.push({
       position: parsed.currentPosition,
       ptn: parsed.currentPtnPerMatch ?? 0,
@@ -233,6 +237,9 @@ async function main() {
       ...parsed,
       currentPosition: currentRow?.position ?? null,
       currentPtnPerMatch: currentRow?.ptnPerMatch ?? null,
+      // Persisted so the app can tell "season not started" from "winless" —
+      // ptn/match is 0 in both cases. See supabase/opponent_strength_played.sql.
+      currentPlayed: currentRow?.played ?? null,
     };
     const strength = computeStrengthScore(combined);
     const { error } = await supabase
@@ -244,6 +251,7 @@ async function main() {
         last_synced: new Date().toISOString(),
         current_position: combined.currentPosition,
         current_ptn_per_match: combined.currentPtnPerMatch,
+        current_played: combined.currentPlayed,
         history: parsed.history,
         strength_score: strength,
       });

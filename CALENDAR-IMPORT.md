@@ -119,10 +119,19 @@ npm run sync:palmares      # or wait for the monthly workflow
 Discovers the opponents **and** the standings from the same team overview page, so no per-season URL change is
 needed. It writes `opponent_strength` keyed `(season_slug, team_id)`.
 
-⚠ **Expect this to be thin or empty for the first few weeks.** It parses the *current* season's standings
+⚠ **Not thin — full and meaningless for the first few weeks. See §2a.** It parses the *current* season's standings
 table, which barely exists before a few rounds are played. The wiped dummy data had faked this using last
 season's positions. So sidebar difficulty and the projected league table will look flat early on — that is
 expected, not a bug. The job runs monthly, so consider one manual run once a few results are in.
+
+## 2a. ✅ The "standings are thin early" warning was wrong — they are *full and meaningless*
+
+Resolved 2026-08-19. §2 predicted `opponent_strength` would be thin or empty before results exist.
+It is neither: LZV serves the complete 12-team table from day one with **every team on 0 played /
+0 points**, and `getDifficulty()` used to trust that ordering. Fixed by persisting the standings'
+`played` count (`supabase/opponent_strength_played.sql` + `sync-palmares.mjs`) and gating on it, so
+no rating shows until a match has been played. **Run that migration before the next palmares sync**,
+or the upsert fails on the missing column. Next season, expect the same shape.
 
 ## 2b. ⚠ Check the league size — the difficulty bands are hardcoded for ~12 teams
 

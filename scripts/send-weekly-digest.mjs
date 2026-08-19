@@ -2,12 +2,24 @@
 /**
  * Weekly squad pulse email: next fixture RSVP gaps + MotM voting status.
  *
+ * Recipients follow the roster, not a hand-edited list: every active player in
+ * `players` that is linked to a confirmed `auth.users` account (via
+ * `players.auth_user_id`) gets a mail. A sign-up that was never linked to a
+ * player is skipped on purpose — that is what keeps strangers off the list.
+ * One mail per person, so nobody sees anyone else's address.
+ *
  * Env:
- *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY — service role is required, it is what
+ *     can read auth.users (via the admin API) and bypass RLS
  *   RESEND_API_KEY — https://resend.com (free tier)
- *   DIGEST_TO_EMAIL — comma-separated recipients
- *   DIGEST_FROM_EMAIL — optional (default: onboarding@resend.dev until domain verified)
- *   DIGEST_SEASON_SLUG — optional (default: first entry in src/seasons.js default == 2526)
+ *   DIGEST_TO_EMAIL — optional, comma-separated EXTRA recipients (people with no
+ *     account). No longer the source of the squad list.
+ *   DIGEST_SKIP_EMAILS — optional, comma-separated opt-out list
+ *   DIGEST_DRY_RUN — set to 1/true to resolve and print recipients without sending
+ *   DIGEST_FROM_EMAIL — optional (default: onboarding@resend.dev, which Resend only
+ *     delivers to the account owner's own address — set a verified domain before
+ *     expecting the squad to receive anything)
+ *   DIGEST_SEASON_SLUG — optional (default: DEFAULT_SEASON_SLUG in src/seasons.js)
  *   PUBLIC_APP_URL — full app URL with scheme, e.g. https://www.caracrew.org (host-only is OK; https is added)
  */
 
@@ -57,12 +69,128 @@ function emailCard(title, headerBg, headerColor, bodyHtml) {
 </table>`;
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function parseEmailList(raw) {
+  return String(raw || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function isTruthyFlag(raw) {
+  return ["1", "true", "yes", "on"].includes(String(raw || "").trim().toLowerCase());
+}
+
+/**
+ * All auth users, paged. PostgREST cannot select `auth.users`, so this goes through
+ * the GoTrue admin API — which is why the job needs the service-role key, not the
+ * anon one. (`admin_list_auth_users()` is no use here: it gates on `is_admin_user()`,
+ * which reads `auth.uid()`, and a service-role call has no uid.)
+ */
+async function listAuthUsers(supabase) {
+  const perPage = 200;
+  const out = [];
+  for (let page = 1; page <= 25; page += 1) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+    const batch = data?.users || [];
+    out.push(...batch);
+    if (batch.length < perPage) break;
+  }
+  return out;
+}
+
+/** Never mail an address the user has not confirmed, or a banned account. */
+function isMailableAuthUser(user, nowMs) {
+  if (!user?.email) return false;
+  if (!user.email_confirmed_at && !user.confirmed_at) return false;
+  if (user.banned_until && new Date(user.banned_until).getTime() > nowMs) return false;
+  return true;
+}
+
+/**
+ * Roster -> addresses. Pure and exported so the "who gets a mail" rules can be
+ * unit-tested; this is the one decision in the job with real blast radius.
+ *
+ * Also returns who was left out and why, because "why did X not get it" is the
+ * only question anyone ever asks about this job.
+ */
+export function selectRecipients(
+  players,
+  authUsers,
+  { extraEmails = [], skipEmails = [], nowMs = Date.now() } = {}
+) {
+  const usersById = new Map((authUsers || []).map((u) => [u.id, u]));
+  const skipList = new Set(skipEmails.map((e) => String(e).trim().toLowerCase()));
+
+  const byEmail = new Map();
+  const optedOut = [];
+  const add = (email, name) => {
+    const key = String(email || "").trim().toLowerCase();
+    if (!key) return;
+    if (skipList.has(key)) {
+      optedOut.push(name || key);
+      return;
+    }
+    if (!byEmail.has(key)) byEmail.set(key, { email: String(email).trim(), name });
+  };
+
+  const unlinked = [];
+  const unconfirmed = [];
+  for (const player of players || []) {
+    // `archived` is derived in the app (useFutsalData); the raw column is `archived_at`.
+    if (player.archived_at) continue;
+    if (!player.auth_user_id) {
+      unlinked.push(player.name);
+      continue;
+    }
+    const user = usersById.get(player.auth_user_id);
+    if (!isMailableAuthUser(user, nowMs)) {
+      unconfirmed.push(player.name);
+      continue;
+    }
+    add(user.email, player.name);
+  }
+
+  // Extras are for people with no account at all — they do not replace the roster.
+  for (const email of extraEmails) add(email, null);
+
+  return { recipients: [...byEmail.values()], unlinked, unconfirmed, optedOut };
+}
+
+async function resolveRecipients(supabase, players, nowMs) {
+  const authUsers = await listAuthUsers(supabase);
+  return {
+    authUserCount: authUsers.length,
+    ...selectRecipients(players, authUsers, {
+      extraEmails: parseEmailList(process.env.DIGEST_TO_EMAIL),
+      skipEmails: parseEmailList(process.env.DIGEST_SKIP_EMAILS),
+      nowMs,
+    }),
+  };
+}
+
+async function sendOneEmail(resendKey, payload) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.text();
+  if (!res.ok) throw new Error(`Resend ${res.status}: ${body}`);
+  return body;
+}
+
 async function main() {
   const seasonSlug = process.env.DIGEST_SEASON_SLUG || DEFAULT_SEASON_SLUG;
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const resendKey = process.env.RESEND_API_KEY;
-  const toRaw = process.env.DIGEST_TO_EMAIL || "";
+  const dryRun = isTruthyFlag(process.env.DIGEST_DRY_RUN);
   const fromEmail =
     process.env.DIGEST_FROM_EMAIL || "Caracrew digest <onboarding@resend.dev>";
   const appUrl = normalizeAppUrl(
@@ -72,12 +200,7 @@ async function main() {
   if (!supabaseUrl || !serviceRoleKey) {
     throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
   }
-  if (!resendKey) throw new Error("Missing RESEND_API_KEY");
-  const toList = toRaw
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (!toList.length) throw new Error("Set DIGEST_TO_EMAIL (comma-separated)");
+  if (!resendKey && !dryRun) throw new Error("Missing RESEND_API_KEY");
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false },
@@ -117,8 +240,11 @@ async function main() {
   }
 
   const hiddenNames = new Set(["test test"]);
+  // `archived_at` is the actual column — the app derives a boolean `archived` from it
+  // (useFutsalData), which this script never had, so `!p.archived` was always true
+  // and retired players were still being chased for an RSVP.
   const fixedRoster = (players || []).filter(
-    (p) => p.fixed && !p.archived && !hiddenNames.has(String(p.name || "").toLowerCase().trim())
+    (p) => p.fixed && !p.archived_at && !hiddenNames.has(String(p.name || "").toLowerCase().trim())
   );
 
   const nextThree = nextUpcomingGamesByCalendar(games || [], 3);
@@ -304,26 +430,68 @@ Reply not monitored — use WhatsApp or the app.
 </body>
 </html>`;
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: fromEmail,
-      to: toList,
-      subject: subjectLine,
-      html,
-      text: textBody,
-    }),
-  });
+  const { recipients, authUserCount, unlinked, unconfirmed, optedOut } =
+    await resolveRecipients(supabase, players, Date.now());
 
-  const body = await res.text();
-  if (!res.ok) {
-    throw new Error(`Resend ${res.status}: ${body}`);
+  console.log(
+    `[digest] ${recipients.length} recipient(s) from ${authUserCount} auth user(s) / ${
+      (players || []).length
+    } player row(s)`
+  );
+  if (unlinked.length) {
+    console.log(`[digest] no account linked (${unlinked.length}): ${unlinked.join(", ")}`);
   }
-  console.log("[digest] Sent OK:", body);
+  if (unconfirmed.length) {
+    console.log(
+      `[digest] linked but email unconfirmed or banned (${unconfirmed.length}): ${unconfirmed.join(", ")}`
+    );
+  }
+  if (optedOut.length) {
+    console.log(`[digest] opted out via DIGEST_SKIP_EMAILS (${optedOut.length}): ${optedOut.join(", ")}`);
+  }
+
+  if (!recipients.length) {
+    throw new Error(
+      "No recipients: link players to confirmed accounts via players.auth_user_id, or set DIGEST_TO_EMAIL for people without one"
+    );
+  }
+
+  if (/resend\.dev/i.test(fromEmail) && recipients.length > 1) {
+    console.warn(
+      "[digest] WARNING: sending from a resend.dev address. Resend only delivers those to the account owner's own address — set DIGEST_FROM_EMAIL to a verified domain or most of these will 403."
+    );
+  }
+
+  if (dryRun) {
+    console.log("[digest] DRY RUN — nothing sent. Would mail:");
+    for (const r of recipients) console.log(`  - ${r.email}${r.name ? ` (${r.name})` : ""}`);
+    return;
+  }
+
+  // One mail each rather than a shared `to:` array, so nobody sees the squad's
+  // addresses. Spaced out for Resend's ~2 req/s limit; a bad address fails alone.
+  const failures = [];
+  for (const [i, r] of recipients.entries()) {
+    if (i > 0) await sleep(600);
+    try {
+      await sendOneEmail(resendKey, {
+        from: fromEmail,
+        to: [r.email],
+        subject: subjectLine,
+        html,
+        text: textBody,
+      });
+      console.log(`[digest] sent -> ${r.email}`);
+    } catch (err) {
+      failures.push({ email: r.email, message: err?.message || String(err) });
+      console.error(`[digest] FAILED -> ${r.email}: ${err?.message || err}`);
+    }
+  }
+
+  console.log(`[digest] done: ${recipients.length - failures.length}/${recipients.length} sent`);
+  if (failures.length) {
+    throw new Error(`${failures.length} of ${recipients.length} sends failed (see log above)`);
+  }
 }
 
 const isMain =

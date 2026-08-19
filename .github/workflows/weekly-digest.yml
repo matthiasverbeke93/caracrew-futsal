@@ -4,7 +4,12 @@ on:
   schedule:
     # Friday 16:00 UTC (~17:00 Brussels winter)
     - cron: "0 16 * * 5"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Resolve recipients and print them without sending"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -31,7 +36,11 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # Recipients come from players.auth_user_id -> auth.users. This var is now
+          # only EXTRA addresses for people without an account.
           DIGEST_TO_EMAIL: ${{ vars.DIGEST_TO_EMAIL }}
+          DIGEST_SKIP_EMAILS: ${{ vars.DIGEST_SKIP_EMAILS }}
+          DIGEST_DRY_RUN: ${{ inputs.dry_run }}
           DIGEST_FROM_EMAIL: ${{ vars.DIGEST_FROM_EMAIL }}
-          DIGEST_SEASON_SLUG: ${{ vars.LZV_SEASON_SLUG }}
+          DIGEST_SEASON_SLUG: ${{ vars.LZV_SEASON_SLUG || '2627' }}
           PUBLIC_APP_URL: ${{ vars.PUBLIC_APP_URL }}

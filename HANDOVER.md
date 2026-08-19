@@ -181,8 +181,12 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   null `game_time`/`location`, every `title` carries the team, all scores still null, 11 opponents, span
   2026-09-06 → 2027-05-09, **2526 untouched at 22**, and no child-table rows point at 2627 yet.
   `.ics` feeds regenerated (21 VEVENTs, CRLF intact) and committed.
-- 🔴 **STILL TO DO: set the repo var `LZV_SEASON_SLUG=2627`.** `weekly-digest.yml` passes it with **no
-  fallback** (the other workflows default to `'2627'`), so the digest is the one job that misbehaves without it.
+- ✅ **Resolved 2026-08-19 — and the original note was wrong.** `weekly-digest.yml` now passes
+  `${{ vars.LZV_SEASON_SLUG || '2627' }}`, matching the other workflows. The claim that the digest
+  "misbehaves without it" never held: the *script* already fell back
+  (`process.env.DIGEST_SEASON_SLUG || DEFAULT_SEASON_SLUG` → `2627`), so an **unset** var was harmless.
+  The real risk was the inverse — the var still being set to `2526` would silently digest last season
+  with no error anywhere. Setting the repo var explicitly is still the tidier state; it is no longer a 🔴.
 - 🔴 **RUN `supabase/opponent_strength_played.sql` BEFORE THE NEXT PALMARES SYNC (cron: 1 Sept
   06:30 UTC).** `sync-palmares.mjs` now writes a `current_played` column that does not exist yet.
   Until the migration runs, every upsert fails with "column does not exist" and the job logs errors
@@ -244,8 +248,12 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   null `game_time`/`location`, every `title` carries the team, all scores still null, 11 opponents, span
   2026-09-06 → 2027-05-09, **2526 untouched at 22**, and no child-table rows point at 2627 yet.
   `.ics` feeds regenerated (21 VEVENTs, CRLF intact) and committed.
-- 🔴 **STILL TO DO: set the repo var `LZV_SEASON_SLUG=2627`.** `weekly-digest.yml` passes it with **no
-  fallback** (the other workflows default to `'2627'`), so the digest is the one job that misbehaves without it.
+- ✅ **Resolved 2026-08-19 — and the original note was wrong.** `weekly-digest.yml` now passes
+  `${{ vars.LZV_SEASON_SLUG || '2627' }}`, matching the other workflows. The claim that the digest
+  "misbehaves without it" never held: the *script* already fell back
+  (`process.env.DIGEST_SEASON_SLUG || DEFAULT_SEASON_SLUG` → `2627`), so an **unset** var was harmless.
+  The real risk was the inverse — the var still being set to `2526` would silently digest last season
+  with no error anywhere. Setting the repo var explicitly is still the tidier state; it is no longer a 🔴.
 - ⚠ **DO NOT run `npm run sync:palmares` yet — and the 1 Sept cron will do it for you anyway.** The
   runbook predicted standings would be *thin or empty* before results exist. The reality is worse: LZV
   already serves a **full 12-team table in which every team has `ptn/m = 0`** — nobody has played. The
@@ -319,6 +327,62 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-19** — *Digest recipients now come from the roster (`auth.users`), not a hand-edited var.*
+  - **Before: the job had no idea who was in the squad.** Recipients were the repo variable
+    `DIGEST_TO_EMAIL`, split on commas. `players` has no email column — addresses exist only in
+    `auth.users` — so the list never tracked sign-ups, never dropped anyone, and was invisible from the repo.
+  - **Now:** every non-archived `players` row whose `auth_user_id` points at a **confirmed** `auth.users`
+    account. Read via `supabase.auth.admin.listUsers()` (paged) — PostgREST cannot select `auth.users`,
+    which is why the **service-role key is mandatory**. `admin_list_auth_users()` is no use here: it gates
+    on `is_admin_user()`, which reads `auth.uid()`, and a service-role call has no uid.
+  - **Deliberate exclusions**, all named in the run log so "why didn't X get it" is answerable:
+    unlinked players, unconfirmed/banned addresses, archived players, and **auth users not linked to any
+    player** (that last one is what keeps a stray sign-up off the squad's mailing list).
+  - **One mail per person instead of a shared `to:` array.** Auto-deriving the list turned the old
+    all-recipients-visible `to:` into a real address leak. Sends are spaced ~600ms for Resend's ~2 req/s
+    limit, a bad address fails alone, and the job exits non-zero if any send failed.
+  - `DIGEST_TO_EMAIL` survives as **extra** recipients for people with no account; new `DIGEST_SKIP_EMAILS`
+    is the opt-out; new `DIGEST_DRY_RUN` (also a `workflow_dispatch` boolean input) resolves and prints the
+    list without sending. **Use the dry run before the first real send.**
+  - 🔴 **Still blocking actual delivery: `DIGEST_FROM_EMAIL`.** The default `onboarding@resend.dev` only
+    delivers to the Resend account owner's own address — everyone else 403s. Verify caracrew.org in Resend
+    and set the var. The script now warns about this in the log when it sees a `resend.dev` sender and more
+    than one recipient.
+  - **Found a second latent bug while in there:** the script filtered the roster with `!p.archived`, but the
+    DB column is `archived_at` — the boolean `archived` is *derived in the app*
+    (`useFutsalData.jsx:180`), and this script reads raw rows. So the filter was always true and retired
+    players were still being chased for RSVPs. Same trap as the `.env` outage: the missing consumer was
+    invisible because the name looked right.
+  - `selectRecipients()` is exported and pure so the who-gets-mail rules are unit-tested (10 cases,
+    `scripts/send-weekly-digest.test.mjs`) — the job cannot be safely exercised from here, and this is the
+    one decision in it with real blast radius. `vite.config.js` now includes `scripts/**/*.test.mjs`.
+  - `weekly-digest.yml` also gained the `|| '2627'` season default, which closes the old 🔴 above.
+  - `lint` clean, **108/108**, `build` OK. **Not run end-to-end** — no service-role key on this box.
+- **2026-08-19** — *"Games played" counted RSVPs for fixtures that had not happened yet.*
+  - 🔴 **Real data bug, user-reported:** the season-overview **GP** column counted every game with
+    `attendance.status = 'playing'` regardless of date, so voting In for the next 3 fixtures read as
+    *played 3*. `utils/teamSeasonStats.js` now requires `isPlayed(game)` too. An RSVP is an intention;
+    an appearance is a fixture that took place.
+  - **Had to move the denominator with it, or the fix creates a worse lie.** `pctPlayed` divided by the
+    *whole schedule* (`games.length`), so once the numerator was played-only, a player who turned out for
+    all 10 games that had happened would read **48% of 21**. It now divides by games played *so far*, and
+    is `null` (rendered `—`) before anything is played — `0%` for everyone pre-season reads as "skipped
+    every game". This also makes the live path agree with the static LZV-snapshot path, which was already
+    dividing by a played-games total.
+  - `totalSeasonGames` still means the full fixture count; the new `playedSeasonGames` is what GP and %
+    are measured against. Caption now reads "N of 21 scheduled games played so far".
+  - Goals/assists deliberately **not** filtered by `isPlayed` — no total changes, and a stats row can only
+    exist for a fixture that has been playable. Note `isPlayed` is *strictly* before today, so a match
+    played **today** joins GP tomorrow; that is the existing convention everywhere else.
+  - **Same class of bug left alone deliberately:** `PlayerProfileModal`'s *In rate* and *Longest In streak*
+    also span future fixtures, but they are labelled as RSVP intent ("In"), not appearances, so 3/3 is
+    honest there. `currentStreak` already filters on `played`; `longestStreak` does not — worth a look if
+    the streak numbers ever seem generous.
+  - Calendar rows now show **DD-MM-YY** instead of `YYYY-MM-DD` (new `formatMatchShortDate` in
+    `utils/formatMatch.js` — string slicing on the normalised date, no `Date`, so no timezone can shift
+    the day). The **list-view** cards still show ISO on purpose — only the calendar chips were asked for.
+  - New unit tests: `utils/teamSeasonStats.test.js` (4, fixtures dated relative to today since `isPlayed`
+    reads the clock) and `utils/formatMatch.test.js` (5). `lint` clean, **98/98**, `build` OK.
 - **2026-08-19** — *Sidebar now shows the actual headcount for fixtures that are open for RSVP.*
   - The sidebar only ever showed the *qualitative* readiness ("Just enough players") in list view, and
     **nothing at all** in calendar view — so you could see a fixture was thin but not by how much.

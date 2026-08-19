@@ -23,6 +23,19 @@ export function normalizeGameDateOnly(gameOrRawDate) {
   return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
 }
 
+/**
+ * `DD-MM-YY` for the compact calendar rows — day-first is how the team reads a
+ * date, and dropping the century buys the width the opponent name needs. Pure
+ * string work on the normalised `YYYY-MM-DD`, so no timezone can shift the day
+ * (see the local-day-string rule in HANDOVER).
+ */
+export function formatMatchShortDate(gameOrRawDate) {
+  const dateOnly = normalizeGameDateOnly(gameOrRawDate);
+  if (!dateOnly) return "";
+  const [yyyy, mm, dd] = dateOnly.split("-");
+  return `${dd}-${mm}-${yyyy.slice(2)}`;
+}
+
 export function formatMatchDayTime(game) {
   const dateOnly = normalizeGameDateOnly(game);
   if (!dateOnly) return "";

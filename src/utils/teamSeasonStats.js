@@ -1,9 +1,18 @@
+import { isPlayed } from "./game.js";
 import { countPlayerMotmWins } from "./motm.js";
 
 /**
  * Season totals per roster player (players table: fixed + pool guests).
- * "Games played" = games with attendance status `playing`.
- * Denominator for % = all games in `games` (scheduled season games).
+ *
+ * "Games played" = **fixtures that have already taken place** where the player was
+ * marked `playing`. An RSVP for an upcoming fixture is an intention, not an
+ * appearance — counting it made a player who had only voted In for the next 3
+ * fixtures read as GP 3.
+ *
+ * `pctPlayed` divides by the games played *so far*, not the whole schedule, so
+ * mid-season "played 10 of the 10 that happened" is 100% rather than 48% of 21.
+ * `null` when nothing has been played yet — 0% would read as having skipped games.
+ * `totalSeasonGames` stays the full fixture count (what the caption reports).
  */
 export function buildTeamSeasonPlayerRows(
   games,
@@ -14,6 +23,7 @@ export function buildTeamSeasonPlayerRows(
   nowMs = Date.now()
 ) {
   const totalSeasonGames = games?.length ?? 0;
+  const playedSeasonGames = (games || []).filter((g) => isPlayed(g)).length;
 
   return (playersWithRole || []).map((player) => {
     let gamesPlayed = 0;
@@ -24,7 +34,7 @@ export function buildTeamSeasonPlayerRows(
       const att = attendance.find(
         (a) => a.game_id === game.id && a.player_id === player.id
       );
-      if (att?.status === "playing") gamesPlayed += 1;
+      if (att?.status === "playing" && isPlayed(game)) gamesPlayed += 1;
 
       const st = stats.find((s) => s.game_id === game.id && s.player_id === player.id);
       if (st) {
@@ -34,7 +44,7 @@ export function buildTeamSeasonPlayerRows(
     }
 
     const pctPlayed =
-      totalSeasonGames > 0 ? Math.round((gamesPlayed / totalSeasonGames) * 100) : 0;
+      playedSeasonGames > 0 ? Math.round((gamesPlayed / playedSeasonGames) * 100) : null;
     const involvement = goals + assists;
     const goalsPerGame = gamesPlayed > 0 ? goals / gamesPlayed : 0;
     const assistsPerGame = gamesPlayed > 0 ? assists / gamesPlayed : 0;
@@ -48,6 +58,7 @@ export function buildTeamSeasonPlayerRows(
       isGuest: player.isGuest,
       gamesPlayed,
       totalSeasonGames,
+      playedSeasonGames,
       pctPlayed,
       fairplayRank: null,
       goals,
@@ -91,7 +102,7 @@ export function buildStaticTeamSeasonRows(staticData, playersWithRole) {
     const assists = Number(row.assists) || 0;
     const involvement = goals + assists;
     const pctPlayed =
-      totalGamesPlayed > 0 ? Math.round((gamesPlayed / totalGamesPlayed) * 100) : 0;
+      totalGamesPlayed > 0 ? Math.round((gamesPlayed / totalGamesPlayed) * 100) : null;
 
     return {
       id: matched?.id ?? `static-${normalizeName(row.name)}`,
@@ -101,6 +112,7 @@ export function buildStaticTeamSeasonRows(staticData, playersWithRole) {
       hasProfile: Boolean(matched),
       gamesPlayed,
       totalSeasonGames: totalGamesPlayed,
+      playedSeasonGames: totalGamesPlayed,
       pctPlayed,
       fairplayRank,
       goals,

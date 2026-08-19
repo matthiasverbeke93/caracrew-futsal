@@ -26,13 +26,24 @@ VITE_SUPABASE_ANON_KEY=...
 - `npm run lint` — ESLint (flat config, React + hooks plugins).
 - `npm run sync:lzv` / `npm run sync:lzv:dryrun` — pull final scores from `lzvcup.be`.
 - `npm run sync:palmares` / `npm run sync:palmares:dryrun` — refresh opponent strength.
-- `npm run digest:weekly` — send the squad pulse email via [Resend](https://resend.com); needs service role + `RESEND_API_KEY` + `DIGEST_TO_EMAIL` (see Weekly digest).
+- `npm run digest:weekly` — send the squad pulse email via [Resend](https://resend.com); needs service role + `RESEND_API_KEY` (see Weekly digest).
 
 ## Weekly digest email
 
 Friday schedule (GitHub Actions) runs `scripts/send-weekly-digest.mjs`: upcoming fixtures, fixed-roster RSVP gaps for the next match, and Man of the Match voting status for open polls.
 
-**GitHub:** add secret `RESEND_API_KEY`, repository variable `DIGEST_TO_EMAIL` (comma-separated recipients). Optional: `DIGEST_FROM_EMAIL`, `PUBLIC_APP_URL` (your deployed app link in the CTA). Uses `LZV_SEASON_SLUG` when set (same as sync workflows), else default season from `src/seasons.js`.
+**Who receives it:** the roster, not a hand-edited list. Every non-archived row in `players` whose `auth_user_id` points at a **confirmed** `auth.users` account gets one mail. Consequences worth knowing:
+
+- A squad member with no account, or one whose email is unconfirmed, gets nothing — the run log names them (`no account linked`, `linked but email unconfirmed`), so check the log rather than guessing.
+- A sign-up that was never linked to a player is skipped, which is what keeps strangers off the list.
+- Each person gets their own mail, so nobody sees anyone else's address.
+- Reading `auth.users` goes through the GoTrue admin API, so the **service role** key is mandatory.
+
+**GitHub:** add secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`. Optional repo variables: `DIGEST_TO_EMAIL` (**extra** recipients who have no account — no longer the squad list), `DIGEST_SKIP_EMAILS` (opt-out), `DIGEST_FROM_EMAIL`, `PUBLIC_APP_URL` (deployed app link in the CTA). Season comes from `LZV_SEASON_SLUG`, defaulting to `2627`.
+
+⚠️ **`DIGEST_FROM_EMAIL` must be a verified domain before this reaches the squad.** The default `onboarding@resend.dev` only delivers to the Resend account owner's own address; everyone else 403s. The job warns about this in its log and exits non-zero if any send fails.
+
+**Check the list before sending:** run the workflow manually with the **dry run** input ticked (Actions → Weekly squad digest → Run workflow), or `DIGEST_DRY_RUN=1 npm run digest:weekly` locally. It resolves and prints recipients without sending.
 
 **Local test:** copy `.env.example` digest vars into a shell session or `.env` loaded manually, then `npm run digest:weekly`.
 

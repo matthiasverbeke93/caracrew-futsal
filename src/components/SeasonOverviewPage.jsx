@@ -377,6 +377,10 @@ export default function SeasonOverviewPage({
   const denominator = staticData
     ? tableRows[0]?.totalSeasonGames ?? 0
     : games?.length ?? 0;
+  /** What GP and % are actually measured against: fixtures that have taken place. */
+  const playedDenominator = staticData
+    ? tableRows[0]?.playedSeasonGames ?? 0
+    : summary.playedGames;
   const showLiveSeasonInsights = seasonSlug !== "2526";
 
   return (
@@ -398,12 +402,13 @@ export default function SeasonOverviewPage({
             {staticData ? (
               <>
                 Main table can include an <strong>LZV snapshot</strong> for games played and goals (
-                {denominator} games this season). % = GP ÷ season games.
+                {denominator} games played this season). % = GP ÷ games played.
               </>
             ) : (
               <>
-                {denominator} scheduled game{denominator === 1 ? "" : "s"} · GP = games marked{" "}
-                <em>In</em> · % = GP ÷ season games.
+                {playedDenominator} of {denominator} scheduled game
+                {denominator === 1 ? "" : "s"} played so far · GP = played games marked{" "}
+                <em>In</em> · % = GP ÷ games played so far.
               </>
             )}
           </p>
@@ -640,7 +645,11 @@ export default function SeasonOverviewPage({
             {barRows.map((r) => {
               const raw = Number(r[barMetric]) || 0;
               const display =
-                barMetric === "pctPlayed" ? `${Math.round(raw)}%` : String(Math.round(raw * 10) / 10);
+                barMetric === "pctPlayed"
+                  ? r.pctPlayed == null
+                    ? "—"
+                    : `${Math.round(raw)}%`
+                  : String(Math.round(raw * 10) / 10);
               const w = Math.round((raw / maxBarValue) * 100);
               return (
                 <li key={r.id} className="insights-leader-row">
@@ -701,7 +710,7 @@ export default function SeasonOverviewPage({
                   </td>
                   <td>{r.fairplayRank ? `${r.fairplayRank}e` : "—"}</td>
                   <td>{renderLeaderValue(r.gamesPlayed, "gamesPlayed", "Most games played", "🎽")}</td>
-                  <td>{r.pctPlayed}%</td>
+                  <td>{r.pctPlayed == null ? "—" : `${r.pctPlayed}%`}</td>
                   <td>{renderLeaderValue(r.goals, "goals", "Most goals", "⚽")}</td>
                   <td>{renderLeaderValue(r.assists, "assists", "Most assists", "🎯")}</td>
                   <td>{r.motmWins ?? 0}</td>

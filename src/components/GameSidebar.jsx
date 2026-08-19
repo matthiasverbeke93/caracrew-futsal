@@ -2,7 +2,7 @@ import { FILTER_CONFLICTS, GAME_EXTRA_FILTERS, GAME_FILTERS } from "../constants
 import { getDifficulty } from "../utils/difficulty";
 import { playerStatusLabel, readinessClass } from "../utils/game";
 import { isMotmVotingOpen } from "../utils/motm";
-import { formatMatchDayTime } from "../utils/formatMatch";
+import { formatMatchDayTime, formatMatchShortDate } from "../utils/formatMatch";
 import { cleanOpponentName } from "../utils/opponent";
 import { useLayoutEffect, useMemo, useState } from "react";
 
@@ -422,7 +422,7 @@ export default function GameSidebar({
                           onClick={() => onSelectGame(game.id)}
                         >
                           <span className="calendar-game-datetime">
-                            {game.game_date} · {game.game_time || "--:--"}
+                            {formatMatchShortDate(game)} · {game.game_time || "--:--"}
                           </span>
                           <span className="calendar-game-opponent-wrap">
                             {attendanceNext && !playedCal && nextRankCal >= 0 && (

@@ -115,28 +115,24 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   add `useCallback` there expecting a win without also memoizing the heavy children (profile first).
 
 ## Current state (as of 2026-08-19, after the pre-share review)
-- 🔴🔴 **CRITICAL, UNPATCHED UNTIL THE SQL IS RUN — the anon key could write to
-  `games`, `players`, `attendance` and `player_stats`.** That key is compiled into the public
-  client bundle, so this was open to anyone on the internet. Proven live, not theorised:
-  `insert into players` returned 201 and the row landed; `update players set is_admin = true`
-  returned 204 and **the flag was actually set**; `update games set home_score = 99` changed a real
-  fixture. Writable `players.is_admin` / `players.auth_user_id` is full admin takeover — point a
-  player row at your own auth uid, flip the flag, done.
-  **Cause:** `auth_ownership.sql` removes loose policies with `drop policy if exists` naming each
-  one *exactly*. Policies added by hand in the Supabase dashboard get default names ("Enable insert
-  for all users"), so the targeted drops never matched them, and Postgres ORs permissive policies
-  together — the loose one wins. That is why `guest_players`, `motm_votes` and `opponent_strength`
-  were correctly locked while these four were wide open.
-  **Fix:** run **`supabase/fix_rls_lockdown.sql`** in the SQL editor. It enumerates and drops *every*
-  policy on those tables (immune to whatever they are named), recreates the intended set, hardens
-  `admin_approve_claim` against link-stealing, and deletes the probe rows. Safe for the sync jobs —
-  they all use the service-role key, which bypasses RLS; only `gen-ics` uses the anon key and it
-  only reads. **The file ends with a 4-step smoke test — do it, because locking down means
-  `attendance_owner_write` / `current_player_id()` decide a write for the first time.**
-- ⚠ **Until that runs, the roster contains a junk player `zz`** created by the security probe. It is
-  visible in the roster *and* selectable in the claim picker. The lockdown script deletes it.
-- 🟡 **`supabase/fix_2526_tigers_score.sql` — the inverted ZVC Tigers result, now resolved to a
-  recommendation.** Audit of all 22 rows: 20 of 21 parseable titles agree with their stored scores,
+- ✅ **CLOSED 2026-08-19 — the anon-write / admin-takeover hole is fixed and verified.**
+  `supabase/fix_rls_lockdown.sql` was run. Re-probed from outside with the public anon key
+  afterwards: every insert refused (401) across games/players/attendance/player_stats/motm_votes/
+  guest_players/opponent_strength, and — the checks that actually matter, because an RLS-blocked
+  UPDATE returns a misleading **204 with zero rows affected** rather than an error — **promoting a
+  non-admin to `is_admin` left the flag `false`**, a fixture delete was a no-op (21 still there),
+  an `auth_user_id` hijack left the column null, and a score write left it null. Admin count is 1.
+  Public reads still return 200 on all seven tables. The probe's junk rows are gone (13 players).
+  **⚠ When reading this back, remember 204 does not mean blocked and 204 does not mean applied —
+  always re-read the row.** An earlier probe of mine targeted a player who was *already* admin,
+  which proved nothing; the conclusive test is promoting a **non**-admin and re-reading.
+  **What made this findable:** probing the live API per-table, per-verb. The migration files
+  described a correct model all along — the live database had drifted from them, so no amount of
+  reading `supabase/*.sql` would have shown it.
+
+- 🟡 **STILL OPEN: `supabase/fix_2526_tigers_score.sql` — the inverted ZVC Tigers result, resolved
+  to a recommendation but NOT yet run** (verified 2026-08-19: the row still reads `home_score = 10`,
+  and the 25-26 record still shows 5W-2D-15L / 74-127 / 17 pts). Audit of all 22 rows: 20 of 21 parseable titles agree with their stored scores,
   and the decisive analogue is `VV Schemerboyz 2 - 11 K Caracrew SK` stored `11-2` — same shape
   (we are away, named second, our goals on the right), read correctly. The Tigers row took the
   *left* number. The stored `location` (Heiveld, an away venue) agrees with the title too. Fix
@@ -261,8 +257,9 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
 
 ## Session log
 - **2026-08-19** — *Full pre-share review. One critical security hole, two real bugs.*
-  - 🔴 **Found the anon key could write to `games`, `players`, `attendance`, `player_stats` —
-    including `players.is_admin`.** Full detail in Current state. Found by probing the live API
+  - 🔴 **Found — and the same day closed and verified — that the anon key could write to `games`,
+    `players`, `attendance`, `player_stats`, including `players.is_admin`.** Full detail in Current
+    state. Found by probing the live API
     rather than reading the migrations, which is the only reason it surfaced: the migration files
     describe a correct model, and the live database had drifted from them. **The probe itself
     wrote data** — a junk `players` row and a `home_score = 99` on the season opener. The score was

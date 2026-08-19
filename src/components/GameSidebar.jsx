@@ -356,6 +356,7 @@ export default function GameSidebar({
                       const playing =
                         gameRows.filter((a) => a.status === "playing").length +
                         gameGuestRows.filter((p) => p.status === "playing").length;
+                      const responses = gameRows.length + gameGuestRows.length;
                       const status = gameStatusById[game.id];
                       const playedCal = status?.played;
                       const tone =
@@ -363,7 +364,7 @@ export default function GameSidebar({
                           ? "neutral"
                           : status?.played
                             ? "neutral"
-                            : readinessClass(playing).replace("game-card ", "");
+                            : readinessClass(playing, responses).replace("game-card ", "");
 
                       const attendanceNext = attendanceHighlightIds?.has(game.id);
                       const myRowCal =
@@ -419,6 +420,7 @@ export default function GameSidebar({
               const playing =
                 gameRows.filter((a) => a.status === "playing").length +
                 gameGuestPlayers.filter((p) => p.status === "playing").length;
+              const responses = gameRows.length + gameGuestPlayers.length;
               const status = gameStatusById[game.id];
 
               const played = status?.played;
@@ -427,7 +429,7 @@ export default function GameSidebar({
                   ? "game-card neutral"
                   : played
                     ? "game-card neutral"
-                    : readinessClass(playing);
+                    : readinessClass(playing, responses);
               const difficulty =
                 showSidebarMatchStats &&
                 getDifficulty(game.opponent, opponentStrengths, seasonSlug);
@@ -483,7 +485,9 @@ export default function GameSidebar({
                         voterUserId={voterUserId}
                       />
                     ) : null}
-                    {showSidebarMatchStats && !played && <span>{playerStatusLabel(playing)}</span>}
+                    {showSidebarMatchStats && !played && (
+                      <span>{playerStatusLabel(playing, responses)}</span>
+                    )}
                     {showSidebarMatchStats && hasScore && (
                       <span className="result-chip-mini" title="Caracrew – opponent">
                         {game.home_score}–{game.away_score}

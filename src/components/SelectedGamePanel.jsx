@@ -290,9 +290,13 @@ export default function SelectedGamePanel({
         />
       )}
 
-      {!played && counts.playing < MIN_PLAYERS_WARNING && (
-        <div className="warning-box">Low player count: only {counts.playing} marked In.</div>
-      )}
+      {/* Only warn once somebody has actually answered — before that "only 0 marked In"
+          fires on every fixture of a fresh season and means nothing. */}
+      {!played &&
+        counts.playing + counts.if_needed + counts.cant > 0 &&
+        counts.playing < MIN_PLAYERS_WARNING && (
+          <div className="warning-box">Low player count: only {counts.playing} marked In.</div>
+        )}
 
       {showAttendanceSummary && (
         <div className="count-grid">

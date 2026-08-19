@@ -3,6 +3,7 @@ import AccountChip from "./components/AccountChip";
 import AttendanceTab from "./components/AttendanceTab";
 import AuthModal from "./components/AuthModal";
 import ClaimPlayerModal from "./components/ClaimPlayerModal";
+import { useToast } from "./hooks/useToast.jsx";
 import FormChip from "./components/FormChip";
 import GameSidebar from "./components/GameSidebar";
 import MyNextGamesTiles from "./components/MyNextGamesTiles";
@@ -32,6 +33,7 @@ function readTeamStatsTab(searchParams) {
 }
 
 export default function App() {
+  const { notify } = useToast();
   const {
     user,
     currentPlayer,
@@ -316,7 +318,13 @@ export default function App() {
                 className="auth-banner-btn ghost"
                 onClick={async () => {
                   const res = await cancelClaim();
-                  if (res?.error) console.error(res.error);
+                  // Every other write surfaces its failure as a toast; this one
+                  // used to fail silently, leaving the banner unchanged with no
+                  // explanation.
+                  if (res?.error) {
+                    console.error(res.error);
+                    notify("Couldn't cancel the claim — check your connection and try again.", "error");
+                  }
                 }}
               >
                 Cancel

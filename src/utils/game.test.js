@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   getStatsLockDaysLeft,
+  playerStatusLabel,
+  readinessClass,
   isAttendanceEditable,
   isAttendanceEditableByCalendar,
   isAttendanceInUpcomingWindow,
@@ -115,5 +117,33 @@ describe("stats freeze window", () => {
     expect(getStatsLockDaysLeft(g(isoOffset(-3)))).toBe(STATS_FREEZE_DAYS - 3);
     expect(getStatsLockDaysLeft(g(isoOffset(1)))).toBeNull();
     expect(getStatsLockDaysLeft(g(isoOffset(-(STATS_FREEZE_DAYS + 2))))).toBeNull();
+  });
+});
+
+describe("readiness (count vs. nobody-has-answered)", () => {
+  it("keeps the old thresholds once people have answered", () => {
+    expect(playerStatusLabel(3, 8)).toBe("Not enough players");
+    expect(playerStatusLabel(6, 9)).toBe("Just enough players");
+    expect(playerStatusLabel(7, 9)).toBe("Enough players");
+    expect(readinessClass(3, 8)).toBe("game-card danger");
+    expect(readinessClass(6, 9)).toBe("game-card warning");
+    expect(readinessClass(7, 9)).toBe("game-card success");
+  });
+
+  it("reports 'no responses yet' instead of a red 'not enough' when nobody has answered", () => {
+    // Every fixture of a freshly imported season looks like this.
+    expect(playerStatusLabel(0, 0)).toBe("No responses yet");
+    expect(readinessClass(0, 0)).toBe("game-card neutral");
+  });
+
+  it("still warns when people answered but too few are in", () => {
+    // 9 answers, all "Out" — genuinely short-handed, not unknown.
+    expect(playerStatusLabel(0, 9)).toBe("Not enough players");
+    expect(readinessClass(0, 9)).toBe("game-card danger");
+  });
+
+  it("falls back to count-only behaviour when responses are not supplied", () => {
+    expect(playerStatusLabel(0)).toBe("Not enough players");
+    expect(readinessClass(0)).toBe("game-card danger");
   });
 });

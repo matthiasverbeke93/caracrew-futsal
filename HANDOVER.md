@@ -114,7 +114,71 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
 - **No component uses `React.memo`.** So memoizing callbacks in `useFutsalData` buys nothing on its own — don't
   add `useCallback` there expecting a win without also memoizing the heavy children (profile first).
 
-## Current state (as of 2026-08-19)
+## Current state (as of 2026-08-19, after the pre-share review)
+- 🔴🔴 **CRITICAL, UNPATCHED UNTIL THE SQL IS RUN — the anon key could write to
+  `games`, `players`, `attendance` and `player_stats`.** That key is compiled into the public
+  client bundle, so this was open to anyone on the internet. Proven live, not theorised:
+  `insert into players` returned 201 and the row landed; `update players set is_admin = true`
+  returned 204 and **the flag was actually set**; `update games set home_score = 99` changed a real
+  fixture. Writable `players.is_admin` / `players.auth_user_id` is full admin takeover — point a
+  player row at your own auth uid, flip the flag, done.
+  **Cause:** `auth_ownership.sql` removes loose policies with `drop policy if exists` naming each
+  one *exactly*. Policies added by hand in the Supabase dashboard get default names ("Enable insert
+  for all users"), so the targeted drops never matched them, and Postgres ORs permissive policies
+  together — the loose one wins. That is why `guest_players`, `motm_votes` and `opponent_strength`
+  were correctly locked while these four were wide open.
+  **Fix:** run **`supabase/fix_rls_lockdown.sql`** in the SQL editor. It enumerates and drops *every*
+  policy on those tables (immune to whatever they are named), recreates the intended set, hardens
+  `admin_approve_claim` against link-stealing, and deletes the probe rows. Safe for the sync jobs —
+  they all use the service-role key, which bypasses RLS; only `gen-ics` uses the anon key and it
+  only reads. **The file ends with a 4-step smoke test — do it, because locking down means
+  `attendance_owner_write` / `current_player_id()` decide a write for the first time.**
+- ⚠ **Until that runs, the roster contains a junk player `zz`** created by the security probe. It is
+  visible in the roster *and* selectable in the claim picker. The lockdown script deletes it.
+- 🟡 **`supabase/fix_2526_tigers_score.sql` — the inverted ZVC Tigers result, now resolved to a
+  recommendation.** Audit of all 22 rows: 20 of 21 parseable titles agree with their stored scores,
+  and the decisive analogue is `VV Schemerboyz 2 - 11 K Caracrew SK` stored `11-2` — same shape
+  (we are away, named second, our goals on the right), read correctly. The Tigers row took the
+  *left* number. The stored `location` (Heiveld, an away venue) agrees with the title too. Fix
+  turns 5W-2D-15L / 74-127 into 4W-2D-16L / 65-136. Run it unless you know otherwise.
+
+## Fixed in the review (all committed, gates green: lint, 80 tests, build)
+- 🐛 **MOTM voting opened at midnight, not after the match.** `isMotmVotingOpen` was gated on
+  `isPlayed()`, which is day-granular (`game_date < today`), so the window stayed shut until 00:00.
+  A 21:00 home game lost its 23:00–00:00 hour; the 26-27 calendar's 18:00/19:00/19:30/20:00 away
+  kickoffs would have lost **2–4 hours each** — the hours right after the whistle, when people
+  actually vote. The gate was pure subtraction: `nowMs >= openAt` (kickoff + 2h) already implies the
+  game kicked off. Removed from `isMotmVotingOpen` and `countPlayerMotmWins`, which also makes the
+  injected `nowMs` honoured throughout so the window is finally testable. 5 regression tests.
+- 🐛 **A fresh season rendered as a wall of red.** With no RSVPs, every fixture showed
+  `readinessClass(0)` → red "Not enough players", and the panel said "only 0 marked In" — alarming
+  and untrue, since nobody had been asked. `readinessClass`/`playerStatusLabel` now take an optional
+  `responses` count and report a neutral **"No responses yet"** at zero; the low-count warning box
+  only fires once somebody has answered. Thresholds are unchanged once responses exist, and a game
+  where everyone answered "Out" still goes red. 4 tests.
+- **`saveStat` had no time-window guard** — it checked ownership but not the freeze, unlike
+  `saveAttendance`. `StatsTab` already disables the inputs (the freeze is absolute, admins included),
+  so this only closed the UI/write gap.
+- **Claim cancellation failed silently** — the one write with no toast. Now matches the rest.
+- **`npm audit`: 4 dev-only vulnerabilities → 0.** Transitive (postcss, nanoid, brace-expansion,
+  @babel/core), fixed semver-compatibly; vite 8 / vitest 4 majors deliberately unchanged.
+  Production dependencies were already clean.
+
+## Reviewed and found sound (don't re-audit)
+- **RLS *intent* is right** — the model in `auth_ownership.sql` is correct; the live DB had drifted
+  from it. `motm_votes` has `unique (game_id, voter_key)`, so one vote per user per game is enforced
+  in the schema, not just the UI. `players_auth_user_id_unique` prevents one account linking to two
+  players.
+- **The stats page survives the new season's exact shape** — probed every util with 21 fixtures,
+  all scores null, no stats/attendance: all return zeroed/empty structures, none throw.
+- **The claim/onboarding flow** handles all four banner states and correctly offers only unclaimed
+  players, with a sensible empty state. Note only **2 of 13** roster rows are currently unclaimed
+  (Cédric Vaessen, Bart Moyens) — anyone new needs an admin to add their row first.
+- **Known and accepted, not bugs:** attendance/stats time windows are UI-only (RLS scopes writes to
+  your own row but not to a window) — fine for a team app; `gameStatusById` is O(games x attendance),
+  trivial at this scale.
+
+## Superseded — state as of earlier on 2026-08-19
 - ✅ **The official 26-27 calendar is LOADED AND VERIFIED.** LZV published on/before 2026-08-19; the user ran
   `supabase/fixtures_2627.sql` in the SQL editor the same day. Verified read-only afterwards: **21 rows**,
   every `id` consistent with its own date/time/opponent, no duplicate ids or `(date, opponent)` pairs, no
@@ -196,6 +260,22 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-19** — *Full pre-share review. One critical security hole, two real bugs.*
+  - 🔴 **Found the anon key could write to `games`, `players`, `attendance`, `player_stats` —
+    including `players.is_admin`.** Full detail in Current state. Found by probing the live API
+    rather than reading the migrations, which is the only reason it surfaced: the migration files
+    describe a correct model, and the live database had drifted from them. **The probe itself
+    wrote data** — a junk `players` row and a `home_score = 99` on the season opener. The score was
+    reverted immediately and verified back to null; the junk row could not be removed from here
+    (RLS blocks anon DELETE even though it allows INSERT), so `fix_rls_lockdown.sql` deletes it.
+  - **Lesson worth keeping:** the earlier "verified 401, anon key can't write" note in this file was
+    based on *some* tables. Per-table, per-verb probing found four that were open. Check the live
+    policy set, not the migration that was supposed to create it — the same lesson as the `.env`
+    outage, where the missing consumer was invisible to a repo grep.
+  - Fixed the MOTM voting window, the fresh-season "wall of red", the `saveStat` window guard, the
+    silent claim-cancel failure, and the dev-dependency advisories. See Fixed in the review.
+  - Resolved the long-open ZVC Tigers score question with a 22-row audit
+    (`supabase/fix_2526_tigers_score.sql`) — the title is right, the stored score is inverted.
 - **2026-08-19** — *The official 26-27 calendar went live; imported it (DB load still pending).*
   - **The importer refused all 21 fixtures on first run, exactly as it was designed to.** LZV's SUMMARY
     separator is a **bare, unpadded hyphen** (`VT 09-K Caracrew SK`) and every separator in the list was

@@ -1,5 +1,4 @@
 import { isSeasonVotingLocked } from "../seasons.js";
-import { isPlayed } from "./game.js";
 
 function parseGameStart(game) {
   const date = game.game_date;
@@ -24,8 +23,20 @@ export function getMotmVotingEnd(game) {
   return new Date(openAt.getTime() + 24 * 60 * 60 * 1000);
 }
 
+/**
+ * Voting runs from estimated full-time (kickoff + 2h) to 24h later.
+ *
+ * Deliberately NOT gated on `isPlayed()`. That helper is day-granular
+ * (`game_date < today`), so it stayed false until midnight and swallowed the
+ * start of every window: a 21:00 kickoff should open at 23:00 but stayed shut
+ * for the last hour of match day, and the 26-27 calendar has 18:00-20:00 away
+ * kickoffs that would have lost 2-4 hours each — the hours right after the
+ * final whistle, when people actually vote. The `nowMs >= openAt` test already
+ * implies the game has kicked off, so the extra gate only ever subtracted time.
+ * Dropping it also makes `nowMs` honoured throughout, so the window is testable.
+ */
 export function isMotmVotingOpen(game, nowMs = Date.now()) {
-  if (!game || isSeasonVotingLocked(game.season_slug) || !isPlayed(game)) return false;
+  if (!game || isSeasonVotingLocked(game.season_slug)) return false;
   const openAt = getMotmVotingStart(game);
   const end = getMotmVotingEnd(game);
   if (!openAt || !end) return false;
@@ -53,7 +64,8 @@ export function countPlayerMotmWins(playerId, games, votes, nowMs = Date.now()) 
   if (!playerId || !games?.length) return 0;
   let wins = 0;
   for (const game of games) {
-    if (!isPlayed(game)) continue;
+    // No isPlayed() gate: `nowMs > end` (kickoff + 26h) already implies it was played,
+    // and unlike isPlayed() it respects the injected clock.
     const end = getMotmVotingEnd(game);
     if (!end || nowMs <= end.getTime()) continue;
     const leaders = getMotmLeaderIds(game.id, votes);

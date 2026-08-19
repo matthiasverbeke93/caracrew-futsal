@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { isSeasonVotingLocked } from "../seasons.js";
-import { isAttendanceEditable, isPlayed } from "../utils/game";
+import { isAttendanceEditable, isPlayed, isStatsEditable } from "../utils/game";
 import { useToast } from "./useToast.jsx";
 
 /** Shown when an optimistic write fails and we roll the UI back. */
@@ -439,6 +439,10 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
   async function saveStat(playerId, field, value) {
     const gameId = selectedGameId;
     if (!gameId) return;
+    // Mirror saveAttendance: check the time window as well as ownership. StatsTab
+    // already disables the inputs outside it (for admins too — the freeze is
+    // absolute), so this only closes the gap between the UI and the write.
+    if (!isStatsEditable(selectedGame)) return;
     if (!canEditAttendanceFor(playerId)) return;
     const existing = gameStats.find((s) => s.player_id === playerId);
     const goals = field === "goals" ? Number(value || 0) : existing?.goals ?? 0;

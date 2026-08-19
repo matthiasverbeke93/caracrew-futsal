@@ -55,4 +55,30 @@ describe("isMotmVotingOpen", () => {
     const future = { id: "g", game_date: isoOffset(2), game_time: "18:00", season_slug: "2627" };
     expect(isMotmVotingOpen(future, Date.now())).toBe(false);
   });
+
+  // Regression: the window used to be gated on isPlayed(), which is day-granular
+  // (game_date < today), so voting on match night stayed shut until midnight —
+  // exactly the hours after the final whistle when people vote.
+  describe("opens on match night, not at midnight", () => {
+    const today = isoOffset(0);
+    const at = (hhmm) => new Date(`${today}T${hhmm}:00`).getTime();
+
+    it("21:00 home kickoff is open from 23:00 the same evening", () => {
+      const game = { id: "g", game_date: today, game_time: "21:00", season_slug: "2627" };
+      expect(isMotmVotingOpen(game, at("23:30"))).toBe(true);
+    });
+
+    it("18:00 away kickoff is open from 20:00 the same evening", () => {
+      // The 26-27 calendar has 18:00/19:00/19:30/20:00 away kickoffs — this one
+      // used to lose four hours of its window.
+      const game = { id: "g", game_date: today, game_time: "18:00", season_slug: "2627" };
+      expect(isMotmVotingOpen(game, at("20:30"))).toBe(true);
+    });
+
+    it("stays shut before estimated full-time", () => {
+      const game = { id: "g", game_date: today, game_time: "21:00", season_slug: "2627" };
+      expect(isMotmVotingOpen(game, at("22:00"))).toBe(false);
+      expect(isMotmVotingOpen(game, at("20:00"))).toBe(false);
+    });
+  });
 });

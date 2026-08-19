@@ -87,13 +87,24 @@ export function getStatsLockDaysLeft(game, nowMs = Date.now()) {
   return left > 0 ? left : null;
 }
 
-export function readinessClass(count) {
+/**
+ * Readiness tone for a fixture.
+ *
+ * `responses` is the number of people who have answered at all (In / Out / If
+ * needed, roster + guests). When it is 0 nobody has been asked yet, so the
+ * fixture is *unknown*, not short-handed — without this every fixture in a
+ * fresh season renders red "Not enough players", which is both alarming and
+ * untrue. Pass `null`/omit to keep the old count-only behaviour.
+ */
+export function readinessClass(count, responses = null) {
+  if (responses === 0) return "game-card neutral";
   if (count <= 5) return "game-card danger";
   if (count === 6) return "game-card warning";
   return "game-card success";
 }
 
-export function playerStatusLabel(count) {
+export function playerStatusLabel(count, responses = null) {
+  if (responses === 0) return "No responses yet";
   if (count <= 5) return "Not enough players";
   if (count === 6) return "Just enough players";
   return "Enough players";

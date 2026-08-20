@@ -1,0 +1,53 @@
+name: Send bug reports
+
+on:
+  # Every 15 minutes. The app writes bug_reports rows; this is what mails them.
+  # GitHub's scheduler is best-effort and can run late under load — the job is
+  # idempotent (it only picks up rows with emailed_at is null), so a skipped or
+  # doubled tick is harmless.
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "List pending reports without sending or stamping"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Two overlapping runs could mail the same report twice (both read before either
+# stamps). Serialise instead.
+concurrency:
+  group: send-bug-reports
+  cancel-in-progress: false
+
+jobs:
+  bugs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Send bug reports
+        run: npm run bugs:send
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          BUG_REPORT_TO_EMAIL: ${{ vars.BUG_REPORT_TO_EMAIL }}
+          # Falls back to DIGEST_FROM_EMAIL, which is already a verified sender.
+          BUG_REPORT_FROM_EMAIL: ${{ vars.BUG_REPORT_FROM_EMAIL }}
+          DIGEST_FROM_EMAIL: ${{ vars.DIGEST_FROM_EMAIL }}
+          BUG_REPORT_DRY_RUN: ${{ inputs.dry_run }}
+          PUBLIC_APP_URL: ${{ vars.PUBLIC_APP_URL }}

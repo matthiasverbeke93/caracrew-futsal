@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { formatShortDateTime } from "../utils/formatMatch";
+import { BUG_KINDS, BUG_SEVERITIES } from "../utils/bugReport";
+
+const BUG_KIND_LABEL = Object.fromEntries(BUG_KINDS.map((k) => [k.value, k.label]));
+const BUG_SEVERITY_LABEL = Object.fromEntries(BUG_SEVERITIES.map((s) => [s.value, s.label]));
 
 function slugifyName(name) {
   return String(name || "")
@@ -26,17 +30,24 @@ export default function AdminPanel({ open, onClose, onChanged }) {
   const [newId, setNewId] = useState("");
   const [newFixed, setNewFixed] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
+  const [bugReports, setBugReports] = useState([]);
+  const [bugsError, setBugsError] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const [claimsRes, usersRes, playersRes] = await Promise.all([
+    const [claimsRes, usersRes, playersRes, bugsRes] = await Promise.all([
       supabase.rpc("admin_list_claims_with_email"),
       supabase.rpc("admin_list_auth_users"),
       supabase
         .from("players")
         .select("id, name, fixed, is_admin, auth_user_id, archived_at")
         .order("name", { ascending: true }),
+      supabase
+        .from("bug_reports")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100),
     ]);
     if (claimsRes.error) setError(claimsRes.error.message);
     if (usersRes.error) setError(usersRes.error.message);
@@ -44,6 +55,8 @@ export default function AdminPanel({ open, onClose, onChanged }) {
     setClaims(claimsRes.data || []);
     setUsers(usersRes.data || []);
     setPlayers(playersRes.data || []);
+    setBugReports(bugsRes.data || []);
+    setBugsError(bugsRes.error ? bugsRes.error.message : null);
     setLoading(false);
   }, []);
 
@@ -63,6 +76,8 @@ export default function AdminPanel({ open, onClose, onChanged }) {
 
   const pendingClaims = useMemo(() => claims.filter((c) => c.status === "pending"), [claims]);
   const historyClaims = useMemo(() => claims.filter((c) => c.status !== "pending"), [claims]);
+  const openBugs = useMemo(() => bugReports.filter((b) => !b.resolved_at), [bugReports]);
+  const resolvedBugs = useMemo(() => bugReports.filter((b) => b.resolved_at), [bugReports]);
   const unlinkedUsers = useMemo(
     () => users.filter((u) => !u.linked_player_id),
     [users]
@@ -211,6 +226,72 @@ export default function AdminPanel({ open, onClose, onChanged }) {
     setNewId("");
     setNewFixed(true);
     setShowAddForm(false);
+  }
+
+  async function setBugResolved(report, resolved) {
+    await run(`bug-${report.id}`, () =>
+      supabase
+        .from("bug_reports")
+        .update({ resolved_at: resolved ? new Date().toISOString() : null })
+        .eq("id", report.id)
+    );
+  }
+
+  async function deleteBugReport(report) {
+    if (!window.confirm("Delete this report for good?")) return;
+    await run(`bug-del-${report.id}`, () =>
+      supabase.from("bug_reports").delete().eq("id", report.id)
+    );
+  }
+
+  function renderBugCard(b) {
+    const resolved = Boolean(b.resolved_at);
+    // Delivery state is worth showing: "did this ever reach the inbox" is the
+    // first question, and the mailer records the answer on the row.
+    const delivery = b.emailed_at
+      ? `mailed ${formatShortDateTime(b.emailed_at)}`
+      : b.email_error
+        ? `mail failed (${b.email_attempts || 0}x)`
+        : "not mailed yet";
+    return (
+      <div key={b.id} className={`admin-bug-card ${resolved ? "resolved" : ""}`}>
+        <div className="admin-bug-top">
+          <span className="admin-bug-tag">{BUG_KIND_LABEL[b.kind] || b.kind}</span>
+          <span className={`admin-bug-tag sev-${b.severity}`}>
+            {BUG_SEVERITY_LABEL[b.severity] || b.severity}
+          </span>
+          <span className="admin-bug-when">{formatShortDateTime(b.created_at)}</span>
+        </div>
+        <p className="admin-bug-message">{b.message}</p>
+        <p className="admin-bug-meta">
+          {b.reporter_name || b.reporter_email || "anonymous"}
+          {b.reporter_name && b.reporter_email ? ` · ${b.reporter_email}` : ""}
+          {b.season_slug ? ` · season ${b.season_slug}` : ""}
+          {b.viewport ? ` · ${b.viewport}` : ""}
+          {` · ${delivery}`}
+        </p>
+        {b.page_url && <p className="admin-bug-meta">{b.page_url}</p>}
+        {b.email_error && <p className="admin-bug-meta">Mail error: {b.email_error}</p>}
+        <div className="admin-bug-actions">
+          <button
+            type="button"
+            className="admin-btn"
+            disabled={busyKey === `bug-${b.id}`}
+            onClick={() => setBugResolved(b, !resolved)}
+          >
+            {resolved ? "Reopen" : "Mark resolved"}
+          </button>
+          <button
+            type="button"
+            className="admin-btn danger"
+            disabled={busyKey === `bug-del-${b.id}`}
+            onClick={() => deleteBugReport(b)}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    );
   }
 
   function renderPlayerRow(p) {
@@ -401,6 +482,14 @@ export default function AdminPanel({ open, onClose, onChanged }) {
             {unlinkedUsers.length > 0 && (
               <span className="admin-tab-badge muted">{unlinkedUsers.length}</span>
             )}
+          </button>
+          <button
+            type="button"
+            className={tab === "bugs" ? "active" : ""}
+            onClick={() => setTab("bugs")}
+          >
+            Bugs
+            {openBugs.length > 0 && <span className="admin-tab-badge">{openBugs.length}</span>}
           </button>
         </div>
 
@@ -617,6 +706,36 @@ export default function AdminPanel({ open, onClose, onChanged }) {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {tab === "bugs" && !loading && (
+          <div className="admin-section">
+            {bugsError && (
+              <div className="auth-error admin-error">
+                Could not read bug reports: {bugsError}. Has supabase/bug_reports.sql been run?
+              </div>
+            )}
+            <h3 className="admin-section-title">
+              Open {openBugs.length > 0 ? `(${openBugs.length})` : ""}
+            </h3>
+            {openBugs.length === 0 && !bugsError && (
+              <p className="admin-empty">No open reports.</p>
+            )}
+            <div className="admin-bug-list">
+              {openBugs.map((b) => renderBugCard(b))}
+            </div>
+
+            {resolvedBugs.length > 0 && (
+              <>
+                <h3 className="admin-section-title" style={{ marginTop: 16 }}>
+                  Resolved ({resolvedBugs.length})
+                </h3>
+                <div className="admin-bug-list">
+                  {resolvedBugs.map((b) => renderBugCard(b))}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

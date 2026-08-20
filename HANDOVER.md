@@ -108,13 +108,42 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   the feeds to LF on every Windows commit while the Linux CI runner stored CRLF — a whole-file churn on all
   three feeds each sync, and a real risk of shipping an LF feed that strict clients (Outlook) reject.
   **Don't remove that rule, and don't "fix" the .ics files to LF.**
+- **The hall booking is a standing fortnightly series, not one slot per fixture.** The
+  club books every second Thursday 21:00–22:00 at Sporthal Winketkaai for the whole
+  season (AGB SAM, 16 slots in 26-27); LZV then lands only ~11 home games on it. So
+  "reserved but no fixture" is normal, not a scheduling bug. Also: **two 26-27 fixtures
+  are AT Winketkaai while we are the away side** (Sun 06/09/2026 vs VT 09, Sat
+  24/04/2027 vs FC Tripel) — those opponents use the same hall, so they are their
+  bookings, not ours. Don't "fix" the home/away flag on those two.
 - **`file:` there is none** — single package, plain npm. No monorepo/workspaces.
 - **Web fonts** come from Google Fonts (`index.html`); offline they fall back to a system sans — fine, just less
   distinctive. **Header is static** (scrolls away) by the user's choice — not sticky/fixed.
 - **No component uses `React.memo`.** So memoizing callbacks in `useFutsalData` buys nothing on its own — don't
   add `useCallback` there expecting a win without also memoizing the heavy children (profile first).
 
-## Current state (as of 2026-08-19, after the pre-share review)
+## Current state (as of 2026-08-20)
+- 🟡 **RUN `supabase/bug_reports.sql` BEFORE THE NEXT DEPLOY.** The new "Report a bug"
+  button inserts into a table that does not exist yet; until the migration is run the
+  button fails and the reporter sees the Postgres error. The admin panel's Bugs tab
+  degrades on purpose (its own inline error, the other tabs keep working), but the
+  button does not. Committed but **not pushed** for exactly this reason — push after
+  the SQL is in.
+
+- ✅ **CLOSED 2026-08-20 — the digest's sender was already configured.** The 🔴 in the
+  2026-08-19 log below is stale: `DIGEST_FROM_EMAIL` is set to
+  `weeklydigest@caracrew.org`, and all three Resend DNS records for caracrew.org
+  resolve (DKIM at `resend._domainkey`, SPF + `feedback-smtp.eu-west-1.amazonses.com`
+  MX on `send.caracrew.org`). A dry run resolved **11 recipients** from 11 auth users /
+  13 player rows, correctly excluding the two unlinked players (Bart Moyens, Cédric
+  Vaessen) and deduping `DIGEST_TO_EMAIL` against the roster-derived address.
+  `DIGEST_TO_EMAIL` is now redundant and can be emptied.
+  **⚠ Still unproven: Resend's domain verification status.** `DIGEST_DRY_RUN` returns
+  *before* Resend is touched (`send-weekly-digest.mjs:468`), so nothing has yet
+  exercised that sender. If the domain is not Verified, all 11 sends 403 and the job
+  fails. Check Resend → Domains, or wait for the Friday 16:00 UTC run — 2026-08-21 was
+  the first scheduled run of the roster-driven code (`c868e8a`); every green run before
+  it was the old single-recipient version.
+
 - ✅ **CLOSED 2026-08-19 — the anon-write / admin-takeover hole is fixed and verified.**
   `supabase/fix_rls_lockdown.sql` was run. Re-probed from outside with the public anon key
   afterwards: every insert refused (401) across games/players/attendance/player_stats/motm_votes/
@@ -327,6 +356,48 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-20** — *In-app bug reporting; digest sender verified; hall booking reconciled.*
+  - **"Report a bug" button** in the header (`dashboard-nav-btn-quiet` — deliberately the
+    quietest thing up there). Open to signed-out visitors, because a bug that only
+    logged-in players can report is a bug you hear about late.
+  - **Table first, email second.** The client only inserts into `bug_reports`
+    (`supabase/bug_reports.sql`); `scripts/send-bug-reports.mjs` mails new rows on a
+    15-minute cron (`.github/workflows/bug-reports.yml`) and stamps `emailed_at`. Chosen
+    over an Edge Function because it **reuses the Resend setup that is already proven
+    working** — no new tooling, no new secret, and no `supabase` CLI on this box. Cost:
+    up to ~15 minutes' delay. The row being the source of truth is the point: a broken
+    mailer loses nothing, and reports are visible in **Admin panel → Bugs**.
+  - **Not an optimistic write** — the one place in the app that deviates. Everywhere else
+    the user can see whether their change landed; here they cannot, and "thanks, logged
+    it" for a report that never arrived is worse than a spinner.
+  - **RLS: anyone inserts, only admins read.** Reports carry email addresses, so a public
+    `select` would hand them to anyone with the anon key. The insert policy also pins
+    `auth_user_id` to `auth.uid()` (no filing under someone else's name) and forces the
+    delivery columns to null/zero — otherwise a pre-stamped row would sit in the table
+    forever, invisible to the mailer. Open insert is spammable; that trade-off is written
+    into the migration's header rather than pretended away.
+  - **The report body is hostile input** (anonymous insert), so the mail is HTML-escaped
+    and there are tests that specifically try to inject markup into my own inbox.
+  - **Client-side truncation mirrors the column caps**, because a 600-char user agent is
+    entirely normal and Postgres rejects the whole insert, not just the long field —
+    the reporter would have lost their text to a constraint error.
+  - `email_attempts` caps retries at 5 so one unmailable report cannot fail every run
+    forever; the job logs how many rows gave up. A send that succeeds but fails to stamp
+    is logged as loudly as a failure — it *will* be re-sent next run.
+  - Build timestamp is now stamped into the bundle (`vite.config.js` `define`) and
+    attached to every report, so "which version were you on?" is answerable.
+  - Verified: `lint` clean, **138/138** (+30), `build` OK. **Not eyeballed** — no browser
+    automation here, so the visual check is on the user. **Committed, not pushed** until
+    `supabase/bug_reports.sql` has been run (see Current state).
+  - **Digest:** confirmed `DIGEST_FROM_EMAIL` was already set and a dry run resolves 11
+    recipients correctly — details in Current state above. The old 🔴 was stale.
+  - **Hall booking reconciled against the fixtures** (one-off, from the AGB SAM
+    confirmation PDF + `supabase/fixtures_2627.sql`): **5 of 16 reserved slots have no
+    home fixture** — 10/09/2026, 11/02/2027, 25/03/2027, 22/04/2027, 20/05/2027, €150 of
+    the €480. All 11 home fixtures *are* covered, so there is no risk of arriving without
+    a hall. Reservation number 648393 is missing from an otherwise contiguous run and
+    lines up with 08/04/2027 (Easter break). A cancellation email was drafted for
+    sport@mechelen.be. See the new gotcha above before reading anything into this.
 - **2026-08-19** — *Digest recipients now come from the roster (`auth.users`), not a hand-edited var.*
   - **Before: the job had no idea who was in the squad.** Recipients were the repo variable
     `DIGEST_TO_EMAIL`, split on commas. `players` has no email column — addresses exist only in

@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react
 import AccountChip from "./components/AccountChip";
 import AttendanceTab from "./components/AttendanceTab";
 import AuthModal from "./components/AuthModal";
+import BugReportModal from "./components/BugReportModal";
 import ClaimPlayerModal from "./components/ClaimPlayerModal";
 import { useToast } from "./hooks/useToast.jsx";
 import FormChip from "./components/FormChip";
@@ -52,6 +53,7 @@ export default function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
+  const [bugModalOpen, setBugModalOpen] = useState(false);
 
   const [profilePlayerId, setProfilePlayerId] = useState(() =>
     new URLSearchParams(window.location.search).get("player")
@@ -279,6 +281,14 @@ export default function App() {
               >
                 LZV Cup ↗
               </a>
+              <button
+                type="button"
+                className="dashboard-nav-btn dashboard-nav-btn-quiet"
+                onClick={() => setBugModalOpen(true)}
+                title="Report a bug or suggest something"
+              >
+                Report a bug
+              </button>
             </nav>
             <AccountChip
               user={user}
@@ -540,6 +550,15 @@ export default function App() {
         onClose={() => setClaimModalOpen(false)}
         onSubmit={submitClaim}
       />
+
+      {bugModalOpen && (
+        <BugReportModal
+          onClose={() => setBugModalOpen(false)}
+          user={user}
+          currentPlayer={currentPlayer}
+          seasonSlug={seasonSlug}
+        />
+      )}
 
       {adminPanelOpen && (
         <Suspense fallback={null}>

@@ -27,6 +27,7 @@ VITE_SUPABASE_ANON_KEY=...
 - `npm run sync:lzv` / `npm run sync:lzv:dryrun` — pull final scores from `lzvcup.be`.
 - `npm run sync:palmares` / `npm run sync:palmares:dryrun` — refresh opponent strength.
 - `npm run digest:weekly` — send the squad pulse email via [Resend](https://resend.com); needs service role + `RESEND_API_KEY` (see Weekly digest).
+- `npm run bugs:send` — mail any unsent rows in `bug_reports` (see Bug reports).
 
 ## Weekly digest email
 
@@ -46,6 +47,22 @@ Friday schedule (GitHub Actions) runs `scripts/send-weekly-digest.mjs`: upcoming
 **Check the list before sending:** run the workflow manually with the **dry run** input ticked (Actions → Weekly squad digest → Run workflow), or `DIGEST_DRY_RUN=1 npm run digest:weekly` locally. It resolves and prints recipients without sending.
 
 **Local test:** copy `.env.example` digest vars into a shell session or `.env` loaded manually, then `npm run digest:weekly`.
+
+## Bug reports
+
+A **Report a bug** button sits in the header, open to signed-out visitors too. It writes one row to `bug_reports`; a scheduled Action (`.github/workflows/bug-reports.yml`, every 15 minutes) runs `scripts/send-bug-reports.mjs`, mails each new row and stamps `emailed_at`.
+
+**Run `supabase/bug_reports.sql` before deploying the frontend** — without the table the button's insert fails and the reporter gets an error.
+
+- **The row is the source of truth**, not the email. A broken mailer loses nothing: reports show up in **Admin panel → Bugs**, where they can be resolved, reopened or deleted.
+- **Context is attached automatically** — page URL, season, viewport, browser and the build timestamp the bundle was compiled with — so nobody has to be asked "which page were you on?".
+- **Identity comes from the session** when signed in (player + account email), and the typed name/email is only a fallback for anonymous visitors. A signed-in report cannot be filed under someone else's name.
+- **Anyone can insert, only admins can read.** Reports carry email addresses, so a public `select` would leak them to anyone holding the anon key. The flip side is that the insert policy is spammable — the answer at squad scale is the admin panel's delete.
+- **Delivery is retried** up to 5 times per report (`email_attempts`), then that row is left alone and reported in the log, so one unmailable report can't fail every run forever.
+
+**GitHub:** repo variable `BUG_REPORT_TO_EMAIL` (where reports go — the job refuses to run without it), optional `BUG_REPORT_FROM_EMAIL` (falls back to `DIGEST_FROM_EMAIL`). Reuses the same `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `RESEND_API_KEY` secrets as the digest.
+
+**Check without sending:** Actions → Send bug reports → Run workflow with **dry run** ticked, or `BUG_REPORT_DRY_RUN=1 npm run bugs:send`.
 
 ## Seasons
 The app is multi-season. Each `games` row and each `opponent_strength` row carries a `season_slug` (e.g. `2526`, `2627`). The UI exposes a switcher in the dashboard header (`?season=` in the URL). Use **Insights** for season trends (monthly scoring pace, leader bars, live table) or **Team stats** for the full stats/compliance view (`?insights=1` / `?team_stats=1`).

@@ -15,6 +15,7 @@
     "sync:palmares": "node scripts/sync-palmares.mjs",
     "sync:palmares:dryrun": "node scripts/sync-palmares-dryrun.mjs",
     "digest:weekly": "node scripts/send-weekly-digest.mjs",
+    "bugs:send": "node scripts/send-bug-reports.mjs",
     "ics:gen": "node scripts/gen-ics.mjs",
     "calendar:import": "node scripts/import-lzv-calendar.mjs"
   },

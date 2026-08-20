@@ -362,6 +362,28 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-20** — *Share message cleaned up; the nudge tally now reconciles.*
+  - **Why the old nudge tally read as nonsense:** `In / If needed / Out` came from `counts.*`, which
+    **includes guests**, while `No reply` was **fixed-players-only** and the squad line printed the
+    fixed-roster size. So `… No reply 6` next to `12 in the roster` could not be added up, and the
+    figure did not have to match the names listed underneath. `counts` now also exposes a
+    `roster` / `guestBreakdown` split (additive — the summary bar still uses the mixed totals), the
+    nudge prints **`*Roster (12)* · In 4 · If needed 2 · Out 3 · No reply 3`** (adds to 12) with guests
+    on their own line, and **`No reply` is derived from the name list itself**, so count and list
+    cannot disagree.
+  - **Share message got the same treatment.** `formatFixtureShareLines` is now the one place that
+    formats a fixture for sharing: bold title, `formatMatchCalendarDateTime` + venue, and a
+    `Final score x – y` line when the fixture has one (sharing a played match is usually *about* the
+    score). It fixes two real defects — the raw `game_date` (an ISO datetime shared verbatim) and
+    `game_time` with its seconds (`21:00:00`), plus the dangling `·  ·` a missing time/venue left
+    behind, since `.trim()` cannot remove a separator in the middle.
+  - `handleShare`'s **native share sheet** now uses the same body (`formatFixtureShareText`), so a
+    fixture reads identically whether it goes out via WhatsApp, the OS sheet or the clipboard.
+  - Still raw in the **UI**, deliberately out of scope here: the `<p>` under the match header in
+    `SelectedGamePanel` prints `game_date · game_time · location` unformatted (`2026-09-08 ·
+    21:00:00`). Same defect class, one line to fix, needs an eyeball.
+  - Verified: `lint` clean, **153/153** (+12), `build` OK. **Not eyeballed** — no browser automation
+    here. Committed and pushed to `main` (standing arrangement for this repo as of today).
 - **2026-08-20** — *WhatsApp nudge message rewritten.*
   - `buildWhatsAppNudgeUrl` (`utils/formatMatch.js`) now leads with the fixture in **WhatsApp bold**
     and — the actual bug — prints the **full date** (`formatMatchCalendarDateTime`) plus the venue

@@ -2,7 +2,12 @@ import { useEffect, useId, useRef, useState } from "react";
 import { MIN_PLAYERS_WARNING, TEAM_NAME } from "../constants";
 import { getDifficulty } from "../utils/difficulty";
 import { isPlayed } from "../utils/game";
-import { buildCurrentPageGameShareUrl, buildGameWhatsAppShareUrl, buildWhatsAppNudgeUrl } from "../utils/formatMatch";
+import {
+  buildCurrentPageGameShareUrl,
+  buildGameWhatsAppShareUrl,
+  buildWhatsAppNudgeUrl,
+  formatFixtureShareText,
+} from "../utils/formatMatch";
 import { getHeadToHeadSummary } from "../utils/headToHead";
 import { focusInitialMenuItem, handleMenuArrowKeys } from "../utils/menuNav";
 import { cleanOpponentName } from "../utils/opponent";
@@ -112,7 +117,8 @@ export default function SelectedGamePanel({
     const shareUrl = buildCurrentPageGameShareUrl(selectedGame.id, selectedGame.season_slug);
     const shareData = {
       title: `${TEAM_NAME} vs ${opponentName}`,
-      text: `${selectedGame.game_date} · ${selectedGame.game_time || ""} · ${selectedGame.location || ""}`.trim(),
+      // Same body as the WhatsApp share, so a fixture reads identically wherever it lands.
+      text: formatFixtureShareText(selectedGame),
       url: shareUrl,
     };
 
@@ -143,13 +149,17 @@ export default function SelectedGamePanel({
 
   function handleNudge() {
     const firstNames = missingFixed.map((p) => p.name.split(" ")[0]);
+    // Roster-only figures: the nudge prints them next to the roster size, so the
+    // guest-inclusive totals in `counts.playing` & co. would not add up (see `counts`).
     const wa = buildWhatsAppNudgeUrl(selectedGame, firstNames, {
-      fixedRoster: fixedPlayers.length,
-      playing: counts.playing,
-      if_needed: counts.if_needed,
-      cant: counts.cant,
-      missing: counts.missing,
+      fixedRoster: counts.roster?.size ?? fixedPlayers.length,
+      playing: counts.roster?.playing ?? counts.playing,
+      if_needed: counts.roster?.if_needed ?? counts.if_needed,
+      cant: counts.roster?.cant ?? counts.cant,
       guests: counts.guests,
+      guestPlaying: counts.guestBreakdown?.playing ?? 0,
+      guestIfNeeded: counts.guestBreakdown?.if_needed ?? 0,
+      guestCant: counts.guestBreakdown?.cant ?? 0,
     });
     window.open(wa, "_blank", "noopener,noreferrer");
   }

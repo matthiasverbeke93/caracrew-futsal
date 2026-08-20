@@ -267,6 +267,22 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       if_needed: rosterIfNeeded + guestIfNeeded,
       missing: Math.max(fixedPlayers.length - fixedAttendanceCount, 0),
       guests: selectedGameGuests.length,
+      // The totals above mix roster and guests, which is what the summary bar wants but
+      // makes a tally that cannot be reconciled against the roster size (`missing` is
+      // fixed-players-only). Anything that shows the two side by side — the WhatsApp
+      // nudge — needs them split out.
+      roster: {
+        size: fixedPlayers.length,
+        playing: rosterPlaying,
+        if_needed: rosterIfNeeded,
+        cant: rosterCant,
+      },
+      guestBreakdown: {
+        total: selectedGameGuests.length,
+        playing: guestPlaying,
+        if_needed: guestIfNeeded,
+        cant: guestCant,
+      },
     };
   }, [fixedPlayers, gameAttendance, selectedGameGuests]);
 

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildWhatsAppNudgeUrl, formatMatchShortDate } from "./formatMatch.js";
+import {
+  buildGameWhatsAppShareUrl,
+  buildWhatsAppNudgeUrl,
+  formatFixtureShareText,
+  formatMatchShortDate,
+} from "./formatMatch.js";
 
 describe("formatMatchShortDate", () => {
   it("renders a game_date as DD-MM-YY", () => {
@@ -25,49 +30,118 @@ describe("formatMatchShortDate", () => {
   });
 });
 
-describe("buildWhatsAppNudgeUrl", () => {
-  const game = {
-    id: 42,
-    season_slug: "2026-2027",
-    opponent: "Nova FC",
-    game_date: "2026-09-08",
-    game_time: "21:00:00",
-    location: "Sporthal Ter Linden",
-  };
-  const snapshot = { fixedRoster: 13, playing: 5, if_needed: 2, cant: 3, missing: 3, guests: 1 };
+const GAME = {
+  id: 42,
+  season_slug: "2026-2027",
+  opponent: "Nova FC",
+  game_date: "2026-09-08",
+  game_time: "21:00:00",
+  location: "Sporthal Ter Linden",
+};
 
-  function messageOf(url) {
-    return decodeURIComponent(url.replace("https://wa.me/?text=", ""));
-  }
+/** `Intl` renders the date half as "Tue, 8 Sept 2026" on this ICU; other builds differ. */
+const WHEN_WHERE = /^Tue,? 8 Sept? 2026 · 21:00 · Sporthal Ter Linden$/;
+
+function messageOf(url) {
+  return decodeURIComponent(url.replace("https://wa.me/?text=", ""));
+}
+
+describe("formatFixtureShareText", () => {
+  it("puts the fixture first, then the formatted date, kick-off and venue", () => {
+    const lines = formatFixtureShareText(GAME).split("\n");
+    expect(lines[0]).toBe("K. Caracrew SK vs Nova FC");
+    expect(lines[1]).toMatch(WHEN_WHERE);
+  });
+
+  it("never emits a dangling separator when the time or venue is missing", () => {
+    const text = formatFixtureShareText({ ...GAME, game_time: null, location: "" });
+    expect(text).not.toContain("·  ·");
+    expect(text.split("\n")[1]).toBe("Tue, 8 Sept 2026");
+  });
+
+  it("adds the final score once a played fixture has one", () => {
+    expect(formatFixtureShareText({ ...GAME, home_score: 5, away_score: 3 })).toContain(
+      "Final score 5 – 3"
+    );
+    expect(formatFixtureShareText({ ...GAME, home_score: 0, away_score: 0 })).toContain(
+      "Final score 0 – 0"
+    );
+    expect(formatFixtureShareText(GAME)).not.toContain("Final score");
+  });
+});
+
+describe("buildGameWhatsAppShareUrl", () => {
+  it("bolds the fixture and keeps the link on its own line", () => {
+    const lines = messageOf(buildGameWhatsAppShareUrl(GAME)).split("\n");
+    expect(lines[0]).toBe("*K. Caracrew SK vs Nova FC*");
+    expect(lines[1]).toMatch(WHEN_WHERE);
+    expect(lines[2]).toBe("");
+    expect(lines[3]).toContain("game=42");
+    expect(lines[3]).toContain("season=2026-2027");
+  });
+
+  it("does not leak the raw game_date or the seconds off game_time", () => {
+    const msg = messageOf(buildGameWhatsAppShareUrl(GAME));
+    expect(msg).not.toContain("2026-09-08");
+    expect(msg).not.toContain("21:00:00");
+  });
+});
+
+describe("buildWhatsAppNudgeUrl", () => {
+  const snapshot = {
+    fixedRoster: 12,
+    playing: 4,
+    if_needed: 2,
+    cant: 3,
+    guests: 1,
+    guestPlaying: 1,
+  };
 
   it("leads with the fixture in bold, then date, kick-off and venue", () => {
-    const lines = messageOf(buildWhatsAppNudgeUrl(game, ["Jan"], snapshot)).split("\n");
+    const lines = messageOf(buildWhatsAppNudgeUrl(GAME, ["Jan"], snapshot)).split("\n");
     expect(lines[0]).toBe("*K. Caracrew SK vs Nova FC*");
-    // The date half comes from Intl ("Tue, 8 Sept 2026" on this ICU), so assert the shape.
-    expect(lines[1]).toMatch(/^Tue,? 8 Sept? 2026 · 21:00 · Sporthal Ter Linden$/);
+    expect(lines[1]).toMatch(WHEN_WHERE);
+  });
+
+  it("prints a roster tally that adds up to the roster size", () => {
+    const msg = messageOf(buildWhatsAppNudgeUrl(GAME, ["Koen", "David", "Lennart"], snapshot));
+    expect(msg).toContain("*Roster (12)* · In 4 · If needed 2 · Out 3 · No reply 3");
+    expect(snapshot.playing + snapshot.if_needed + snapshot.cant + 3).toBe(snapshot.fixedRoster);
+  });
+
+  it("takes 'No reply' from the names it lists, so the two can never disagree", () => {
+    // A stale `missing` in the snapshot must not win over the actual list.
+    const msg = messageOf(buildWhatsAppNudgeUrl(GAME, ["Koen", "David"], { ...snapshot, missing: 6 }));
+    expect(msg).toContain("No reply 2");
+    expect(msg).not.toContain("No reply 6");
+    expect(msg).toContain("Still waiting on Koen and David.");
+  });
+
+  it("keeps guests on their own line and only mentions statuses that happened", () => {
+    const msg = messageOf(buildWhatsAppNudgeUrl(GAME, ["Jan"], snapshot));
+    expect(msg).toContain("*Guests (1)* · 1 in");
+    expect(msg).not.toContain("0 out");
+  });
+
+  it("drops the guest line entirely when there are no guests", () => {
+    const msg = messageOf(buildWhatsAppNudgeUrl(GAME, ["Jan"], { ...snapshot, guests: 0 }));
+    expect(msg).not.toContain("Guests");
   });
 
   it("lists the missing players as a sentence and closes with the link", () => {
-    const msg = messageOf(buildWhatsAppNudgeUrl(game, ["Jan", "Piet", "Bram"], snapshot));
-    expect(msg).toContain("In 5 · If needed 2 · Out 3 · No reply 3");
-    expect(msg).toContain("13 in the roster · 1 guest");
+    const msg = messageOf(buildWhatsAppNudgeUrl(GAME, ["Jan", "Piet", "Bram"], snapshot));
     expect(msg).toContain("Still waiting on Jan, Piet and Bram.");
     expect(msg).toContain("Confirm here:");
     expect(msg).toContain("game=42");
-  });
-
-  it("uses no 'and' for a single name and drops the guest count when there are none", () => {
-    const msg = messageOf(buildWhatsAppNudgeUrl(game, ["Jan"], { ...snapshot, guests: 0 }));
-    expect(msg).toContain("Still waiting on Jan.");
-    expect(msg).toContain("13 in the roster\n");
-    expect(msg).not.toContain("guest");
+    expect(msg.trimEnd().endsWith("_— Attendance Bot 3000_")).toBe(true);
   });
 
   it("omits the when/where line and the names line when there is nothing to say", () => {
     const msg = messageOf(
-      buildWhatsAppNudgeUrl({ ...game, game_date: null, game_time: null, location: "" }, [], snapshot)
+      buildWhatsAppNudgeUrl({ ...GAME, game_date: null, game_time: null, location: "" }, [], snapshot)
     );
     expect(msg.split("\n")[1]).toBe("");
     expect(msg).not.toContain("Still waiting on");
+    expect(msg).toContain("No reply 0");
   });
 });

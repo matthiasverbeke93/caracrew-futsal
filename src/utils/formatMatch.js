@@ -114,13 +114,43 @@ export function buildCurrentPageGameShareUrl(gameId, seasonSlug) {
 }
 
 /**
- * Prefilled WhatsApp (app or web) — works on macOS where the system Share sheet often omits WhatsApp.
+ * The two lines every share of a fixture opens with: who, then when and where.
+ *
+ * `game_date` can arrive as a full ISO datetime and `game_time` as `HH:MM:SS`, so
+ * neither is safe to interpolate raw — and joining the parts with a separator only
+ * after dropping the empty ones is what keeps a venue-less fixture from reading
+ * "8 Sept 2026 ·  · ". `bold` wraps the title in WhatsApp's `*…*`.
+ */
+export function formatFixtureShareLines(game, { bold = false } = {}) {
+  const opp = cleanOpponentName(game?.opponent);
+  const title = `${TEAM_NAME} vs ${opp}`;
+  const lines = [bold ? `*${title}*` : title];
+
+  const whenWhere = [formatMatchCalendarDateTime(game), game?.location?.trim()]
+    .filter(Boolean)
+    .join(" · ");
+  if (whenWhere) lines.push(whenWhere);
+
+  // A shared fixture that has already been played is usually shared *for* the score.
+  if (game?.home_score != null && game?.away_score != null) {
+    lines.push(`Final score ${game.home_score} – ${game.away_score}`);
+  }
+
+  return lines;
+}
+
+/** Plain-text fixture summary for the native share sheet / clipboard fallback. */
+export function formatFixtureShareText(game) {
+  return formatFixtureShareLines(game).join("\n");
+}
+
+/**
+ * Prefilled WhatsApp (app or web) — works on macOS where the system Share sheet often
+ * omits WhatsApp. Same body as the native share, plus the deep link on its own line.
  */
 export function buildGameWhatsAppShareUrl(game) {
   const shareUrl = buildCurrentPageGameShareUrl(game.id, game.season_slug);
-  const opp = cleanOpponentName(game.opponent);
-  const meta = `${game.game_date} · ${game.game_time || ""} · ${game.location || ""}`.trim();
-  const message = `${TEAM_NAME} vs ${opp}\n${meta}\n${shareUrl}`;
+  const message = [...formatFixtureShareLines(game, { bold: true }), "", shareUrl].join("\n");
   return `https://wa.me/?text=${encodeURIComponent(message)}`;
 }
 
@@ -136,39 +166,52 @@ function formatNameList(names) {
  * Prefilled WhatsApp nudge for the fixed players who still owe an RSVP.
  *
  * Shape matters here: this lands in a group chat where messages get skimmed on a
- * phone, so it opens with who/when/where (the full date, not just the weekday —
- * a nudge sent days ahead has to say *which* match), then the tally, then the
- * names, then a single link. WhatsApp renders `*…*` as bold, so the fixture line
- * carries the emphasis and nothing else competes with it.
+ * phone, so it opens with who/when/where (the full date, not just the weekday — a
+ * nudge sent days ahead has to say *which* match), then the tally, then the names,
+ * then a single link.
+ *
+ * The tally is **roster-only and adds up to the roster size**, with guests on their
+ * own line. Mixing the two (guests inside In/If needed/Out, "No reply" counting
+ * fixed players only) produced a line whose numbers could not be reconciled against
+ * the squad size — In 5 · … · No reply 6 next to "12 in the roster" invites exactly
+ * the question "what does that mean?". `No reply` is taken from the names we are
+ * about to list, so the count and the list can never disagree.
  */
 export function buildWhatsAppNudgeUrl(game, missingNames, rosterSnapshot = {}) {
   const shareUrl = buildCurrentPageGameShareUrl(game.id, game.season_slug);
-  const opp = cleanOpponentName(game.opponent);
-  const when = formatMatchCalendarDateTime(game);
-  const venue = game?.location?.trim();
   const {
     fixedRoster = 0,
     playing = 0,
     if_needed = 0,
     cant = 0,
-    missing = 0,
     guests = 0,
+    guestPlaying = 0,
+    guestIfNeeded = 0,
+    guestCant = 0,
   } = rosterSnapshot;
 
-  const lines = [`*${TEAM_NAME} vs ${opp}*`];
+  const waitingNames = (missingNames || []).map((n) => String(n ?? "").trim()).filter(Boolean);
+  const lines = formatFixtureShareLines(game, { bold: true });
 
-  const whenWhere = [when, venue].filter(Boolean).join(" · ");
-  if (whenWhere) lines.push(whenWhere);
-
-  const squad = [`${fixedRoster} in the roster`];
-  if (guests > 0) squad.push(`${guests} guest${guests === 1 ? "" : "s"}`);
   lines.push(
     "",
-    `In ${playing} · If needed ${if_needed} · Out ${cant} · No reply ${missing}`,
-    squad.join(" · ")
+    `*Roster (${fixedRoster})* · In ${playing} · If needed ${if_needed} · Out ${cant} · No reply ${waitingNames.length}`
   );
 
-  const waiting = formatNameList(missingNames);
+  if (guests > 0) {
+    // Only the statuses that actually happened — "0 out" is noise in a one-guest line.
+    const guestBits = [
+      [guestPlaying, "in"],
+      [guestIfNeeded, "if needed"],
+      [guestCant, "out"],
+    ]
+      .filter(([n]) => n > 0)
+      .map(([n, label]) => `${n} ${label}`);
+    const detail = guestBits.length > 0 ? ` · ${guestBits.join(" · ")}` : "";
+    lines.push(`*Guests (${guests})*${detail}`);
+  }
+
+  const waiting = formatNameList(waitingNames);
   if (waiting) lines.push("", `Still waiting on ${waiting}.`);
 
   // The bot signature stays a footer, not a headline: it tells the group this is an

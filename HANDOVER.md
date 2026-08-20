@@ -362,10 +362,10 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
     logged-in players can report is a bug you hear about late.
   - **Table first, email second.** The client only inserts into `bug_reports`
     (`supabase/bug_reports.sql`); `scripts/send-bug-reports.mjs` mails new rows on a
-    15-minute cron (`.github/workflows/bug-reports.yml`) and stamps `emailed_at`. Chosen
+    6-hourly cron (`.github/workflows/bug-reports.yml`) and stamps `emailed_at`. Chosen
     over an Edge Function because it **reuses the Resend setup that is already proven
     working** — no new tooling, no new secret, and no `supabase` CLI on this box. Cost:
-    up to ~15 minutes' delay. The row being the source of truth is the point: a broken
+    up to ~6 hours' delay. The row being the source of truth is the point: a broken
     mailer loses nothing, and reports are visible in **Admin panel → Bugs**.
   - **Not an optimistic write** — the one place in the app that deviates. Everywhere else
     the user can see whether their change landed; here they cannot, and "thanks, logged

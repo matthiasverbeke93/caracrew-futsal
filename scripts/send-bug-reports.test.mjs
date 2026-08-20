@@ -3,6 +3,7 @@ import {
   describeReporter,
   escapeHtml,
   formatBugReportEmail,
+  isMissingTableError,
   MAX_ATTEMPTS,
 } from "./send-bug-reports.mjs";
 
@@ -131,5 +132,26 @@ describe("MAX_ATTEMPTS", () => {
   it("gives up eventually, so one poison report cannot fail every run forever", () => {
     expect(MAX_ATTEMPTS).toBeGreaterThan(1);
     expect(MAX_ATTEMPTS).toBeLessThanOrEqual(10);
+  });
+});
+
+describe("isMissingTableError", () => {
+  it("recognises the table not existing yet, by code or by message", () => {
+    expect(isMissingTableError({ code: "42P01" })).toBe(true);
+    expect(isMissingTableError({ code: "PGRST205" })).toBe(true);
+    expect(
+      isMissingTableError({ message: 'relation "public.bug_reports" does not exist' })
+    ).toBe(true);
+    expect(
+      isMissingTableError({ message: "Could not find the table 'public.bug_reports'" })
+    ).toBe(true);
+  });
+
+  it("does not swallow anything else — a real failure must stay loud", () => {
+    expect(isMissingTableError(null)).toBe(false);
+    expect(isMissingTableError(undefined)).toBe(false);
+    expect(isMissingTableError({ code: "42501", message: "permission denied" })).toBe(false);
+    expect(isMissingTableError({ message: "JWT expired" })).toBe(false);
+    expect(isMissingTableError({ message: 'relation "players" does not exist' })).toBe(false);
   });
 });

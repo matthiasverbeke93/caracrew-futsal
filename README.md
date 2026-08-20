@@ -50,7 +50,7 @@ Friday schedule (GitHub Actions) runs `scripts/send-weekly-digest.mjs`: upcoming
 
 ## Bug reports
 
-A **Report a bug** button sits in the header, open to signed-out visitors too. It writes one row to `bug_reports`; a scheduled Action (`.github/workflows/bug-reports.yml`, every 15 minutes) runs `scripts/send-bug-reports.mjs`, mails each new row and stamps `emailed_at`.
+A **Report a bug** button sits in the header, open to signed-out visitors too. It writes one row to `bug_reports`; a scheduled Action (`.github/workflows/bug-reports.yml`, every 6 hours) runs `scripts/send-bug-reports.mjs`, mails each new row and stamps `emailed_at`.
 
 **Run `supabase/bug_reports.sql` before deploying the frontend** — without the table the button's insert fails and the reporter gets an error.
 
@@ -61,6 +61,8 @@ A **Report a bug** button sits in the header, open to signed-out visitors too. I
 - **Delivery is retried** up to 5 times per report (`email_attempts`), then that row is left alone and reported in the log, so one unmailable report can't fail every run forever.
 
 **GitHub:** repo variable `BUG_REPORT_TO_EMAIL` (where reports go — the job refuses to run without it), optional `BUG_REPORT_FROM_EMAIL` (falls back to `DIGEST_FROM_EMAIL`). Reuses the same `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `RESEND_API_KEY` secrets as the digest.
+
+**Need one now?** The schedule is every 6 hours; run the workflow manually for an immediate send (it is idempotent, so an extra run cannot double-send).
 
 **Check without sending:** Actions → Send bug reports → Run workflow with **dry run** ticked, or `BUG_REPORT_DRY_RUN=1 npm run bugs:send`.
 

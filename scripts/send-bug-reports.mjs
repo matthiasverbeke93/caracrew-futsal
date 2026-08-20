@@ -32,6 +32,22 @@ export const MAX_ATTEMPTS = 5;
 
 const DEFAULT_BATCH = 25;
 
+/**
+ * Has supabase/bug_reports.sql not been run yet?
+ *
+ * This job runs on a schedule, so between deploying the frontend and running the
+ * migration it would otherwise go red on every tick. A missing table means
+ * "nothing to do yet", not "the mailer is broken" — anything else still fails loudly.
+ */
+export function isMissingTableError(error) {
+  if (!error) return false;
+  const code = String(error.code || "");
+  if (code === "42P01" || code === "PGRST205") return true;
+  return /relation .*bug_reports.* does not exist|could not find the table/i.test(
+    String(error.message || "")
+  );
+}
+
 export function escapeHtml(s) {
   return String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -164,7 +180,6 @@ async function main() {
     throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
   }
   if (!dryRun && !resendKey) throw new Error("Missing RESEND_API_KEY");
-  if (!dryRun && !to) throw new Error("Missing BUG_REPORT_TO_EMAIL — nowhere to send reports");
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false },
@@ -177,7 +192,26 @@ async function main() {
     .lt("email_attempts", MAX_ATTEMPTS)
     .order("created_at", { ascending: true })
     .limit(batch);
+  if (isMissingTableError(error)) {
+    console.warn("[bugs] bug_reports does not exist yet — run supabase/bug_reports.sql");
+    return;
+  }
   if (error) throw new Error(`Reading bug_reports failed: ${error.message}`);
+
+  if (!reports?.length) {
+    console.log("[bugs] nothing to send");
+    return;
+  }
+
+  // Checked here rather than up front: an unset recipient with an empty queue is a
+  // repo that has not finished being configured, not a failure worth a red run on
+  // every tick. An unset recipient with reports waiting is a real problem.
+  if (!dryRun && !to) {
+    throw new Error(
+      `${reports.length} report(s) waiting and BUG_REPORT_TO_EMAIL is unset — nowhere to send them`
+    );
+  }
+  console.log(`[bugs] ${reports.length} report(s) to mail -> ${dryRun ? "(dry run)" : to}`);
 
   // Rows that hit the attempt ceiling are dropped from the queue, not lost — say so,
   // otherwise "I filed a report and heard nothing" has no explanation.
@@ -191,12 +225,6 @@ async function main() {
       `[bugs] ${stuckCount} report(s) gave up after ${MAX_ATTEMPTS} attempts — still in the admin panel, never mailed`
     );
   }
-
-  if (!reports?.length) {
-    console.log("[bugs] nothing to send");
-    return;
-  }
-  console.log(`[bugs] ${reports.length} report(s) to mail -> ${dryRun ? "(dry run)" : to}`);
 
   if (/resend\.dev/i.test(from)) {
     console.warn(

@@ -1,12 +1,12 @@
 name: Send bug reports
 
 on:
-  # Every 15 minutes. The app writes bug_reports rows; this is what mails them.
-  # GitHub's scheduler is best-effort and can run late under load — the job is
-  # idempotent (it only picks up rows with emailed_at is null), so a skipped or
-  # doubled tick is harmless.
+  # Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). The app writes bug_reports rows;
+  # this is what mails them. Need one sooner? Run the workflow manually — the job is
+  # idempotent (it only picks up rows with emailed_at is null), so an extra run in
+  # between, a late tick or a skipped one are all harmless.
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "0 */6 * * *"
   workflow_dispatch:
     inputs:
       dry_run:

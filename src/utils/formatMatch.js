@@ -124,11 +124,28 @@ export function buildGameWhatsAppShareUrl(game) {
   return `https://wa.me/?text=${encodeURIComponent(message)}`;
 }
 
+/** "Jan", "Jan and Piet", "Jan, Piet and Bram" — the nudge should read like a sentence, not a CSV. */
+function formatNameList(names) {
+  const clean = (names || []).map((n) => String(n ?? "").trim()).filter(Boolean);
+  if (clean.length === 0) return "";
+  if (clean.length === 1) return clean[0];
+  return `${clean.slice(0, -1).join(", ")} and ${clean[clean.length - 1]}`;
+}
+
+/**
+ * Prefilled WhatsApp nudge for the fixed players who still owe an RSVP.
+ *
+ * Shape matters here: this lands in a group chat where messages get skimmed on a
+ * phone, so it opens with who/when/where (the full date, not just the weekday —
+ * a nudge sent days ahead has to say *which* match), then the tally, then the
+ * names, then a single link. WhatsApp renders `*…*` as bold, so the fixture line
+ * carries the emphasis and nothing else competes with it.
+ */
 export function buildWhatsAppNudgeUrl(game, missingNames, rosterSnapshot = {}) {
   const shareUrl = buildCurrentPageGameShareUrl(game.id, game.season_slug);
-  const list = missingNames.join(", ");
   const opp = cleanOpponentName(game.opponent);
-  const when = formatMatchDayTime(game);
+  const when = formatMatchCalendarDateTime(game);
+  const venue = game?.location?.trim();
   const {
     fixedRoster = 0,
     playing = 0,
@@ -137,15 +154,27 @@ export function buildWhatsAppNudgeUrl(game, missingNames, rosterSnapshot = {}) {
     missing = 0,
     guests = 0,
   } = rosterSnapshot;
-  const line = [
-    "Attendance Bot 3000",
+
+  const lines = [`*${TEAM_NAME} vs ${opp}*`];
+
+  const whenWhere = [when, venue].filter(Boolean).join(" · ");
+  if (whenWhere) lines.push(whenWhere);
+
+  const squad = [`${fixedRoster} in the roster`];
+  if (guests > 0) squad.push(`${guests} guest${guests === 1 ? "" : "s"}`);
+  lines.push(
     "",
-    `Match · ${when} vs ${opp}`,
-    `Roster · ${fixedRoster} fixed · In ${playing} · If needed ${if_needed} · Out ${cant} · no RSVP ${missing} · guests ${guests}`,
-    "",
-    `Still waiting on ${missingNames.length}: ${list}`,
-    "",
-    `Confirm attendance:\n${shareUrl}`,
-  ].join("\n");
-  return `https://wa.me/?text=${encodeURIComponent(line)}`;
+    `In ${playing} · If needed ${if_needed} · Out ${cant} · No reply ${missing}`,
+    squad.join(" · ")
+  );
+
+  const waiting = formatNameList(missingNames);
+  if (waiting) lines.push("", `Still waiting on ${waiting}.`);
+
+  // The bot signature stays a footer, not a headline: it tells the group this is an
+  // automated reminder rather than someone singling players out, without stealing the
+  // first line from the fixture. `_…_` is WhatsApp italics.
+  lines.push("", "Confirm here:", shareUrl, "", "_— Attendance Bot 3000_");
+
+  return `https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`;
 }

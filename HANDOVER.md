@@ -362,6 +362,22 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-20** — *WhatsApp nudge message rewritten.*
+  - `buildWhatsAppNudgeUrl` (`utils/formatMatch.js`) now leads with the fixture in **WhatsApp bold**
+    and — the actual bug — prints the **full date** (`formatMatchCalendarDateTime`) plus the venue
+    instead of just `formatMatchDayTime`'s weekday+time. A nudge sent days ahead has to say *which*
+    match; "Tuesday 21:00" doesn't.
+  - Copy cleaned: consistent-case tally (`In / If needed / Out / No reply`), squad size on its own
+    line, and the missing players read as a sentence (`Jan, Piet and Bram` via a small local
+    `formatNameList`) rather than a CSV with a count in front of it.
+  - "Attendance Bot 3000" moved from the headline to an italic **footer signature**. It still tells the
+    group this is automated rather than someone singling players out, but it no longer takes the first
+    line from the fixture.
+  - Empty-safe: the when/where line, the guest count and the names line each drop out when there is
+    nothing to put in them (so no `guests 0` or dangling label).
+  - Verified: `lint` clean, **145/145** (+4, decoding the `wa.me` payload back to text), `build` OK.
+    The one date assertion is a regex — `Intl` renders `Tue, 8 Sept 2026` on this ICU, and pinning
+    the exact string would break on another. **Not eyeballed** — no browser automation here.
 - **2026-08-20** — *The guide gets its own URL; Tigers fix verified.*
   - `?guide=1` opens the guide directly, so it can be shared without a Claude account or a login
     — `https://caracrew.org/?guide=1`. Follows the existing query-param routing (`openGuide` /

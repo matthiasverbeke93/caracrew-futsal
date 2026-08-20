@@ -15,6 +15,7 @@ import Tabs from "./components/Tabs";
 
 // Heavy, rarely-first-seen overlays — split out of the initial bundle.
 const AdminPanel = lazy(() => import("./components/AdminPanel"));
+const GuideModal = lazy(() => import("./components/GuideModal"));
 const PlayerProfileModal = lazy(() => import("./components/PlayerProfileModal"));
 const SeasonOverviewPage = lazy(() => import("./components/SeasonOverviewPage"));
 import { TEAM_NAME } from "./constants";
@@ -54,6 +55,7 @@ export default function App() {
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const [bugModalOpen, setBugModalOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const [profilePlayerId, setProfilePlayerId] = useState(() =>
     new URLSearchParams(window.location.search).get("player")
@@ -281,6 +283,14 @@ export default function App() {
               >
                 LZV Cup ↗
               </a>
+              <button
+                type="button"
+                className="dashboard-nav-btn"
+                onClick={() => setGuideOpen(true)}
+                title="How the app works: RSVP, stats, Man of the Match"
+              >
+                How it works
+              </button>
               <button
                 type="button"
                 className="dashboard-nav-btn dashboard-nav-btn-quiet"
@@ -550,6 +560,12 @@ export default function App() {
         onClose={() => setClaimModalOpen(false)}
         onSubmit={submitClaim}
       />
+
+      {guideOpen && (
+        <Suspense fallback={null}>
+          <GuideModal onClose={() => setGuideOpen(false)} />
+        </Suspense>
+      )}
 
       {bugModalOpen && (
         <BugReportModal

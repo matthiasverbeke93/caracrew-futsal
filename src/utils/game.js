@@ -1,6 +1,6 @@
 import { isSeasonAttendanceLocked } from "../seasons.js";
 
-export const STATS_FREEZE_DAYS = 10;
+export const STATS_FREEZE_DAYS = 5;
 
 function localToday() {
   const d = new Date();

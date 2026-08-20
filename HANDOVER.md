@@ -78,8 +78,10 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   `DEFAULT_SEASON_SLUG` (26-27). No current/historical split.
 - **Roles:** anyone reads; a signed-in *linked* player edits their own attendance/stats; any signed-in user votes
   MOTM once/game; **admin** sets scores, manages guests/roster, and overrides anyone.
-- **Editing windows:** attendance is editable only for the **next 3 upcoming fixtures**; stats lock **10 days**
-  after a game (`STATS_FREEZE_DAYS`).
+- **Editing windows:** attendance is editable only for the **next 3 upcoming fixtures**; stats lock **5 days**
+  after a game (`STATS_FREEZE_DAYS`); MOTM voting runs from estimated full-time (kickoff + 2h) to **5 days**
+  later (`MOTM_VOTING_DAYS`). Both were widened/narrowed to 5 on 2026-08-20 — stats were 10 days, MOTM was 24h.
+  Because a MotM win is only counted once voting closes, the winner now surfaces 5 days after the match.
 - **Roster thresholds:** ≤5 playing = "not enough", 6 = "just enough", ≥7 = "right amount"
   (`MIN_PLAYERS_WARNING`, `JUST_RIGHT_PLAYERS`).
 
@@ -356,6 +358,30 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-20** — *Stats and MotM windows both set to 5 days; the squad guide now lives in the app.*
+  - **Stats freeze: 10 days → 5** (`STATS_FREEZE_DAYS`). **MotM voting: 24h → 5 days**
+    (new `MOTM_VOTING_DAYS` in `utils/motm.js`; the end is still derived from the kickoff+2h open,
+    so it can never precede the open).
+  - **Knock-on worth knowing:** `countPlayerMotmWins` only counts a win once voting has *closed*,
+    so the MotM winner now appears in the season stats **5 days** after the match instead of the
+    next day. That is the same rule as before, not a new one — but the visible delay is 5x longer.
+  - The old tests pinned the old windows: one asserted voting was shut two days after the match,
+    which is now mid-window. Rewritten to derive their offsets from `MOTM_VOTING_DAYS` so the next
+    change to the window cannot silently pass them, plus a new test that the in-between days are
+    open. `StatsTab`'s hint text now interpolates the constant instead of saying "24 hours".
+  - **New `GuideModal` ("How it works" in the header)** — a squad-facing guide inside the app:
+    RSVP options, how to read the headcount, the two windows, a deadlines table, the calendar feed,
+    and a pointer to Report a bug. Lazy-loaded, so the initial bundle only moved 466.17 → 466.52 kB.
+  - **Every number in the guide is read from the constant that enforces it** — `STATS_FREEZE_DAYS`,
+    `MOTM_VOTING_DAYS`, `MIN_PLAYERS_WARNING`/`JUST_RIGHT_PLAYERS`, `ATTENDANCE_OPTIONS` — and the
+    .ics URL comes from `window.location.origin`. Change a window and the guide follows. **Don't
+    hardcode a number in there.**
+  - Why in-app rather than a shared document: a hosted page needed an account to open, and the squad
+    should not need one to read how the app works. It is also the one copy that cannot go stale.
+  - Account-creation steps deliberately **left out** of the guide at the user's request (most of the
+    squad has signed up). Note 2 of 13 roster rows are still unlinked, so those two need a direct
+    nudge rather than the guide.
+  - `lint` clean, **141/141**, `build` OK. **Not eyeballed** — the visual check is on the user.
 - **2026-08-20** — *In-app bug reporting; digest sender verified; hall booking reconciled.*
   - **"Report a bug" button** in the header (`dashboard-nav-btn-quiet` — deliberately the
     quietest thing up there). Open to signed-out visitors, because a bug that only

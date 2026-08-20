@@ -103,7 +103,7 @@ describe("isAttendanceEditable", () => {
 describe("stats freeze window", () => {
   it("freezes strictly after STATS_FREEZE_DAYS days", () => {
     expect(isStatsFrozen(g(isoOffset(-(STATS_FREEZE_DAYS - 1))))).toBe(false);
-    expect(isStatsFrozen(g(isoOffset(-STATS_FREEZE_DAYS)))).toBe(false); // boundary: exactly 10 = editable
+    expect(isStatsFrozen(g(isoOffset(-STATS_FREEZE_DAYS)))).toBe(false); // boundary: exactly STATS_FREEZE_DAYS = editable
     expect(isStatsFrozen(g(isoOffset(-(STATS_FREEZE_DAYS + 1))))).toBe(true);
   });
 

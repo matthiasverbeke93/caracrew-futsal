@@ -16,15 +16,18 @@ export function getMotmVotingStart(game) {
   return new Date(start.getTime() + 2 * 60 * 60 * 1000);
 }
 
-/** Voting closes 24h after estimated full-time. */
+/** Voting stays open this many days after estimated full-time. */
+export const MOTM_VOTING_DAYS = 5;
+
+/** Voting closes MOTM_VOTING_DAYS days after estimated full-time. */
 export function getMotmVotingEnd(game) {
   const openAt = getMotmVotingStart(game);
   if (!openAt) return null;
-  return new Date(openAt.getTime() + 24 * 60 * 60 * 1000);
+  return new Date(openAt.getTime() + MOTM_VOTING_DAYS * 24 * 60 * 60 * 1000);
 }
 
 /**
- * Voting runs from estimated full-time (kickoff + 2h) to 24h later.
+ * Voting runs from estimated full-time (kickoff + 2h) to MOTM_VOTING_DAYS days later.
  *
  * Deliberately NOT gated on `isPlayed()`. That helper is day-granular
  * (`game_date < today`), so it stayed false until midnight and swallowed the
@@ -64,8 +67,10 @@ export function countPlayerMotmWins(playerId, games, votes, nowMs = Date.now()) 
   if (!playerId || !games?.length) return 0;
   let wins = 0;
   for (const game of games) {
-    // No isPlayed() gate: `nowMs > end` (kickoff + 26h) already implies it was played,
-    // and unlike isPlayed() it respects the injected clock.
+    // No isPlayed() gate: `nowMs > end` (full-time + MOTM_VOTING_DAYS) already implies it
+    // was played, and unlike isPlayed() it respects the injected clock. Note this also
+    // means a MotM win only shows up once voting has closed — now 5 days after the
+    // match rather than the next day.
     const end = getMotmVotingEnd(game);
     if (!end || nowMs <= end.getTime()) continue;
     const leaders = getMotmLeaderIds(game.id, votes);

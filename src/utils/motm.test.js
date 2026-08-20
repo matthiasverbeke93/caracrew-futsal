@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getMotmLeaderIds, isMotmVotingOpen } from "./motm.js";
+import { MOTM_VOTING_DAYS, getMotmLeaderIds, isMotmVotingOpen } from "./motm.js";
 
 /** Local YYYY-MM-DD offset from today. */
 function isoOffset(days) {
@@ -38,16 +38,24 @@ describe("getMotmLeaderIds", () => {
 });
 
 describe("isMotmVotingOpen", () => {
-  it("is open within 24h after estimated full-time of a played game", () => {
+  it("is open within the window after estimated full-time of a played game", () => {
     const game = { id: "g", game_date: isoOffset(-1), game_time: "18:00", season_slug: "2627" };
-    // full-time ≈ yesterday 20:00, window closes today 20:00
+    // full-time ≈ yesterday 20:00; the window now runs 5 days from there
     const withinWindow = new Date(`${isoOffset(-1)}T21:00:00`).getTime();
     expect(isMotmVotingOpen(game, withinWindow)).toBe(true);
   });
 
-  it("is closed once the 24h window has passed", () => {
+  it("stays open on the days in between — not just the next day", () => {
     const game = { id: "g", game_date: isoOffset(-1), game_time: "18:00", season_slug: "2627" };
-    const wellAfter = new Date(`${isoOffset(2)}T00:00:00`).getTime();
+    // Two days after the match was shut under the old 24h window; now it is mid-window.
+    const twoDaysLater = new Date(`${isoOffset(1)}T12:00:00`).getTime();
+    expect(isMotmVotingOpen(game, twoDaysLater)).toBe(true);
+  });
+
+  it("is closed once the window has passed", () => {
+    const game = { id: "g", game_date: isoOffset(-1), game_time: "18:00", season_slug: "2627" };
+    // Derived from the constant, so widening the window cannot silently pass this.
+    const wellAfter = new Date(`${isoOffset(MOTM_VOTING_DAYS + 1)}T00:00:00`).getTime();
     expect(isMotmVotingOpen(game, wellAfter)).toBe(false);
   });
 

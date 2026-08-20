@@ -81,7 +81,8 @@ To start a new season:
 
 ## Editing windows
 - **Attendance** is editable for the next 3 upcoming games only; later future fixtures stay locked until they enter that window.
-- **Stats** (goals/assists and MOTM) lock 10 days after the game (`STATS_FREEZE_DAYS` in `src/utils/game.js`).
+- **Stats** (goals/assists) lock 5 days after the game (`STATS_FREEZE_DAYS` in `src/utils/game.js`). The freeze is absolute — admins included.
+- **MOTM voting** opens at estimated full-time (kickoff + 2h) and closes 5 days later (`MOTM_VOTING_DAYS` in `src/utils/motm.js`). A MotM win only appears in the season stats once voting has closed, so the winner now shows up 5 days after the match rather than the next day.
 
 ## Accounts and permissions
 

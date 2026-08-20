@@ -8,7 +8,13 @@ import {
 } from "../utils/game";
 import { supabase } from "../lib/supabase";
 import { isSeasonVotingLocked } from "../seasons";
-import { getMotmLeaderIds, getMotmVotingEnd, getMotmVotingStart, isMotmVotingOpen } from "../utils/motm";
+import {
+  MOTM_VOTING_DAYS,
+  getMotmLeaderIds,
+  getMotmVotingEnd,
+  getMotmVotingStart,
+  isMotmVotingOpen,
+} from "../utils/motm";
 
 export default function StatsTab({
   allGamePlayers,
@@ -163,7 +169,8 @@ export default function StatsTab({
           )}
           {votingPending && !motmSeasonLocked && (
             <p className="motm-hint">
-              MOTM voting opens about 2 hours after kickoff, then stays open for 24 hours.
+              MOTM voting opens about 2 hours after kickoff, then stays open for
+              {MOTM_VOTING_DAYS} days.
             </p>
           )}
           {votingOpen && (

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   ATTENDANCE_OPTIONS,
   JUST_RIGHT_PLAYERS,
@@ -18,6 +18,7 @@ import { MOTM_VOTING_DAYS } from "../utils/motm";
  * change a window, this page follows on its own — don't hardcode a number here.
  */
 export default function GuideModal({ onClose }) {
+  const [copied, setCopied] = useState(false);
   useEffect(() => {
     function onKey(e) {
       if (e.key === "Escape") onClose();
@@ -27,11 +28,26 @@ export default function GuideModal({ onClose }) {
   }, [onClose]);
 
   const feedUrl = `${window.location.origin}/fixtures.ics`;
+  // Deliberately rebuilt from origin+pathname rather than href: the live URL carries
+  // ?season=/?game=/?player= state that has no business in a link to the guide.
+  const shareUrl = `${window.location.origin}${window.location.pathname}?guide=1`;
   const optionHelp = {
     playing: "Count on me.",
     cant: "Can't make it.",
     if_needed: "Only if we're short. Say this instead of nothing — a blank is invisible, this is a plan.",
   };
+
+  async function copyLink() {
+    // navigator.clipboard needs a secure context and can still be refused; the URL is
+    // shown as text either way, so a failure costs the user nothing but the shortcut.
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   return (
     <div className="auth-modal-backdrop" role="presentation" onClick={onClose}>
@@ -50,6 +66,16 @@ export default function GuideModal({ onClose }) {
         </div>
 
         <div className="guide-body">
+          <div className="guide-share">
+            <div className="guide-share-text">
+              <strong>Share this guide</strong>
+              <code>{shareUrl}</code>
+            </div>
+            <button type="button" className="guide-share-btn" onClick={copyLink}>
+              {copied ? "Copied" : "Copy link"}
+            </button>
+          </div>
+
           <p className="guide-lede">
             Anyone can look around without signing in. You need an account to say whether you're
             playing.

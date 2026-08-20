@@ -48,6 +48,12 @@ Friday schedule (GitHub Actions) runs `scripts/send-weekly-digest.mjs`: upcoming
 
 **Local test:** copy `.env.example` digest vars into a shell session or `.env` loaded manually, then `npm run digest:weekly`.
 
+## The squad guide
+
+**How it works** in the header opens `GuideModal` — the player-facing guide (RSVP options, how to read the headcount, the two editing windows, a deadlines table, the calendar feed). It has its own link, `?guide=1`, so it can be shared with people who have no account: <https://caracrew.org/?guide=1>. The modal shows that link with a copy button.
+
+Every number in it is **read from the constant that enforces it** (`STATS_FREEZE_DAYS`, `MOTM_VOTING_DAYS`, `MIN_PLAYERS_WARNING` / `JUST_RIGHT_PLAYERS`, `ATTENDANCE_OPTIONS`) and the feed URL from `window.location.origin`, so changing a rule updates the guide with it. **Do not hardcode a number there.**
+
 ## Bug reports
 
 A **Report a bug** button sits in the header, open to signed-out visitors too. It writes one row to `bug_reports`; a scheduled Action (`.github/workflows/bug-reports.yml`, every 6 hours) runs `scripts/send-bug-reports.mjs`, mails each new row and stamps `emailed_at`.

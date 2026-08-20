@@ -161,13 +161,17 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   described a correct model all along — the live database had drifted from them, so no amount of
   reading `supabase/*.sql` would have shown it.
 
-- 🟡 **STILL OPEN: `supabase/fix_2526_tigers_score.sql` — the inverted ZVC Tigers result, resolved
-  to a recommendation but NOT yet run** (verified 2026-08-19: the row still reads `home_score = 10`,
-  and the 25-26 record still shows 5W-2D-15L / 74-127 / 17 pts). Audit of all 22 rows: 20 of 21 parseable titles agree with their stored scores,
-  and the decisive analogue is `VV Schemerboyz 2 - 11 K Caracrew SK` stored `11-2` — same shape
-  (we are away, named second, our goals on the right), read correctly. The Tigers row took the
-  *left* number. The stored `location` (Heiveld, an away venue) agrees with the title too. Fix
-  turns 5W-2D-15L / 74-127 into 4W-2D-16L / 65-136. Run it unless you know otherwise.
+- ✅ **CLOSED 2026-08-20 — the inverted ZVC Tigers result is fixed and verified.**
+  `supabase/fix_2526_tigers_score.sql` was run. Re-read from outside with the public anon key
+  afterwards (reads are public, so this needs no service role): the row
+  `2526-2025-10-14-2100-zvc-tigers` now stores **1-10** (our goals / theirs) against the title
+  `ZVC Tigers 10 - 1 K Caracrew SK`, and the 25-26 record recomputes to **4W-2D-16L / 65-136 /
+  14 pts** — exactly the numbers predicted before the fix, which is what makes it a verification
+  rather than a hope. Was 5W-2D-15L / 74-127 / 17 pts.
+  **What made it findable:** auditing all 22 rows against their own titles. 20 of 21 parseable
+  titles agreed with their stored scores; the decisive analogue was
+  `VV Schemerboyz 2 - 11 K Caracrew SK` stored `11-2` — same shape (we are away, named second,
+  our goals on the right) read correctly, while the Tigers row had taken the *left* number.
 
 ## Fixed in the review (all committed, gates green: lint, 80 tests, build)
 - 🐛 **MOTM voting opened at midnight, not after the match.** `isMotmVotingOpen` was gated on
@@ -358,6 +362,16 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-20** — *The guide gets its own URL; Tigers fix verified.*
+  - `?guide=1` opens the guide directly, so it can be shared without a Claude account or a login
+    — `https://caracrew.org/?guide=1`. Follows the existing query-param routing (`openGuide` /
+    `closeGuide` pushState like `openPlayer`/`closePlayer`), and **popstate moves the guide too**,
+    so Back closes it instead of leaving the URL and the screen disagreeing.
+  - The modal shows the link with a **Copy link** button. The URL is rebuilt from
+    `origin + pathname`, **not** `href` — the live URL carries `?season=`/`?game=`/`?player=`
+    state that has no business in a link to the guide. The link is always visible as text, so a
+    refused `navigator.clipboard` costs nothing but the shortcut.
+  - **Tigers fix verified applied** — see Current state above. `lint` clean, **141/141**, `build` OK.
 - **2026-08-20** — *Stats and MotM windows both set to 5 days; the squad guide now lives in the app.*
   - **Stats freeze: 10 days → 5** (`STATS_FREEZE_DAYS`). **MotM voting: 24h → 5 days**
     (new `MOTM_VOTING_DAYS` in `utils/motm.js`; the end is still derived from the kickoff+2h open,

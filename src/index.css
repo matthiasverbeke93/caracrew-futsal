@@ -4425,3 +4425,48 @@ input[type="number"] {
   .guide-scale { grid-template-columns: 1fr; }
   .guide-opt { grid-template-columns: 1fr; gap: 4px; }
 }
+
+/* Share row at the top of the guide — the guide has its own link (?guide=1). */
+.guide-share {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--accent-muted);
+}
+
+.guide-share-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 220px;
+  font-size: 12px;
+  color: var(--accent-strong);
+}
+
+.guide-share-text code {
+  font-size: 11.5px;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.guide-share-btn {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid var(--accent-strong);
+  transition: background 120ms ease;
+}
+
+.guide-share-btn:hover {
+  background: var(--accent-strong);
+}

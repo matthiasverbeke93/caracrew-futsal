@@ -55,7 +55,9 @@ export default function App() {
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const [bugModalOpen, setBugModalOpen] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(
+    () => new URLSearchParams(window.location.search).get("guide") === "1"
+  );
 
   const [profilePlayerId, setProfilePlayerId] = useState(() =>
     new URLSearchParams(window.location.search).get("player")
@@ -103,6 +105,21 @@ export default function App() {
     setSeasonOverviewOpen(true);
   }, []);
 
+  /** `?guide=1` is the shareable link for the guide — see openGuide/closeGuide. */
+  const openGuide = useCallback(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("guide", "1");
+    window.history.pushState({}, "", url);
+    setGuideOpen(true);
+  }, []);
+
+  const closeGuide = useCallback(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("guide");
+    window.history.pushState({}, "", url);
+    setGuideOpen(false);
+  }, []);
+
   const openPlayer = useCallback((id) => {
     if (!id) return;
     const url = new URL(window.location.href);
@@ -138,6 +155,7 @@ export default function App() {
     const onPop = () => {
       const sp = new URLSearchParams(window.location.search);
       setProfilePlayerId(sp.get("player"));
+      setGuideOpen(sp.get("guide") === "1");
       setSeasonOverviewOpen(
         sp.has("team_stats") || sp.get("insights") === "1"
       );
@@ -286,7 +304,7 @@ export default function App() {
               <button
                 type="button"
                 className="dashboard-nav-btn"
-                onClick={() => setGuideOpen(true)}
+                onClick={openGuide}
                 title="How the app works: RSVP, stats, Man of the Match"
               >
                 How it works
@@ -563,7 +581,7 @@ export default function App() {
 
       {guideOpen && (
         <Suspense fallback={null}>
-          <GuideModal onClose={() => setGuideOpen(false)} />
+          <GuideModal onClose={closeGuide} />
         </Suspense>
       )}
 

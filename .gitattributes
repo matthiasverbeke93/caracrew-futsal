@@ -4,3 +4,10 @@
 # whole-file on every sync, and risks an LF-normalized feed reaching subscribers, where
 # strict clients (Outlook in particular) can reject it. Keep the bytes exactly as generated.
 *.ics -text
+
+# Scripts must stay LF **in the working tree**, not just in the index. With core.autocrlf=true a
+# Windows checkout rewrites them to CRLF, and a CRLF shebang line makes esbuild/vitest reject the
+# whole file with a bare `SyntaxError: Invalid or unexpected token` and no line number — while plain
+# `node` runs it fine. Verified 2026-08-24: an all-CRLF sync-lzv.mjs fails to import under vitest,
+# and the same file with only the shebang line switched back to LF passes.
+*.mjs text eol=lf

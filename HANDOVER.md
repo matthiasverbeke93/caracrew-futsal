@@ -105,10 +105,12 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
 - **Optimistic writes.** All mutations in `useFutsalData` update state first and roll back on error. Keep new
   writes to that pattern (snapshot → mutate → on error restore + `notify(...)` toast + `loadAll()`).
 - **Line endings:** repo is LF; on this Windows workspace git prints harmless `LF will be replaced by CRLF`
-  warnings on add. **Not always harmless in `scripts/*.mjs`:** a CRLF shebang line makes vitest/esbuild reject
-  the whole file with a bare `SyntaxError: Invalid or unexpected token` and no line number, even though plain
-  `node` imports it fine (found 2026-08-24). If a script test suddenly fails to parse, check the line endings
-  before reading the code. Ignore them. **Exception — `*.ics` is pinned to `-text` in `.gitattributes`** (added
+  warnings on add. **Exception 2 — `*.mjs` is pinned to `text eol=lf`** (added 2026-08-24): with
+  `core.autocrlf=true` a Windows checkout rewrites scripts to CRLF, and a **CRLF shebang line** makes
+  esbuild/vitest reject the whole file with a bare `SyntaxError: Invalid or unexpected token` and no line
+  number — while plain `node` runs it fine. Isolated precisely: an all-CRLF `sync-lzv.mjs` fails to import
+  under vitest; the same file with *only* the shebang switched back to LF passes. The rule closes it, but if a
+  script test ever fails to parse again, check line endings before reading the code. Ignore them. **Exception — `*.ics` is pinned to `-text` in `.gitattributes`** (added
   2026-08-17): RFC 5545 mandates CRLF and `gen-ics.mjs` emits it, but `core.autocrlf=true` was normalizing
   the feeds to LF on every Windows commit while the Linux CI runner stored CRLF — a whole-file churn on all
   three feeds each sync, and a real risk of shipping an LF feed that strict clients (Outlook) reject.
@@ -398,10 +400,11 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
     with the 2026-11-08 VV Schemerboyz away game moved to 11-15: 5 matched, exactly **1** reschedule
     candidate offered (not 2, despite Schemerboyz appearing twice — the 09-24 row was already
     claimed), 0 orphans, 0 false stale.
-  - 🔴 **New gotcha — a CRLF shebang breaks vitest.** Editing `scripts/*.mjs` with a tool that writes
-    CRLF makes esbuild fail the whole file with a bare `SyntaxError: Invalid or unexpected token`
-    (no line number), while plain `node` imports it fine. The repo is LF; keep it that way. This cost
-    a bisect to find.
+  - 🐛 **Found and fixed on the way: a CRLF shebang breaks vitest.** Writing `scripts/*.mjs` with a
+    tool that emits CRLF makes esbuild reject the whole file with a bare `SyntaxError: Invalid or
+    unexpected token` (no line number), while plain `node` imports it fine — it cost a bisect. The
+    cause was isolated exactly (all-CRLF fails; same file with only the shebang line LF passes), and
+    `.gitattributes` now pins `*.mjs` to `text eol=lf` so a Windows checkout cannot reintroduce it.
   - README: new **Score sync and reschedules** section, the admin panel is now documented as **five**
     tabs (it already had Bugs and said three), and the Data tab has its own subsection.
   - Verified: `lint` clean, **229/229** (+67), `build` OK. AdminPanel chunk 15.3 → 19.7 kB, code-split

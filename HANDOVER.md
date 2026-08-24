@@ -105,7 +105,10 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
 - **Optimistic writes.** All mutations in `useFutsalData` update state first and roll back on error. Keep new
   writes to that pattern (snapshot → mutate → on error restore + `notify(...)` toast + `loadAll()`).
 - **Line endings:** repo is LF; on this Windows workspace git prints harmless `LF will be replaced by CRLF`
-  warnings on add. Ignore them. **Exception — `*.ics` is pinned to `-text` in `.gitattributes`** (added
+  warnings on add. **Not always harmless in `scripts/*.mjs`:** a CRLF shebang line makes vitest/esbuild reject
+  the whole file with a bare `SyntaxError: Invalid or unexpected token` and no line number, even though plain
+  `node` imports it fine (found 2026-08-24). If a script test suddenly fails to parse, check the line endings
+  before reading the code. Ignore them. **Exception — `*.ics` is pinned to `-text` in `.gitattributes`** (added
   2026-08-17): RFC 5545 mandates CRLF and `gen-ics.mjs` emits it, but `core.autocrlf=true` was normalizing
   the feeds to LF on every Windows commit while the Linux CI runner stored CRLF — a whole-file churn on all
   three feeds each sync, and a real risk of shipping an LF feed that strict clients (Outlook) reject.
@@ -362,6 +365,48 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-24** — *Two data-integrity guards: scores checked against their titles, reschedules detected.*
+  - **Admin panel → Data: every stored score cross-checked against its fixture `title`.** New pure util
+    `utils/scoreAudit.js` (`parseScoreFromTitle`, `auditGameScore`, `auditGameScores`,
+    `suggestedScoreFix`). The title is a **second, independent record of the same result**, so the
+    2025-10-14 ZVC Tigers inversion (stored `10-1`, title `ZVC Tigers 10 - 1 K Caracrew SK`) was
+    detectable from day one — it took a hand-audit of all 22 rows to find. This runs that audit on
+    every panel load, **across all seasons**, because the bad row was in a season the app had already
+    stopped defaulting to.
+  - Four verdicts, ranked: **inverted** (swapping matches the title — offers copyable `update` SQL),
+    **mismatch** (a human decides), **missing** (title has a result the row never stored — the sync
+    missed it), **unverified** (score stored, title carries none). Unplayed fixtures return nothing.
+  - **Verified against the real data, not just invented cases:** all 21 scored 25-26 titles from
+    `public/fixtures-2526.ics` are in the test file with their expected our-goals-first values, plus
+    the actual Tigers row in both its broken and fixed states. The parser also handles `04United`
+    (name starts with digits), `VT 09` (number inside the name), both `K Caracrew SK` / `K. Caracrew
+    SK` spellings, en/em dashes, and the one real unparseable title
+    (`K Caracrew SK - Futsal Opsinjoor` → *unverified*, not a false alarm). A draw is never reported
+    as inverted.
+  - **`sync-lzv.mjs` now detects reschedules.** It only ever matched on an **exact date**, so a moved
+    fixture was two silent non-events at once: LZV's result found no row to write to, and the stored
+    row stayed empty forever. New pure `reconcileFixtures` reports **possible reschedule** (result
+    with no same-date row, but an unclaimed row against that opponent elsewhere), **unmatched result**,
+    and **stale fixture** (>`STALE_RESULT_DAYS` = 7 days past, unscored, never reported by LZV).
+  - **Fixtures matched on their own date are claimed first**, so the second leg of a double
+    round-robin can't be mistaken for the first. Candidates sort unscored-before-scored, then by date
+    distance; two remaining candidates are both listed rather than guessed between.
+  - **It never moves a date and never re-imports** — the id encodes the old date and every RSVP/stat/
+    vote FKs to `game_id`. It prints the `update games set game_date = …` for the *existing* row.
+    Findings go out as GitHub Actions `::warning::` annotations so they land in the run summary.
+  - Smoke-tested against the **real 21-fixture 26-27 list** (parsed from `public/fixtures-2627.ics`)
+    with the 2026-11-08 VV Schemerboyz away game moved to 11-15: 5 matched, exactly **1** reschedule
+    candidate offered (not 2, despite Schemerboyz appearing twice — the 09-24 row was already
+    claimed), 0 orphans, 0 false stale.
+  - 🔴 **New gotcha — a CRLF shebang breaks vitest.** Editing `scripts/*.mjs` with a tool that writes
+    CRLF makes esbuild fail the whole file with a bare `SyntaxError: Invalid or unexpected token`
+    (no line number), while plain `node` imports it fine. The repo is LF; keep it that way. This cost
+    a bisect to find.
+  - README: new **Score sync and reschedules** section, the admin panel is now documented as **five**
+    tabs (it already had Bugs and said three), and the Data tab has its own subsection.
+  - Verified: `lint` clean, **229/229** (+67), `build` OK. AdminPanel chunk 15.3 → 19.7 kB, code-split
+    so the initial bundle is unchanged. **Not eyeballed** — no browser automation here; the Data tab
+    is worth a look in `npm run dev`.
 - **2026-08-24** — *Attendance tab groups players by RSVP status.*
   - `AttendanceTab` no longer renders one flat 2-column grid of every player. Once **at least one
     player has answered**, the tab splits into sections — **In · If needed · Out · No response** — each

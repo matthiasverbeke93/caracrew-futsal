@@ -118,6 +118,118 @@ function findGameForMatch(games, m) {
   return fuzzy || null;
 }
 
+function sameOpponent(a, b) {
+  const x = cleanOpponent(a);
+  const y = cleanOpponent(b);
+  if (!x || !y) return false;
+  return x === y || x.includes(y) || y.includes(x);
+}
+
+function isUnscored(game) {
+  return game.home_score == null || game.away_score == null;
+}
+
+/** Whole days between two `YYYY-MM-DD` strings. Both are plain dates, so UTC parsing cannot drift. */
+function daysBetween(isoA, isoB) {
+  const a = Date.parse(`${isoA}T00:00:00Z`);
+  const b = Date.parse(`${isoB}T00:00:00Z`);
+  if (Number.isNaN(a) || Number.isNaN(b)) return Number.POSITIVE_INFINITY;
+  return Math.round((a - b) / 86400000);
+}
+
+function localTodayIso() {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/** How many days a stored fixture may sit in the past, unscored and unreported by LZV, before we say so. */
+export const STALE_RESULT_DAYS = 7;
+
+/**
+ * Work out what LZV's results say about the stored fixture list.
+ *
+ * The sync only ever matched on an exact date, so a rescheduled match looked like two
+ * non-events at once: LZV's result found no row to write to, and the stored row simply stayed
+ * empty forever. Neither said the word "reschedule", and the stored row is the one every RSVP,
+ * stat and MOTM vote is attached to — re-importing the fixture would create a second row and
+ * orphan all of it (see CALENDAR-IMPORT.md). So this detects and reports; it never moves a date.
+ *
+ * @returns {{
+ *   matched: Array<{match: object, game: object}>,
+ *   reschedules: Array<{match: object, candidates: object[]}>,
+ *   orphans: object[],
+ *   staleFixtures: object[],
+ * }}
+ */
+export function reconcileFixtures(parsed, games, { todayIso = localTodayIso(), staleDays = STALE_RESULT_DAYS } = {}) {
+  const all = games || [];
+  const consumed = new Set();
+  const matched = [];
+  const unmatchedMatches = [];
+
+  // Pass 1 — the fixtures LZV and the DB agree on. Claim them first so a reschedule
+  // cannot be blamed on a row that already has a match of its own.
+  for (const m of parsed || []) {
+    const game = findGameForMatch(all, m);
+    if (game && !consumed.has(game.id)) {
+      consumed.add(game.id);
+      matched.push({ match: m, game });
+    } else {
+      unmatchedMatches.push(m);
+    }
+  }
+
+  // Pass 2 — a result with no row on its date, but an unclaimed row against the same
+  // opponent somewhere else in the season. That is a moved fixture, not a missing one.
+  const reschedules = [];
+  const orphans = [];
+  const proposed = new Set();
+  for (const m of unmatchedMatches) {
+    const candidates = all
+      .filter((g) => !consumed.has(g.id) && !proposed.has(g.id) && sameOpponent(g.opponent, m.opponentRaw))
+      // An unscored row is the likelier home for a result, and a near date likelier than the
+      // reverse fixture months away — but both stay on the list, because a double round-robin
+      // means "same opponent" is never proof on its own.
+      .sort((a, b) => {
+        if (isUnscored(a) !== isUnscored(b)) return isUnscored(a) ? -1 : 1;
+        return Math.abs(daysBetween(a.game_date, m.date)) - Math.abs(daysBetween(b.game_date, m.date));
+      });
+
+    if (candidates.length === 0) {
+      orphans.push(m);
+      continue;
+    }
+    for (const c of candidates) proposed.add(c.id);
+    reschedules.push({ match: m, candidates });
+  }
+
+  // Pass 3 — the other direction: a fixture whose date is well past, still unscored, and which
+  // LZV never reported. Postponed, or a result the parser is no longer picking up.
+  const staleFixtures = all.filter(
+    (g) =>
+      isUnscored(g) &&
+      !consumed.has(g.id) &&
+      !proposed.has(g.id) &&
+      g.game_date &&
+      daysBetween(todayIso, g.game_date) > staleDays
+  );
+
+  return { matched, reschedules, orphans, staleFixtures };
+}
+
+/** GitHub Actions surfaces `::warning::` in the run summary; locally it is just a prefixed line. */
+function annotate(message) {
+  if (process.env.GITHUB_ACTIONS) console.log(`::warning::${message}`);
+  else console.warn(`[lzv-sync] WARN ${message}`);
+}
+
+/** The edit to make by hand. Moving the existing row keeps every RSVP attached to it. */
+export function rescheduleSql(game, match) {
+  return `update games set game_date = '${match.date}' where id = '${game.id}';`;
+}
+
 async function main() {
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -168,20 +280,13 @@ async function main() {
     `[lzv-sync] ${targets.length} games in DB missing a final score.`
   );
 
+  const { matched, reschedules, orphans, staleFixtures } = reconcileFixtures(parsed, games || []);
+
   let updated = 0;
-  let unmatched = 0;
-  for (const m of parsed) {
-    const game = findGameForMatch(targets, m);
-    if (!game) {
-      const anyGame = findGameForMatch(games || [], m);
-      if (!anyGame) {
-        unmatched += 1;
-        console.warn(
-          `[lzv-sync] No DB row for ${m.date} vs ${m.opponentRaw}`
-        );
-      }
-      continue;
-    }
+  for (const { match: m, game } of matched) {
+    // Already stored — nothing to write, and re-writing would churn a row an admin may have
+    // corrected by hand.
+    if (game.home_score != null && game.away_score != null) continue;
     const { error: upErr } = await supabase
       .from("games")
       .update({ home_score: m.home_score, away_score: m.away_score })
@@ -196,8 +301,48 @@ async function main() {
     );
   }
 
+  // Nothing below writes anything. A moved fixture has to be edited in place by hand: the id
+  // encodes the old date, and attendance / player_stats / guest_players / motm_votes all FK to
+  // game_id, so creating a row on the new date would silently abandon every RSVP already given.
+  for (const { match: m, candidates } of reschedules) {
+    const best = candidates[0];
+    annotate(
+      `Possible reschedule: LZV has ${m.date} vs ${m.opponentRaw} ` +
+        `(${m.home_score}-${m.away_score}) but no fixture is stored on that date. ` +
+        `Closest unclaimed row: ${best.id} on ${best.game_date}.`
+    );
+    if (candidates.length > 1) {
+      console.warn(
+        `[lzv-sync]   ${candidates.length} candidates — pick by hand: ` +
+          candidates.map((c) => `${c.id} (${c.game_date})`).join(", ")
+      );
+    }
+    console.warn(
+      `[lzv-sync]   Move the EXISTING row, do not re-import: ${rescheduleSql(best, m)}`
+    );
+    console.warn(
+      "[lzv-sync]   Then re-run this job to fill the score. See CALENDAR-IMPORT.md."
+    );
+  }
+
+  for (const m of orphans) {
+    annotate(
+      `No fixture stored for ${m.date} vs ${m.opponentRaw} ` +
+        `(${m.home_score}-${m.away_score}), and no unclaimed row against that opponent either.`
+    );
+  }
+
+  for (const g of staleFixtures) {
+    annotate(
+      `${g.game_date} vs ${g.opponent} is more than ${STALE_RESULT_DAYS} days past, still has no ` +
+        "score, and LZV reported no result for it. Postponed, or the fixture moved."
+    );
+  }
+
   console.log(
-    `[lzv-sync] Done. Updated ${updated} game(s). ${unmatched} parsed match(es) had no DB row.`
+    `[lzv-sync] Done. Updated ${updated} game(s). ` +
+      `${reschedules.length} possible reschedule(s), ${orphans.length} unmatched result(s), ` +
+      `${staleFixtures.length} stale fixture(s).`
   );
 }
 

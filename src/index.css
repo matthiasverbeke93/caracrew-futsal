@@ -4247,6 +4247,125 @@ input[type="number"] {
   gap: 10px;
 }
 
+/* Admin → Data: stored scores checked against the fixture titles. */
+.admin-hint {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.admin-audit-row {
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--surface-elevated);
+  margin-bottom: 10px;
+}
+
+.admin-audit-row--inverted,
+.admin-audit-row--mismatch {
+  border-left-color: var(--signal-danger);
+}
+
+.admin-audit-row--missing {
+  border-left-color: var(--signal-warning);
+}
+
+.admin-audit-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.admin-audit-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--tone-info-bg);
+  color: var(--tone-info-fg);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.admin-audit-tag--inverted,
+.admin-audit-tag--mismatch {
+  background: var(--tone-danger-bg);
+  color: var(--tone-danger-fg);
+}
+
+.admin-audit-tag--missing {
+  background: var(--tone-warning-bg);
+  color: var(--tone-warning-fg);
+}
+
+.admin-audit-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-audit-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.admin-audit-compare {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.admin-audit-compare strong {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-audit-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.admin-audit-fix {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.admin-audit-fix code {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.admin-audit-fix button {
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid transparent;
+}
+
 .admin-bug-card {
   border: 1px solid var(--border-subtle);
   border-radius: 10px;

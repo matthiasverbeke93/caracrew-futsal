@@ -2,9 +2,30 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { formatShortDateTime } from "../utils/formatMatch";
 import { BUG_KINDS, BUG_SEVERITIES } from "../utils/bugReport";
+import { auditGameScores, suggestedScoreFix } from "../utils/scoreAudit";
 
 const BUG_KIND_LABEL = Object.fromEntries(BUG_KINDS.map((k) => [k.value, k.label]));
 const BUG_SEVERITY_LABEL = Object.fromEntries(BUG_SEVERITIES.map((s) => [s.value, s.label]));
+
+const AUDIT_LABEL = {
+  inverted: "Score inverted",
+  mismatch: "Score disagrees",
+  missing: "Result not stored",
+  unverified: "Cannot be checked",
+};
+
+const AUDIT_NOTE = {
+  inverted:
+    "The stored score is the title's score the wrong way round — this is the 2025-10-14 ZVC Tigers failure, " +
+    "which turned a 1-10 defeat into a 10-1 win. home_score is our goals, whichever side we played on.",
+  mismatch:
+    "The two disagree in a way swapping cannot explain, so a human has to decide which is right. " +
+    "Check lzvcup.be before editing either.",
+  missing:
+    "The title carries a result the row never stored — the weekly score sync did not match this fixture.",
+  unverified:
+    "A score is stored but this title carries none, so nothing independently confirms it.",
+};
 
 function slugifyName(name) {
   return String(name || "")
@@ -32,11 +53,13 @@ export default function AdminPanel({ open, onClose, onChanged }) {
   const [showArchived, setShowArchived] = useState(false);
   const [bugReports, setBugReports] = useState([]);
   const [bugsError, setBugsError] = useState(null);
+  const [games, setGames] = useState([]);
+  const [copiedFixId, setCopiedFixId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const [claimsRes, usersRes, playersRes, bugsRes] = await Promise.all([
+    const [claimsRes, usersRes, playersRes, bugsRes, gamesRes] = await Promise.all([
       supabase.rpc("admin_list_claims_with_email"),
       supabase.rpc("admin_list_auth_users"),
       supabase
@@ -48,15 +71,23 @@ export default function AdminPanel({ open, onClose, onChanged }) {
         .select("*")
         .order("created_at", { ascending: false })
         .limit(100),
+      // Every season, not the selected one — the 2025-10-14 inverted score sat in a season the
+      // app had already stopped defaulting to, which is exactly how it went unnoticed.
+      supabase
+        .from("games")
+        .select("id, season_slug, game_date, title, home_score, away_score")
+        .order("game_date", { ascending: false }),
     ]);
     if (claimsRes.error) setError(claimsRes.error.message);
     if (usersRes.error) setError(usersRes.error.message);
     if (playersRes.error) setError(playersRes.error.message);
+    if (gamesRes.error) setError(gamesRes.error.message);
     setClaims(claimsRes.data || []);
     setUsers(usersRes.data || []);
     setPlayers(playersRes.data || []);
     setBugReports(bugsRes.data || []);
     setBugsError(bugsRes.error ? bugsRes.error.message : null);
+    setGames(gamesRes.data || []);
     setLoading(false);
   }, []);
 
@@ -78,6 +109,12 @@ export default function AdminPanel({ open, onClose, onChanged }) {
   const historyClaims = useMemo(() => claims.filter((c) => c.status !== "pending"), [claims]);
   const openBugs = useMemo(() => bugReports.filter((b) => !b.resolved_at), [bugReports]);
   const resolvedBugs = useMemo(() => bugReports.filter((b) => b.resolved_at), [bugReports]);
+  const scoreIssues = useMemo(() => auditGameScores(games), [games]);
+  // Only a disagreement is actionable; "unverified" / "missing" are context, not a to-do list.
+  const wrongScores = useMemo(
+    () => scoreIssues.filter((i) => i.kind === "inverted" || i.kind === "mismatch"),
+    [scoreIssues]
+  );
   const unlinkedUsers = useMemo(
     () => users.filter((u) => !u.linked_player_id),
     [users]
@@ -491,6 +528,16 @@ export default function AdminPanel({ open, onClose, onChanged }) {
             Bugs
             {openBugs.length > 0 && <span className="admin-tab-badge">{openBugs.length}</span>}
           </button>
+          <button
+            type="button"
+            className={tab === "data" ? "active" : ""}
+            onClick={() => setTab("data")}
+          >
+            Data
+            {wrongScores.length > 0 && (
+              <span className="admin-tab-badge">{wrongScores.length}</span>
+            )}
+          </button>
         </div>
 
         {error && <div className="auth-error admin-error">{error}</div>}
@@ -736,6 +783,77 @@ export default function AdminPanel({ open, onClose, onChanged }) {
                 </div>
               </>
             )}
+          </div>
+        )}
+
+        {tab === "data" && !loading && (
+          <div className="admin-section">
+            <p className="admin-hint">
+              Every stored final score, checked against the fixture title it came with. The title
+              is a second, independent record of the same result, so the two disagreeing means one
+              of them is wrong. Covers all seasons.
+            </p>
+
+            {scoreIssues.length === 0 && (
+              <p className="admin-empty">
+                Checked {games.length} fixtures — nothing disagrees.
+              </p>
+            )}
+
+            {scoreIssues.map((issue) => {
+              const fix = suggestedScoreFix(issue);
+              return (
+                <div className={`admin-audit-row admin-audit-row--${issue.kind}`} key={issue.gameId}>
+                  <div className="admin-audit-head">
+                    <span className={`admin-audit-tag admin-audit-tag--${issue.kind}`}>
+                      {AUDIT_LABEL[issue.kind]}
+                    </span>
+                    <span className="admin-audit-date">
+                      {issue.gameDate || "date unknown"}
+                      {issue.seasonSlug ? ` · ${issue.seasonSlug}` : ""}
+                    </span>
+                  </div>
+                  <div className="admin-audit-title">{issue.title || "(no title)"}</div>
+                  <div className="admin-audit-compare">
+                    <span>
+                      Stored{" "}
+                      <strong>
+                        {issue.stored
+                          ? `${issue.stored.ourGoals}–${issue.stored.theirGoals}`
+                          : "none"}
+                      </strong>
+                    </span>
+                    <span>
+                      Title says{" "}
+                      <strong>
+                        {issue.fromTitle
+                          ? `${issue.fromTitle.ourGoals}–${issue.fromTitle.theirGoals}`
+                          : "nothing"}
+                      </strong>
+                    </span>
+                  </div>
+                  <p className="admin-audit-note">{AUDIT_NOTE[issue.kind]}</p>
+                  {fix && (
+                    <div className="admin-audit-fix">
+                      <code>{fix}</code>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(fix);
+                            setCopiedFixId(issue.gameId);
+                          } catch {
+                            setCopiedFixId(null);
+                          }
+                        }}
+                      >
+                        {copiedFixId === issue.gameId ? "Copied" : "Copy SQL"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

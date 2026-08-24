@@ -24,7 +24,8 @@ VITE_SUPABASE_ANON_KEY=...
 - `npm run dev` — Vite dev server.
 - `npm run build` — production build to `dist/`.
 - `npm run lint` — ESLint (flat config, React + hooks plugins).
-- `npm run sync:lzv` / `npm run sync:lzv:dryrun` — pull final scores from `lzvcup.be`.
+- `npm run sync:lzv` / `npm run sync:lzv:dryrun` — pull final scores from `lzvcup.be` (also reports probable
+  reschedules — see Score sync below).
 - `npm run sync:palmares` / `npm run sync:palmares:dryrun` — refresh opponent strength.
 - `npm run digest:weekly` — send the squad pulse email via [Resend](https://resend.com); needs service role + `RESEND_API_KEY` (see Weekly digest).
 - `npm run bugs:send` — mail any unsent rows in `bug_reports` (see Bug reports).
@@ -85,6 +86,29 @@ To start a new season:
 3. Set repo variable `LZV_SEASON_SLUG` (+ `LZV_TEAM_URL`, `LZV_OUR_TEAM_ID`) and run the sync workflows.
 4. Optionally fill `LEAGUE_STANDINGS_BY_SEASON[<slug>]` in `seasonLeagueStandings.js`.
 
+## Score sync and reschedules
+
+`sync-lzv.mjs` (weekly, Sunday 06:00 UTC) matches each result LZV publishes to a stored fixture **on the exact
+date**. That means a rescheduled match used to be two silent non-events at once: LZV's result found no row to
+write to, and the stored row just stayed empty forever. Neither said the word "reschedule".
+
+The job now reconciles both directions and **reports** what it cannot match (`reconcileFixtures`):
+
+- **Possible reschedule** — a result whose date has no fixture, but an unclaimed row against the same opponent
+  sits elsewhere in the season. Fixtures already matched on their own date are claimed first, so the second leg
+  of a double round-robin is not mistaken for the first. Where two candidates remain, both are listed.
+- **Unmatched result** — a result with no plausible row at all.
+- **Stale fixture** — a fixture more than `STALE_RESULT_DAYS` (7) past, still unscored, that LZV never reported.
+  Postponed, or moved.
+
+⚠️ **It never moves a date itself, and you must not re-import one.** The `id` encodes the old date, and
+`attendance`, `player_stats`, `guest_players` and `motm_votes` all FK to `game_id` — a fresh row on the new date
+silently abandons every RSVP already collected. Update `game_date` on the **existing** row; the job prints the
+exact `update` to run. Then re-run it to fill the score. See [`CALENDAR-IMPORT.md`](./CALENDAR-IMPORT.md).
+
+Findings are emitted as GitHub Actions `::warning::` annotations, so they surface in the run summary instead of
+scrolling past in the log.
+
 ## Editing windows
 - **Attendance** is editable for the next 3 upcoming games only; later future fixtures stay locked until they enter that window.
 - **Stats** (goals/assists) lock 5 days after the game (`STATS_FREEZE_DAYS` in `src/utils/game.js`). The freeze is absolute — admins included.
@@ -139,10 +163,34 @@ update players set is_admin = true where lower(name) = lower('matthias verbeke')
 
 ### Admin panel
 
-The hero shows an **Admin** button for users with `is_admin = true`. It opens a modal with three tabs:
+The hero shows an **Admin** button for users with `is_admin = true`. It opens a modal with five tabs:
 - **Claims** — pending self-service claims with Approve / Approve + admin / Reject.
 - **Players** — full roster management: add new players, rename, toggle fixed/guest, make/remove admin, link/unlink accounts, archive (soft delete — keeps history) and restore, or hard-delete (cascades attendance, stats, votes, claims). Archived players are hidden from `fixedPlayers`, the live team stats, and new-game attendance UI, but they remain visible inside historical games where they have a row.
 - **Accounts** — every auth user, highlighting those not linked yet.
+- **Bugs** — reports filed with the header's **Report a bug** button; resolve, reopen or delete.
+- **Data** — see below.
+
+### Data tab: scores checked against their titles
+
+Every stored final score is cross-checked against the fixture `title` it came with (`src/utils/scoreAudit.js`).
+The title is a **second, independent record of the same result**, so the two disagreeing means one is wrong.
+
+This exists because on 2025-10-14 the ZVC Tigers row stored `10-1` while its own title read
+`ZVC Tigers 10 - 1 K Caracrew SK` — a 1-10 defeat counted as a 10-1 win, worth 3 phantom league points and an
+18-goal swing in the record card, the projected table and win%. It survived until someone hand-audited all 22
+rows. The tab does that audit on every load, across **all seasons** (the bad row was in a season the app had
+already stopped defaulting to, which is how it went unnoticed).
+
+Four verdicts, worst first:
+- **Score inverted** — swapping `home_score` / `away_score` would match the title. One-line fix, offered as
+  copyable SQL.
+- **Score disagrees** — they differ in a way swapping cannot explain; a human decides. Check lzvcup.be first.
+- **Result not stored** — the title carries a result the row never stored, i.e. the weekly sync missed it.
+- **Cannot be checked** — a score is stored but the title carries none, so nothing confirms it.
+
+Remember the convention the check relies on: **`home_score` is *our* goals** whichever side we played on, while
+the `title` names teams in LZV's order (real home side first). That is also why the title is the only store of
+home/away.
 
 ## SQL
 All schema migrations live under `supabase/` and are safe to re-run.

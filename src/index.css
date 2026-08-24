@@ -3095,6 +3095,73 @@ button {
   margin-top: 16px;
 }
 
+/* Attendance tab, grouped by RSVP — one section per vote status. */
+.attendance-group {
+  margin-top: 20px;
+}
+
+.attendance-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.attendance-group-header::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.attendance-group-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  padding: 0 6px;
+  height: 20px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.attendance-group--playing .attendance-group-label {
+  color: var(--tone-success-fg);
+}
+.attendance-group--playing .attendance-group-count {
+  background: var(--tone-success-bg);
+  color: var(--tone-success-fg);
+}
+
+.attendance-group--if_needed .attendance-group-label {
+  color: var(--tone-warning-fg);
+}
+.attendance-group--if_needed .attendance-group-count {
+  background: var(--tone-warning-bg);
+  color: var(--tone-warning-fg);
+}
+
+.attendance-group--cant .attendance-group-label {
+  color: var(--tone-danger-fg);
+}
+.attendance-group--cant .attendance-group-count {
+  background: var(--tone-danger-bg);
+  color: var(--tone-danger-fg);
+}
+
+.player-grid--grouped {
+  margin-top: 10px;
+}
+
 .player-card {
   border: 1px solid #e2e8f0;
   border-radius: 18px;

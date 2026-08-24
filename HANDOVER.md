@@ -362,6 +362,28 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-24** — *Attendance tab groups players by RSVP status.*
+  - `AttendanceTab` no longer renders one flat 2-column grid of every player. Once **at least one
+    player has answered**, the tab splits into sections — **In · If needed · Out · No response** — each
+    with a tinted heading and a count chip, and each holding its own `player-grid`. The point is to
+    make "who is still missing" and "who is in" readable at a glance on a fixture with 15+ names,
+    which the flat list buried.
+  - New pure util `utils/attendanceGroups.js` (`groupPlayersByAttendance`, `hasAnyAttendanceVote`,
+    `attendanceGroupLabel`) holds the bucketing so it stays testable and the component stays a view.
+    Group **order is fixed** (`ATTENDANCE_GROUP_ORDER`) rather than derived from `ATTENDANCE_OPTIONS`,
+    which is ordered `playing / cant / if_needed` for the buttons — a different, deliberate order.
+    Labels are reused from `attendanceLabel` so headings and buttons cannot drift apart.
+  - **Grouping is skipped when nobody has voted yet** (`hasAnyAttendanceVote`): every player would
+    land in "No response" and the heading would be pure noise on a fresh fixture.
+  - Empty groups are dropped; an unrecognised status still gets its own group rather than making the
+    player disappear from the tab.
+  - Card markup, editing rules, tooltips and the guest card are **unchanged** — the card render moved
+    into a `renderPlayerCard` helper, nothing else. `current` now reads through the same `statusOf`
+    the grouping uses, so a card and its group can't disagree.
+  - CSS: `.attendance-group*` block next to `.player-grid` in `index.css`, tones from the existing
+    `--tone-success/warning/danger-*` pairs (no new hex).
+  - Verified: `lint` clean, **162/162** (+9), `build` OK. **Not eyeballed** — no browser automation
+    here; the visual split is worth a quick look in `npm run dev`.
 - **2026-08-20** — *Share message cleaned up; the nudge tally now reconciles.*
   - **Why the old nudge tally read as nonsense:** `In / If needed / Out` came from `counts.*`, which
     **includes guests**, while `No reply` was **fixed-players-only** and the squad line printed the

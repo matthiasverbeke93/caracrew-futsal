@@ -5,6 +5,7 @@ import {
   isAttendanceInUpcomingWindow,
 } from "../utils/game";
 import { isSeasonAttendanceLocked } from "../seasons";
+import { groupPlayersByAttendance, hasAnyAttendanceVote } from "../utils/attendanceGroups";
 
 export default function AttendanceTab({
   allGamePlayers,
@@ -35,12 +36,89 @@ export default function AttendanceTab({
     !isAttendanceInUpcomingWindow(selectedGame, allGames, 3);
   const attendanceOpen = isAttendanceEditable(selectedGame, allGames);
 
+  function statusOf(player) {
+    return (
+      (player.type === "ad_hoc_guest"
+        ? player.status
+        : gameAttendance.find((a) => a.player_id === player.id)?.status) ?? null
+    );
+  }
+
+  const attendanceGroups = groupPlayersByAttendance(allGamePlayers, statusOf);
+  // Before the first RSVP everybody sits in "No response" — grouping there is
+  // just an extra heading over the same flat list.
+  const showGroups = hasAnyAttendanceVote(attendanceGroups);
+
   function disabledTitle(player) {
     if (!isSignedIn) return "Sign in to mark attendance";
     if (lockedBecausePreview) return "RSVP is read-only for this preview season";
     if (lockedBecausePlayed) return "Attendance is locked — match already played";
     if (lockedBecauseOutsideWindow) return "RSVP opens when this match is one of the next 3 upcoming games";
     return `Only ${player.name} or an admin can edit this`;
+  }
+
+  function renderPlayerCard(player) {
+    const current = statusOf(player);
+    const isAdHoc = player.type === "ad_hoc_guest";
+    const rowEditable =
+      attendanceOpen &&
+      (isAdHoc ? canManageGame : canEditAttendanceFor(player.id));
+
+    return (
+      <div
+        className={`player-card ${player.type !== "fixed" ? "guest-player-card" : ""}`}
+        key={player.id}
+      >
+        <div className="player-card-header">
+          <strong>
+            <button type="button" className="player-link" onClick={() => onOpenPlayer(player.id)}>
+              {player.name}
+            </button>
+            <span className={player.type === "fixed" ? "fixed-badge" : "guest-badge"}>
+              {player.type === "fixed" ? "Fixed" : "Guest"}
+            </span>
+          </strong>
+          {isAdHoc && (
+            <button
+              className="remove-player-button"
+              onClick={() => removeGuestPlayer(player.id)}
+              disabled={!canManageGame || !attendanceOpen}
+              title={!canManageGame ? "Admin only" : ""}
+            >
+              Remove
+            </button>
+          )}
+        </div>
+
+        {ATTENDANCE_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={`attendance-opt attendance-opt--${option.value}${
+              current === option.value ? " active" : ""
+            }`}
+            disabled={!rowEditable}
+            title={!rowEditable ? disabledTitle(player) : undefined}
+            onClick={() =>
+              isAdHoc
+                ? saveGuestAttendance(player.id, option.value)
+                : saveAttendance(player.id, option.value)
+            }
+          >
+            {option.label}
+          </button>
+        ))}
+        {!isAdHoc && rowEditable && current && (
+          <button
+            type="button"
+            className="attendance-clear-rsvp"
+            onClick={() => saveAttendance(player.id, null)}
+          >
+            Clear RSVP
+          </button>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -74,75 +152,24 @@ export default function AttendanceTab({
         </div>
       )}
 
-      <div className="player-grid">
-        {allGamePlayers.map((player) => {
-          const current =
-            player.type === "ad_hoc_guest"
-              ? player.status
-              : gameAttendance.find((a) => a.player_id === player.id)?.status;
-
-          const isAdHoc = player.type === "ad_hoc_guest";
-          const rowEditable =
-            attendanceOpen &&
-            (isAdHoc ? canManageGame : canEditAttendanceFor(player.id));
-
-          return (
-            <div
-              className={`player-card ${player.type !== "fixed" ? "guest-player-card" : ""}`}
-              key={player.id}
-            >
-              <div className="player-card-header">
-                <strong>
-                  <button type="button" className="player-link" onClick={() => onOpenPlayer(player.id)}>
-                    {player.name}
-                  </button>
-                  <span className={player.type === "fixed" ? "fixed-badge" : "guest-badge"}>
-                    {player.type === "fixed" ? "Fixed" : "Guest"}
-                  </span>
-                </strong>
-                {isAdHoc && (
-                  <button
-                    className="remove-player-button"
-                    onClick={() => removeGuestPlayer(player.id)}
-                    disabled={!canManageGame || !attendanceOpen}
-                    title={!canManageGame ? "Admin only" : ""}
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-
-              {ATTENDANCE_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={`attendance-opt attendance-opt--${option.value}${
-                    current === option.value ? " active" : ""
-                  }`}
-                  disabled={!rowEditable}
-                  title={!rowEditable ? disabledTitle(player) : undefined}
-                  onClick={() =>
-                    isAdHoc
-                      ? saveGuestAttendance(player.id, option.value)
-                      : saveAttendance(player.id, option.value)
-                  }
-                >
-                  {option.label}
-                </button>
-              ))}
-              {!isAdHoc && rowEditable && current && (
-                <button
-                  type="button"
-                  className="attendance-clear-rsvp"
-                  onClick={() => saveAttendance(player.id, null)}
-                >
-                  Clear RSVP
-                </button>
-              )}
+      {showGroups ? (
+        attendanceGroups.map((group) => (
+          <section
+            className={`attendance-group attendance-group--${group.status ?? "none"}`}
+            key={group.status ?? "none"}
+          >
+            <h3 className="attendance-group-header">
+              <span className="attendance-group-label">{group.label}</span>
+              <span className="attendance-group-count">{group.players.length}</span>
+            </h3>
+            <div className="player-grid player-grid--grouped">
+              {group.players.map(renderPlayerCard)}
             </div>
-          );
-        })}
-      </div>
+          </section>
+        ))
+      ) : (
+        <div className="player-grid">{allGamePlayers.map(renderPlayerCard)}</div>
+      )}
 
       <div className="guest-card">
         <div>

@@ -4,6 +4,11 @@ import react from "@vitejs/plugin-react";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // Pinned, not left to Vite's default 5173: this origin has to be on the Supabase Auth
+  // redirect allowlist for password reset to work locally, and README/HANDOVER document
+  // :3000. strictPort so a taken port fails loudly instead of drifting to :3001 and
+  // silently sending the tester's reset link to production.
+  server: { port: 3000, strictPort: true },
   // Stamped into the bundle so a bug report says WHICH build it came from.
   // Without it "works for me" has no version to hang on.
   define: {

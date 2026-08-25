@@ -144,9 +144,17 @@ The link must be opened **on the same device/browser** that will set the passwor
 the URL, not the account. It is single-use and expires after roughly an hour.
 
 Two Supabase settings this depends on (Authentication → URL Configuration): **Site URL** and the
-**Redirect URLs** allowlist must both include the deployed origin, which is what `VITE_SITE_URL`
-(see `.env.example`) is sent as. Without the allowlist entry Supabase drops the redirect and the
-user never gets the form.
+**Redirect URLs** allowlist. The app sends a **bare origin** as `redirectTo` — `VITE_SITE_URL` if
+set, else `window.location.origin`, trailing slash stripped — so the allowlist needs the origin
+itself, not just a `…/**` pattern:
+
+```
+https://caracrew.org          # the live apex — what the app sends in production
+http://localhost:3000         # local dev (the port is pinned in vite.config.js for this reason)
+```
+
+Supabase silently drops an unallowlisted `redirectTo` and falls back to **Site URL**, so a missing
+entry does not error — it just quietly sends people somewhere else. Keep Site URL on the same apex.
 
 ### One-time setup
 

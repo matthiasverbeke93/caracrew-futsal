@@ -130,13 +130,20 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   add `useCallback` there expecting a win without also memoizing the heavy children (profile first).
 
 ## Current state (as of 2026-08-20)
-- 🟡 **CHECK Supabase Auth → URL Configuration → Redirect URLs BEFORE RELYING ON PASSWORD RESET.**
-  The new reset flow (2026-08-25 below) sends `redirectTo` = `VITE_SITE_URL` /
-  `window.location.origin`. Supabase silently drops a redirect that is not on that
-  allowlist, and the failure looks like "the email never arrived properly" — the mail
-  sends, the link just lands nowhere useful. Add the deployed origin (and
-  `http://localhost:3000` for local testing) if they are not already there. Site URL alone
-  is not enough.
+- 🟡 **ADD `https://caracrew.org` TO Supabase Auth → URL Configuration → Redirect URLs.**
+  Checked 2026-08-25, and the apex — the host this app actually runs on — is **not on the
+  allowlist**. It currently holds `https://www.caracrew.org/**` (the **www** host) and
+  `http://localhost:3000`. Reset still works today only by accident: an unallowlisted
+  `redirectTo` is silently dropped and Supabase falls back to **Site URL**, which happens to
+  be `https://caracrew.org`. That is one dashboard edit away from breaking, and the failure
+  mode is invisible — the mail sends, the link just lands somewhere useless.
+  Two details that decide which entries are needed:
+  - **The app always sends a bare origin, never a path** (`getAuthEmailRedirectTo` returns
+    `normalizeSiteUrl(window.location.origin)`, trailing slash stripped). So a `…/**` entry is
+    not the form that has to match — whether Supabase's glob lets `/**` match a path-less URL
+    is exactly the question worth not depending on. Add the **bare** `https://caracrew.org`.
+  - Setting **`VITE_SITE_URL=https://caracrew.org`** in the production build makes `redirectTo`
+    deterministic instead of "whichever host the visitor happened to load".
 
 - 🟡 **RUN `supabase/bug_reports.sql` BEFORE THE NEXT DEPLOY.** The new "Report a bug"
   button inserts into a table that does not exist yet; until the migration is run the
@@ -405,9 +412,16 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
     to clear so it can be fired on every close.
   - Caveat worth repeating to users: the link must be opened **on the device that will set the
     password** (the session rides the URL), it is single-use, and it lapses after ~an hour.
-  - Verified: `lint` clean, `test` 236 passing (17 files), `build` clean. **Not eyeballed in a
-    browser** — no browser automation here, and the flow needs a real Supabase email round-trip.
-    Worth one manual run-through on the live site after the redirect allowlist is confirmed.
+  - **The dev server was on :5173, not the :3000 that README/HANDOVER have always claimed** —
+    `vite.config.js` never pinned `server.port`, so it sat on Vite's default and the docs were
+    simply wrong. Harmless until now; with reset in play it means the allowlisted
+    `http://localhost:3000` never matches, so a local tester's reset link falls back to Site URL
+    and walks them into **production**. Pinned to 3000 with `strictPort: true` — silently
+    drifting to :3001 would resurrect the same bug.
+  - Verified: `lint` clean, `test` 236 passing (17 files), `build` clean, dev server confirmed
+    listening on :3000. **Not eyeballed in a browser** — no browser automation here, and the flow
+    needs a real Supabase email round-trip. Worth one manual run-through on the live site once
+    the apex is on the redirect allowlist.
 
 - **2026-08-24** — *Two data-integrity guards: scores checked against their titles, reschedules detected.*
   - **Admin panel → Data: every stored score cross-checked against its fixture `title`.** New pure util

@@ -6,54 +6,76 @@ const COPY = {
     submit: "Sign in",
     switchText: "New here?",
     switchAction: "Create an account",
+    switchTo: "sign_up",
   },
   sign_up: {
     title: "Create account",
     submit: "Create account",
     switchText: "Already have an account?",
     switchAction: "Sign in",
+    switchTo: "sign_in",
+  },
+  forgot: {
+    title: "Reset password",
+    submit: "Send reset link",
+    switchText: "Remembered it?",
+    switchAction: "Back to sign in",
+    switchTo: "sign_in",
   },
 };
 
-export default function AuthModal({ open, onClose, signIn, signUp }) {
-  const [mode, setMode] = useState("sign_in");
+/** Mounted only while it is showing (see App), so `initialMode` / `initialError` seed the
+ *  state once and a fresh open always starts clean — no reset effect needed. */
+export default function AuthModal({
+  onClose,
+  signIn,
+  signUp,
+  requestPasswordReset,
+  initialMode = "sign_in",
+  initialError = null,
+}) {
+  const [mode, setMode] = useState(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState(initialError);
   const [info, setInfo] = useState(null);
   const emailRef = useRef(null);
 
   useEffect(() => {
-    if (!open) return undefined;
     function onKey(e) {
       if (e.key === "Escape") onClose();
     }
     window.addEventListener("keydown", onKey);
     setTimeout(() => emailRef.current?.focus(), 0);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [onClose]);
 
-  function switchMode() {
-    setMode((m) => (m === "sign_in" ? "sign_up" : "sign_in"));
+  function goTo(next) {
+    setMode(next);
     setMessage(null);
     setInfo(null);
+    setPassword("");
   }
 
-  if (!open) return null;
+  const copy = COPY[mode] || COPY.sign_in;
+  const needsPassword = mode !== "forgot";
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (busy) return;
     setMessage(null);
     setInfo(null);
-    if (!email || !password) {
-      setMessage("Email and password are required.");
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || (needsPassword && !password)) {
+      setMessage(needsPassword ? "Email and password are required." : "Email is required.");
       return;
     }
     setBusy(true);
-    const fn = mode === "sign_in" ? signIn : signUp;
-    const res = await fn(email.trim(), password);
+    const res =
+      mode === "forgot"
+        ? await requestPasswordReset(trimmedEmail)
+        : await (mode === "sign_in" ? signIn : signUp)(trimmedEmail, password);
     setBusy(false);
     if (res.error) {
       setMessage(res.error);
@@ -63,10 +85,15 @@ export default function AuthModal({ open, onClose, signIn, signUp }) {
       setInfo("Account created. You can sign in right away with the same email and password.");
       return;
     }
+    if (mode === "forgot") {
+      setInfo(
+        `If an account exists for ${trimmedEmail}, a reset link is on its way. ` +
+          "Open it on this device — the link signs you in just long enough to set a new password."
+      );
+      return;
+    }
     onClose();
   }
-
-  const copy = COPY[mode];
 
   return (
     <div
@@ -104,17 +131,28 @@ export default function AuthModal({ open, onClose, signIn, signUp }) {
               required
             />
           </label>
-          <label>
-            <span>Password</span>
-            <input
-              type="password"
-              autoComplete={mode === "sign_in" ? "current-password" : "new-password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-            />
-          </label>
+          {needsPassword && (
+            <label>
+              <span>Password</span>
+              <input
+                type="password"
+                autoComplete={mode === "sign_in" ? "current-password" : "new-password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+            </label>
+          )}
+          {mode === "sign_in" && (
+            <button
+              type="button"
+              className="auth-inline-link"
+              onClick={() => goTo("forgot")}
+            >
+              Forgot your password?
+            </button>
+          )}
           {message && <p className="auth-error">{message}</p>}
           {info && <p className="auth-info">{info}</p>}
           <button type="submit" className="auth-submit" disabled={busy}>
@@ -126,7 +164,7 @@ export default function AuthModal({ open, onClose, signIn, signUp }) {
           <button
             type="button"
             className="auth-switch-link"
-            onClick={switchMode}
+            onClick={() => goTo(copy.switchTo)}
           >
             {copy.switchAction}
           </button>
@@ -135,6 +173,12 @@ export default function AuthModal({ open, onClose, signIn, signUp }) {
           <p className="auth-fineprint">
             After signing up, send your full name to the team admin so they can link your
             account to your player profile.
+          </p>
+        )}
+        {mode === "forgot" && (
+          <p className="auth-fineprint">
+            The link is single-use and expires after about an hour. Check your spam folder if
+            it does not show up.
           </p>
         )}
       </div>

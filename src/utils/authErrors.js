@@ -20,5 +20,18 @@ export function formatAuthError(err) {
     );
   }
 
+  if (code === "same_password" || lower.includes("should be different from the old password")) {
+    return "That is already your password. Pick a different one.";
+  }
+
+  if (code === "weak_password" || lower.includes("password should be at least")) {
+    return "That password is too short — use at least 6 characters.";
+  }
+
+  // A recovery session is short-lived; once it lapses updateUser fails with no session.
+  if (code === "session_not_found" || lower.includes("auth session missing")) {
+    return "This reset link has expired. Request a new password reset email.";
+  }
+
   return msg || "Something went wrong. Please try again.";
 }

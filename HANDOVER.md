@@ -35,7 +35,8 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   attendance/stats/status, and owns every write (`saveAttendance`, `saveStat`, `saveFinalScore`, `submitMotmVote`,
   `addGuestPlayer`, …). Writes are **optimistic** (update local state, then Supabase; on error, restore snapshot +
   `loadAll()`).
-- **`hooks/useAuthSession.jsx`** — Supabase email/password auth + the linked player + admin flag.
+- **`hooks/useAuthSession.jsx`** — Supabase email/password auth + the linked player + admin flag,
+  plus the password-reset/recovery pair (`requestPasswordReset`, `updatePassword`, `recovery`).
 - **`hooks/usePendingClaimsCount.js`** — admin badge for pending player claims.
 - **`components/`** — presentational: `GameSidebar` (fixtures list + calendar + filters), `SelectedGamePanel`
   (match header, share, context, score, count grid), `AttendanceTab`, `StatsTab`, `MyNextGamesTiles`,
@@ -129,6 +130,14 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   add `useCallback` there expecting a win without also memoizing the heavy children (profile first).
 
 ## Current state (as of 2026-08-20)
+- 🟡 **CHECK Supabase Auth → URL Configuration → Redirect URLs BEFORE RELYING ON PASSWORD RESET.**
+  The new reset flow (2026-08-25 below) sends `redirectTo` = `VITE_SITE_URL` /
+  `window.location.origin`. Supabase silently drops a redirect that is not on that
+  allowlist, and the failure looks like "the email never arrived properly" — the mail
+  sends, the link just lands nowhere useful. Add the deployed origin (and
+  `http://localhost:3000` for local testing) if they are not already there. Site URL alone
+  is not enough.
+
 - 🟡 **RUN `supabase/bug_reports.sql` BEFORE THE NEXT DEPLOY.** The new "Report a bug"
   button inserts into a table that does not exist yet; until the migration is run the
   button fails and the reporter sees the Postgres error. The admin panel's Bugs tab
@@ -367,6 +376,39 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-25** — *Password reset, which the app never had.*
+  - **There was no recovery path at all.** `useAuthSession` had `signIn` / `signUp` / `signOut` and
+    nothing else, and `AuthModal` had no "forgot" link — a player who lost their password could only
+    be fixed by an admin editing them in the Supabase dashboard. The tell that this was an omission
+    rather than a decision: `utils/authErrors.js` already mapped the rate-limit error to copy
+    mentioning "account or **reset** emails", for reset emails nothing could send.
+  - **`requestPasswordReset(email)`** → `resetPasswordForEmail`. The success message is the same for
+    an unknown address as for a real one (*"if an account exists for …"*) — a per-address yes/no would
+    let anyone enumerate which emails are on this roster.
+  - **`updatePassword(password)`** → `updateUser`, plus `recovery: { active, error }` and
+    `dismissRecovery()`. New `components/NewPasswordModal.jsx` is the set-new-password step
+    (twice-entered, 6-char floor, keeps the session on success).
+  - **Recovery is detected two ways on purpose**: the `PASSWORD_RECOVERY` auth event *and*
+    `readRecoveryFromUrl(hash, search)` read at mount. The client parses the recovery fragment while
+    it initialises, which can beat our `onAuthStateChange` listener — relying on the event alone
+    leaves the user signed in with no form and no explanation. Pure and unit-tested in
+    `utils/authRedirect.test.js` (which also backfills coverage for `normalizeSiteUrl`).
+  - An **error** fragment (`error_code=otp_expired`) is explicitly *not* treated as a recovery: it
+    carries no session, so it reopens the auth modal on the reset form with the reason instead of
+    showing a form that cannot submit. The `#access_token=…` fragment is stripped via
+    `history.replaceState` once consumed, so a refresh does not re-enter the flow.
+  - **Both modals are conditionally mounted by `App` rather than self-hiding on an `open` prop**, so
+    each open starts from clean state. The obvious version — an effect that re-seeds state when
+    `open` flips — is exactly what `react-hooks/set-state-in-effect` rejects, and lint must stay
+    clean. Same reason `authModalVisible` is derived (`authModalOpen || !!recovery.error`) instead of
+    mirrored into state, and why `dismissRecovery` returns the previous object when there is nothing
+    to clear so it can be fired on every close.
+  - Caveat worth repeating to users: the link must be opened **on the device that will set the
+    password** (the session rides the URL), it is single-use, and it lapses after ~an hour.
+  - Verified: `lint` clean, `test` 236 passing (17 files), `build` clean. **Not eyeballed in a
+    browser** — no browser automation here, and the flow needs a real Supabase email round-trip.
+    Worth one manual run-through on the live site after the redirect allowlist is confirmed.
+
 - **2026-08-24** — *Two data-integrity guards: scores checked against their titles, reschedules detected.*
   - **Admin panel → Data: every stored score cross-checked against its fixture `title`.** New pure util
     `utils/scoreAudit.js` (`parseScoreFromTitle`, `auditGameScore`, `auditGameScores`,

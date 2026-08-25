@@ -128,6 +128,26 @@ Email + password auth via Supabase. Reads stay public; writes are scoped:
 | Add / remove ad-hoc guest               | Admin                                  |
 | Override anyone's attendance or stats   | Admin                                  |
 
+### Forgot password
+
+The sign-in modal has a **Forgot your password?** link. It sends a Supabase recovery email
+(`resetPasswordForEmail`), and the reply is deliberately the same whether or not the address has an
+account — telling a stranger which emails are on the roster is a free leak.
+
+Opening the link returns the user to the app with a short-lived session; `useAuthSession` sees this
+(the `PASSWORD_RECOVERY` event, or `type=recovery` on the landing URL) and shows **Set a new
+password**, which calls `updateUser({ password })` and keeps them signed in. A stale or already-used
+link instead reopens the reset form with the reason on screen. The `#access_token=…` fragment is
+stripped once consumed so a refresh does not re-enter the flow.
+
+The link must be opened **on the same device/browser** that will set the password — the session rides
+the URL, not the account. It is single-use and expires after roughly an hour.
+
+Two Supabase settings this depends on (Authentication → URL Configuration): **Site URL** and the
+**Redirect URLs** allowlist must both include the deployed origin, which is what `VITE_SITE_URL`
+(see `.env.example`) is sent as. Without the allowlist entry Supabase drops the redirect and the
+user never gets the form.
+
 ### One-time setup
 
 1. **Enable email auth in Supabase** (Authentication → Providers → Email). For a friction-free family team, you can disable email confirmation while you onboard, then re-enable.

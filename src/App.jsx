@@ -8,6 +8,7 @@ import { useToast } from "./hooks/useToast.jsx";
 import FormChip from "./components/FormChip";
 import GameSidebar from "./components/GameSidebar";
 import MyNextGamesTiles from "./components/MyNextGamesTiles";
+import NewPasswordModal from "./components/NewPasswordModal";
 import SeasonSwitcher from "./components/SeasonSwitcher";
 import SelectedGamePanel from "./components/SelectedGamePanel";
 import StatsTab from "./components/StatsTab";
@@ -46,12 +47,20 @@ export default function App() {
     signIn,
     signUp,
     signOut,
+    recovery,
+    requestPasswordReset,
+    updatePassword,
+    dismissRecovery,
     submitClaim,
     cancelClaim,
     refreshClaim,
   } = useAuthSession();
   const [pendingClaimsCount, refreshPendingClaimsCount] = usePendingClaimsCount(isAdmin);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  // A dead reset link has nothing to recover with, so it opens the auth modal on the form
+  // that gets a fresh one, with the reason on screen. Derived, not stored: `recovery` already
+  // holds it, and clearing it happens on close.
+  const authModalVisible = authModalOpen || !!recovery.error;
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const [bugModalOpen, setBugModalOpen] = useState(false);
@@ -566,12 +575,23 @@ export default function App() {
         </Suspense>
       )}
 
-      <AuthModal
-        open={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        signIn={signIn}
-        signUp={signUp}
-      />
+      {authModalVisible && (
+        <AuthModal
+          onClose={() => {
+            setAuthModalOpen(false);
+            dismissRecovery();
+          }}
+          signIn={signIn}
+          signUp={signUp}
+          requestPasswordReset={requestPasswordReset}
+          initialMode={recovery.error ? "forgot" : "sign_in"}
+          initialError={recovery.error}
+        />
+      )}
+
+      {recovery.active && (
+        <NewPasswordModal onDismiss={dismissRecovery} updatePassword={updatePassword} />
+      )}
 
       <ClaimPlayerModal
         open={claimModalOpen}

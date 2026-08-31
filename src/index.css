@@ -965,6 +965,12 @@ button {
   color: var(--tone-warning-fg);
 }
 
+/* Roster goalkeeper flag (admin panel) */
+.admin-pill.role-keeper {
+  background: var(--tone-info-bg);
+  color: var(--tone-info-fg);
+}
+
 .admin-pill.role-guest {
   background: var(--tone-info-bg);
   color: #075985;
@@ -1248,6 +1254,15 @@ button {
 .panel.my-next-game-card .my-next-game-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* "Full — 8 In, RSVP closed." on a tile whose fixture already has enough players */
+.panel.my-next-game-card .my-next-game-full {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #fcd34d;
 }
 
 /* Row of up to three compact next-fixture tiles */
@@ -2933,6 +2948,75 @@ button {
   font-weight: 700;
 }
 
+/* Goalkeeper check for a fixture — one line under the headcount. */
+.keeper-line {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.keeper-line--ok {
+  background: var(--tone-success-bg);
+  color: var(--tone-success-fg);
+}
+
+.keeper-line--warn {
+  background: var(--tone-danger-bg);
+  color: var(--tone-danger-fg);
+}
+
+.keeper-line--info {
+  background: var(--tone-info-bg);
+  color: var(--tone-info-fg);
+}
+
+.keeper-line .keeper-line-detail {
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+/* Sidebar fixture chip: nobody who keeps goal has said In */
+.no-keeper-chip {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background: var(--tone-danger-bg);
+  color: var(--tone-danger-fg);
+}
+
+/* "GK" marker beside a goalkeeper's name in the attendance / stats lists */
+.keeper-badge {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--tone-info-bg);
+  color: var(--tone-info-fg);
+  vertical-align: middle;
+}
+
+/* "Match full — 8 players In." Same shape as .warning-box, green tone: it is
+   good news, not a problem. */
+.full-box {
+  margin-top: 16px;
+  background: var(--tone-success-bg);
+  color: var(--tone-success-fg);
+  padding: 14px;
+  border-radius: 16px;
+  font-weight: 700;
+}
+
 .guest-card {
   margin-top: 16px;
   background: #f8fafc;
@@ -4568,9 +4652,22 @@ input[type="number"] {
   font-variant-numeric: tabular-nums;
 }
 
+/* The headcount scale gained a fourth "full" step; two columns on narrow screens. */
+.guide-scale--four {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 560px) {
+  .guide-scale,
+  .guide-scale--four {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .guide-scale .s-low { background: var(--tone-danger-bg); color: var(--tone-danger-fg); }
 .guide-scale .s-mid { background: var(--tone-caution-bg); color: var(--tone-caution-fg); }
 .guide-scale .s-ok { background: var(--tone-success-bg); color: var(--tone-success-fg); }
+.guide-scale .s-full { background: var(--tone-info-bg); color: var(--tone-info-fg); }
 
 .guide-table-scroll { overflow-x: auto; }
 

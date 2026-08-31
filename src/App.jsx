@@ -24,6 +24,7 @@ import { useAuthSession } from "./hooks/useAuthSession";
 import { useFutsalData } from "./hooks/useFutsalData";
 import { usePendingClaimsCount } from "./hooks/usePendingClaimsCount";
 import { nextUpcomingGamesByCalendar } from "./utils/game";
+import { getGoalkeeperSummary } from "./utils/goalkeeper";
 import {
   DEFAULT_SEASON_SLUG,
   isSeasonSlug,
@@ -253,6 +254,27 @@ export default function App() {
   const canManageGame = isSignedIn && isAdmin;
   const canVote = isSignedIn;
 
+  /**
+   * "Do we have a goalie for this match?" — computed here because it needs the
+   * roster flag, the fixture's RSVPs *and* its stats rows at once. Ad-hoc guests
+   * carry their own status/kept_goal on the row; everyone else is looked up.
+   */
+  const keeperSummary = useMemo(
+    () =>
+      getGoalkeeperSummary(
+        allGamePlayers,
+        (player) =>
+          (player.type === "ad_hoc_guest"
+            ? player.status
+            : gameAttendance.find((a) => a.player_id === player.id)?.status) ?? null,
+        (player) =>
+          player.type === "ad_hoc_guest"
+            ? !!player.kept_goal
+            : !!gameStats.find((row) => row.player_id === player.id)?.kept_goal
+      ),
+    [allGamePlayers, gameAttendance, gameStats]
+  );
+
   const claimedPlayerName = useMemo(() => {
     if (!myClaim) return null;
     return players.find((p) => p.id === myClaim.player_id)?.name || myClaim.player_id;
@@ -472,6 +494,7 @@ export default function App() {
               games={games}
               attendance={attendance}
               currentPlayer={currentPlayer}
+              gameStatusById={gameStatusById}
               selectedGameId={selectedGameId}
               onJumpToGame={(id) => setSelectedGameId(id)}
               onMarkAttendance={(gameId, status) =>
@@ -485,6 +508,7 @@ export default function App() {
               <SelectedGamePanel
                 selectedGame={selectedGame}
                 counts={counts}
+                keeperSummary={keeperSummary}
                 allGames={games}
                 fixedPlayers={fixedPlayers}
                 gameAttendance={gameAttendance}
@@ -514,6 +538,7 @@ export default function App() {
                     onOpenPlayer={openPlayer}
                     selectedGame={selectedGame}
                     allGames={games}
+                    playingCount={counts.playing}
                     canEditAttendanceFor={canEditAttendanceFor}
                     canManageGame={canManageGame}
                     isSignedIn={isSignedIn}

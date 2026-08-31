@@ -79,12 +79,21 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   `DEFAULT_SEASON_SLUG` (26-27). No current/historical split.
 - **Roles:** anyone reads; a signed-in *linked* player edits their own attendance/stats; any signed-in user votes
   MOTM once/game; **admin** sets scores, manages guests/roster, and overrides anyone.
-- **Editing windows:** attendance is editable only for the **next 3 upcoming fixtures**; stats lock **5 days**
-  after a game (`STATS_FREEZE_DAYS`); MOTM voting runs from estimated full-time (kickoff + 2h) to **5 days**
-  later (`MOTM_VOTING_DAYS`). Both were widened/narrowed to 5 on 2026-08-20 — stats were 10 days, MOTM was 24h.
-  Because a MotM win is only counted once voting closes, the winner now surfaces 5 days after the match.
+- **Editing windows:** attendance is editable only for the **next 3 upcoming fixtures**; stats lock **2 days**
+  after a game (`STATS_FREEZE_DAYS`, cut from 5 on 2026-08-31) **for players — admins are exempt**
+  (`isStatsEditable(game, { isAdmin })`); MOTM voting runs from estimated full-time (kickoff + 2h) to **5 days**
+  later (`MOTM_VOTING_DAYS`, set on 2026-08-20 when it was 24h). Because a MotM win is only counted once voting
+  closes, the winner surfaces 5 days after the match.
 - **Roster thresholds:** ≤5 playing = "not enough", 6 = "just enough", ≥7 = "right amount"
-  (`MIN_PLAYERS_WARNING`, `JUST_RIGHT_PLAYERS`).
+  (`MIN_PLAYERS_WARNING`, `JUST_RIGHT_PLAYERS`), and **8 In = full** (`GAME_FULL_PLAYERS`) — see below.
+- **A full fixture closes RSVP (2026-08-31).** At 8 In (roster + guests) attendance locks for that match,
+  admins included: `isGameFull(playingCount)`. The one change still accepted is an In player stepping back
+  (Out / If needed / Clear RSVP) — `isRsvpAllowedWhenFull(current, next)` — which frees the spot and reopens
+  the match. First come, first served; there is no waiting list.
+- **Goalkeepers are two separate flags (2026-08-31).** `players.is_goalkeeper` = "is a keeper" (admin panel),
+  which drives the per-fixture *"do we have a goalie In?"* check; `player_stats.kept_goal` /
+  `guest_players.kept_goal` = "went in goal in *this* match", ticked post-game and explicitly allowed for
+  someone who is not a keeper. Logic in `src/utils/goalkeeper.js`; needs `supabase/player_goalkeeper.sql`.
 
 ## Gotchas
 - 🔴 **`.env` IS TRACKED ON PURPOSE — do not untrack it until the deploy platform has the two variables.**
@@ -129,7 +138,7 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
 - **No component uses `React.memo`.** So memoizing callbacks in `useFutsalData` buys nothing on its own — don't
   add `useCallback` there expecting a win without also memoizing the heavy children (profile first).
 
-## Current state (as of 2026-08-20)
+## Current state (as of 2026-08-31)
 - 🟡 **ADD `https://caracrew.org` TO Supabase Auth → URL Configuration → Redirect URLs.**
   Checked 2026-08-25, and the apex — the host this app actually runs on — is **not on the
   allowlist**. It currently holds `https://www.caracrew.org/**` (the **www** host) and
@@ -144,6 +153,11 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
     is exactly the question worth not depending on. Add the **bare** `https://caracrew.org`.
   - Setting **`VITE_SITE_URL=https://caracrew.org`** in the production build makes `redirectTo`
     deterministic instead of "whichever host the visitor happened to load".
+
+- 🔴 **RUN `supabase/player_goalkeeper.sql` BEFORE OR WITH THE NEXT DEPLOY.** It adds
+  `players.is_goalkeeper`, `player_stats.kept_goal`, `guest_players.kept_goal` and the 4-argument
+  `admin_update_player`. Without it the admin panel's `→ Keeper` button and the Stats tab's Keeper
+  tick both fail (unknown column / unknown argument); everything else degrades quietly.
 
 - 🟡 **RUN `supabase/bug_reports.sql` BEFORE THE NEXT DEPLOY.** The new "Report a bug"
   button inserts into a table that does not exist yet; until the migration is run the
@@ -383,6 +397,67 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-08-31** — *Stats window cut to 2 days, admins exempt; goalkeepers.*
+  - **`STATS_FREEZE_DAYS` 5 → 2**, and the freeze is no longer absolute: `isStatsEditable` took an options
+    object (`{ nowMs, isAdmin }`) and returns true for an admin however old the game is. Everyone is still
+    blocked on a game that has not been played — there is nothing to record. Enforced in `saveStat`
+    (`{ isAdmin }`) as well as in `StatsTab` (`isAdmin: canManageGame`), which now shows players *"ask an
+    admin"* and admins *"locked for players, but you can still edit"*. `saveGuestStat` was already admin-only
+    with no window check, so it needed nothing.
+  - **Second param of `isStatsEditable` changed shape** (was a positional `nowMs`). Nothing passed it — the
+    only callers used the default — so this is safe, but a future caller must use `{ nowMs }`.
+  - **Goalkeepers, as two deliberately separate flags.** The roster flag `players.is_goalkeeper` answers
+    "is this player a keeper" and drives the per-fixture check; the per-game `player_stats.kept_goal` /
+    `guest_players.kept_goal` records who *actually* went in goal, which the user explicitly wants to be
+    settable for a non-keeper. Conflating them would have made one of the two questions unanswerable.
+  - **The check runs for every fixture, not just the selected one:** `gameStatusById` gained
+    `keeperIn` / `keeperMissing` / `keeperUnknown`, so the sidebar shows a `No GK` chip, there is a new
+    **No goalkeeper** filter (conflicts with `played` — only an upcoming match can be short a keeper), the
+    match panel gets a red *No goalkeeper In* line, and the Friday digest a warning. `keeperUnknown`
+    (nobody flagged at all) keeps all of it silent: that is an unset flag, not a missing goalie.
+  - A keeper who plays as a **guest** still counts — the guest row's `source_player_id` is matched against
+    the keeper ids, not just `attendance.player_id`.
+  - **Admin panel:** `→ Keeper` / `Not keeper` button + a `Keeper` pill, via
+    `admin_update_player(..., goalkeeper_arg)`. The migration **drops and recreates** that function rather
+    than `create or replace` — adding a parameter leaves two overloads, and PostgREST refuses to choose
+    between them for a named-argument call.
+  - **`supabase/player_goalkeeper.sql` must be run before this ships.** Until then the roster toggle errors
+    (unknown argument) and the Keeper tick fails on insert; the read path degrades quietly, because
+    `is_goalkeeper` is normalised to `isGoalkeeper: !!player.is_goalkeeper` in `playersWithRole` and a missing
+    column is simply `undefined`.
+  - Verified: `lint` clean, `test` 248 passing (18 files, new `utils/goalkeeper.test.js`), `build` clean.
+    **Not eyeballed in a browser.**
+
+- **2026-08-31** — *A match with 8 players In is full: RSVP closes.*
+  - **The rule.** `GAME_FULL_PLAYERS = 8` (`src/constants.js`) + `isGameFull(playingCount)` and
+    `isRsvpAllowedWhenFull(currentStatus, nextStatus)` (`src/utils/game.js`). `playingCount` is the same
+    roster+guest "In" total the sidebar and summary already show (`gameStatusById[id].playingCount` /
+    `counts.playing`). No new season or per-game config — 8 is a squad rule, not a fixture attribute.
+  - **The one exception, and why it is not optional.** A hard lock at 8 would freeze the headcount: a player
+    who then can't make it could not record it, the match would keep looking full, and nobody could take the
+    freed spot. So a player who is already **In** may still switch to **Out** / **If needed** / clear their
+    answer; every other transition (a late In, Out→If needed, clearing an Out) is blocked. Dropping to 7
+    reopens the match for everyone. First come, first served — deliberately no waiting list.
+  - **Applies to admins and guests too.** Consistent with the other RSVP locks (preview season, played,
+    outside the next-3 window), none of which admins can override. Enforced in the writes
+    (`useFutsalData`: `saveAttendance`, `saveGuestAttendance`, and `addGuestPlayer` — a new guest is inserted
+    as `playing`, so it would push past 8), not only in the disabled buttons.
+  - **UI:** green `.full-box` on `SelectedGamePanel` ("Match full — 8 players In"), an `info-banner` +
+    per-option disabling in `AttendanceTab`, a "Full — 8 In, RSVP closed" line on the `MyNextGamesTiles`
+    tiles (shown only to someone *not* In, which is both who needs it and what keeps the reserved footer at
+    two lines so tiles stay aligned), and `playerStatusLabel` now returns **"Full — RSVP closed"** at ≥8
+    in the sidebar (`readinessClass` stays `success` — full is good news).
+  - **Two nudges had to follow the rule, or they'd chase people to press a disabled button:** the Friday
+    digest now prints *"Full — n In. RSVP is closed"* instead of listing non-responders (and had to start
+    fetching `guest_players`, which it never did, or a full fixture still looked short-handed), and the
+    admin **Nudge missing** button hides once full.
+  - **The guide follows automatically** — `GuideModal` reads `GAME_FULL_PLAYERS`, gained a first-come-
+    first-served paragraph, a fourth "Full — RSVP closed" step in the headcount scale (`.guide-scale--four`,
+    two columns under 560px), and the deadlines table now closes RSVP at *"end of match day — or as soon as
+    8 are In, whichever comes first"*.
+  - Verified: `lint` clean, `test` 240 passing (17 files), `build` clean. **Not eyeballed in a browser** (no
+    browser automation here) — worth a look at a fixture with 8 In.
+
 - **2026-08-25** — *Password reset, which the app never had.*
   - **There was no recovery path at all.** `useAuthSession` had `signIn` / `signUp` / `signOut` and
     nothing else, and `AuthModal` had no "forgot" link — a player who lost their password could only

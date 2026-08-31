@@ -1,6 +1,11 @@
 export const TEAM_NAME = "K. Caracrew SK";
 export const MIN_PLAYERS_WARNING = 6;
 export const JUST_RIGHT_PLAYERS = 7;
+/**
+ * "In" count at which a fixture is full: we have enough players, so RSVP closes
+ * for that match (see `isGameFull` / `isRsvpAllowedWhenFull` in `utils/game.js`).
+ */
+export const GAME_FULL_PLAYERS = 8;
 
 export const ATTENDANCE_OPTIONS = [
   { value: "playing", label: "In" },
@@ -23,20 +28,24 @@ export const GAME_FILTERS = [
   { id: "players_not_enough", label: "Not enough players" },
   { id: "players_just_enough", label: "Just enough players" },
   { id: "players_right", label: "Enough players" },
+  { id: "no_keeper", label: "No goalkeeper" },
 ];
 
 export const FILTER_CONFLICTS = {
   upcoming: ["played", "stats_missing"],
-  played: ["upcoming"],
+  played: ["upcoming", "no_keeper"],
   stats_missing: ["upcoming"],
   players_not_enough: ["players_just_enough", "players_right"],
   players_just_enough: ["players_not_enough", "players_right"],
   players_right: ["players_not_enough", "players_just_enough"],
+  // Only upcoming fixtures can be short a keeper, so "played" cannot hold with it.
+  no_keeper: ["played"],
 };
 
 /** Shown under “More filters” in the fixtures sidebar */
 export const GAME_EXTRA_FILTERS = [
   { id: "stats_missing", label: "Stats missing" },
+  { id: "no_keeper", label: "No goalkeeper" },
   { id: "players_not_enough", label: "Not enough players" },
   { id: "players_just_enough", label: "Just enough players" },
   { id: "players_right", label: "Enough players" },

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   ATTENDANCE_OPTIONS,
+  GAME_FULL_PLAYERS,
   JUST_RIGHT_PLAYERS,
   MIN_PLAYERS_WARNING,
   attendanceLabel,
@@ -88,6 +89,13 @@ export default function GuideModal({ onClose }) {
               next 3 fixtures are open, so the list stays short — you can change your answer up to and
               including match day.
             </p>
+            <p>
+              <strong>First come, first served:</strong> as soon as{" "}
+              <strong>{GAME_FULL_PLAYERS}</strong> people are In, that match is full and RSVP closes —
+              we have enough players, so nobody else can sign up. If you are In and can no longer make
+              it, switch yourself to <strong>{attendanceLabel("cant")}</strong>: that frees your spot
+              and reopens the match for the rest.
+            </p>
             <dl className="guide-opts">
               {ATTENDANCE_OPTIONS.map((o) => (
                 <div key={o.value} className="guide-opt">
@@ -103,7 +111,7 @@ export default function GuideModal({ onClose }) {
           <section className="guide-section">
             <h3>Read the headcount</h3>
             <p>Every upcoming fixture shows how many are In, so you can tell if your answer matters.</p>
-            <div className="guide-scale">
+            <div className="guide-scale guide-scale--four">
               <div className="s-low">
                 <b>≤ {MIN_PLAYERS_WARNING - 1}</b>
                 Not enough — we need you
@@ -113,12 +121,29 @@ export default function GuideModal({ onClose }) {
                 Just enough, no cover
               </div>
               <div className="s-ok">
-                <b>{JUST_RIGHT_PLAYERS}+</b>
+                <b>
+                  {JUST_RIGHT_PLAYERS}
+                  {GAME_FULL_PLAYERS - JUST_RIGHT_PLAYERS > 1
+                    ? `–${GAME_FULL_PLAYERS - 1}`
+                    : ""}
+                </b>
                 Sorted
+              </div>
+              <div className="s-full">
+                <b>{GAME_FULL_PLAYERS}</b>
+                Full — RSVP closed
               </div>
             </div>
             <p>
               A <strong>+2 if needed</strong> beside the count means two more are on standby.
+            </p>
+            <p>
+              <strong>Goalkeeper check.</strong> Eight outfield players and no goalie is still a
+              problem, so every upcoming fixture is checked separately: if none of our keepers has
+              said <strong>{attendanceLabel("playing")}</strong>, the match shows{" "}
+              <strong>No GK</strong> in the fixtures list and a red <em>No goalkeeper In</em> line on
+              the match itself. Keepers carry a <strong>GK</strong> badge in the attendance list —
+              Matthias sets who those are.
             </p>
           </section>
 
@@ -130,8 +155,14 @@ export default function GuideModal({ onClose }) {
               <strong>
                 {STATS_FREEZE_DAYS} day{STATS_FREEZE_DAYS === 1 ? "" : "s"}
               </strong>{" "}
-              after the match and nobody can change it afterwards, so do it while you remember.
-              Matthias enters the final score.
+              after the match, so do it while you remember. After that the tab is read-only for
+              players — ask Matthias, who can add or correct stats at any time and also enters the
+              final score.
+            </p>
+            <p>
+              The <strong>Keeper</strong> tick on that same tab records who actually went in goal
+              that night — which is often somebody who never keeps goal, so it is a separate thing
+              from the GK badge.
             </p>
             <p>
               <strong>MotM voting</strong> opens about 2 hours after kickoff — roughly the final
@@ -160,12 +191,18 @@ export default function GuideModal({ onClose }) {
                       {ATTENDANCE_OPTIONS.map((o) => attendanceLabel(o.value)).join(" / ")}
                     </th>
                     <td>When it becomes one of the next 3 fixtures</td>
-                    <td>End of match day</td>
+                    <td>
+                      End of match day — or as soon as {GAME_FULL_PLAYERS} are In, whichever comes
+                      first
+                    </td>
                   </tr>
                   <tr>
                     <th scope="row">Goals &amp; assists</th>
                     <td>Match day</td>
-                    <td>{STATS_FREEZE_DAYS} days after the match</td>
+                    <td>
+                      {STATS_FREEZE_DAYS} day{STATS_FREEZE_DAYS === 1 ? "" : "s"} after the match
+                      (admins: never)
+                    </td>
                   </tr>
                   <tr>
                     <th scope="row">Man of the Match</th>

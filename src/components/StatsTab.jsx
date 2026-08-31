@@ -30,7 +30,8 @@ export default function StatsTab({
   canManageGame,
   canVote,
 }) {
-  const statsWindowOpen = isStatsEditable(selectedGame);
+  // The freeze binds players only — an admin can always correct a scoreline.
+  const statsWindowOpen = isStatsEditable(selectedGame, { isAdmin: canManageGame });
   const frozen = isStatsFrozen(selectedGame);
   const lockedForFutureGame = !statsWindowOpen && !frozen;
   const daysUntilLock = getStatsLockDaysLeft(selectedGame);
@@ -117,14 +118,22 @@ export default function StatsTab({
       {lockedForFutureGame && (
         <div className="warning-box">Stats can only be entered for games played today or earlier.</div>
       )}
-      {frozen && (
+      {frozen && !canManageGame && (
         <div className="warning-box">
-          Stats are locked. This game was played more than {STATS_FREEZE_DAYS} days ago.
+          Stats are locked. This game was played more than {STATS_FREEZE_DAYS} day
+          {STATS_FREEZE_DAYS === 1 ? "" : "s"} ago — ask an admin to add or correct them.
+        </div>
+      )}
+      {frozen && canManageGame && (
+        <div className="info-banner">
+          Locked for players ({STATS_FREEZE_DAYS} day{STATS_FREEZE_DAYS === 1 ? "" : "s"} after the
+          match), but you are an admin — you can still enter or correct these stats.
         </div>
       )}
       {!frozen && daysUntilLock !== null && (
         <div className="info-banner">
-          Stats lock in {daysUntilLock} day{daysUntilLock === 1 ? "" : "s"}.
+          Stats lock in {daysUntilLock} day{daysUntilLock === 1 ? "" : "s"}
+          {canManageGame ? " for players — admins keep editing after that." : "."}
         </div>
       )}
       {(goalsOverTarget || assistsOverTarget) && (
@@ -238,6 +247,7 @@ export default function StatsTab({
               >
                 Played
               </th>
+              <th scope="col" title="Who actually kept goal in this match">Keeper</th>
               <th scope="col">Goals</th>
               <th scope="col">Assists</th>
             </tr>
@@ -263,6 +273,11 @@ export default function StatsTab({
                       {player.name}
                     </button>
                     {player.type !== "fixed" && <span className="guest-badge">Guest</span>}
+                    {player.isGoalkeeper && (
+                      <span className="keeper-badge" title="Goalkeeper on the roster">
+                        GK
+                      </span>
+                    )}
                   </td>
                   <td className="stats-played-cell">
                     {isAdHoc ? (
@@ -282,6 +297,25 @@ export default function StatsTab({
                         onChange={(e) => saveStat(player.id, "played", e.target.checked)}
                       />
                     )}
+                  </td>
+                  <td className="stats-played-cell">
+                    {/* Deliberately not tied to `player.isGoalkeeper`: whoever went in
+                        goal on the night gets marked here, keeper or not. */}
+                    <input
+                      type="checkbox"
+                      checked={!!row?.kept_goal}
+                      disabled={!rowEditable}
+                      title={
+                        !rowEditable
+                          ? disabledTitle
+                          : "This player kept goal in this match"
+                      }
+                      onChange={(e) =>
+                        isAdHoc
+                          ? saveGuestStat(player.id, "kept_goal", e.target.checked)
+                          : saveStat(player.id, "kept_goal", e.target.checked)
+                      }
+                    />
                   </td>
                   <td>
                     <input

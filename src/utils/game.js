@@ -1,6 +1,12 @@
+import { GAME_FULL_PLAYERS } from "../constants.js";
 import { isSeasonAttendanceLocked } from "../seasons.js";
 
-export const STATS_FREEZE_DAYS = 5;
+/**
+ * Days after a match in which players can still enter their own goals/assists.
+ * Short on purpose — people remember the match for about a day. **Admins are not
+ * bound by it** (see `isStatsEditable`), so a late correction is always possible.
+ */
+export const STATS_FREEZE_DAYS = 2;
 
 function localToday() {
   const d = new Date();
@@ -50,10 +56,17 @@ export function isStatsFrozen(game, nowMs = Date.now()) {
   return typeof days === "number" && days > STATS_FREEZE_DAYS;
 }
 
-export function isStatsEditable(game, nowMs = Date.now()) {
+/**
+ * Can stats be entered for this game right now?
+ *
+ * The freeze applies to players; **an admin is exempt** and can fix a scoreline
+ * whenever it comes up. Nobody — admin included — can enter stats for a game that
+ * has not been played yet: there is nothing to record.
+ */
+export function isStatsEditable(game, { nowMs = Date.now(), isAdmin = false } = {}) {
   if (!game?.game_date) return false;
   if (game.game_date > localToday()) return false;
-  return !isStatsFrozen(game, nowMs);
+  return isAdmin || !isStatsFrozen(game, nowMs);
 }
 
 /** Upcoming or today by calendar — ignores preview-season locks (see {@link isAttendanceEditable}). */
@@ -74,6 +87,25 @@ export function isAttendanceEditable(game, allGames = null) {
   if (isSeasonAttendanceLocked(game.season_slug)) return false;
   if (!isAttendanceEditableByCalendar(game)) return false;
   return allGames ? isAttendanceInUpcomingWindow(game, allGames, 3) : true;
+}
+
+/**
+ * A fixture is full once GAME_FULL_PLAYERS people are marked In — we already have
+ * enough players, so RSVP closes for that match. `playingCount` mixes roster and
+ * guests, same as the sidebar/summary counts.
+ */
+export function isGameFull(playingCount) {
+  return Number(playingCount || 0) >= GAME_FULL_PLAYERS;
+}
+
+/**
+ * The one RSVP change a full fixture still accepts: somebody who is In dropping
+ * out (Out, If needed, or clearing their answer). Without this the headcount
+ * would freeze at 8 and silently go stale when a player pulls out — and nobody
+ * could take the freed spot either, because the game would still look full.
+ */
+export function isRsvpAllowedWhenFull(currentStatus, nextStatus) {
+  return currentStatus === "playing" && nextStatus !== "playing";
 }
 
 /** Days remaining before stats freeze; null if not played yet or already frozen. */
@@ -107,5 +139,6 @@ export function playerStatusLabel(count, responses = null) {
   if (responses === 0) return "No responses yet";
   if (count <= 5) return "Not enough players";
   if (count === 6) return "Just enough players";
+  if (isGameFull(count)) return "Full — RSVP closed";
   return "Enough players";
 }

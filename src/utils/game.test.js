@@ -6,12 +6,15 @@ import {
   isAttendanceEditable,
   isAttendanceEditableByCalendar,
   isAttendanceInUpcomingWindow,
+  isGameFull,
   isPlayed,
+  isRsvpAllowedWhenFull,
   isStatsEditable,
   isStatsFrozen,
   nextUpcomingGamesByCalendar,
   STATS_FREEZE_DAYS,
 } from "./game.js";
+import { GAME_FULL_PLAYERS } from "../constants.js";
 
 /** Local YYYY-MM-DD offset from today — mirrors the util's own local-day logic. */
 function isoOffset(days) {
@@ -108,13 +111,21 @@ describe("stats freeze window", () => {
   });
 
   it("isStatsEditable: played and not yet frozen", () => {
-    expect(isStatsEditable(g(isoOffset(-3)))).toBe(true);
+    expect(isStatsEditable(g(isoOffset(-(STATS_FREEZE_DAYS - 1))))).toBe(true);
+    expect(isStatsEditable(g(isoOffset(0)))).toBe(true); // played today
     expect(isStatsEditable(g(isoOffset(1)))).toBe(false); // future game
     expect(isStatsEditable(g(isoOffset(-(STATS_FREEZE_DAYS + 5))))).toBe(false); // frozen
   });
 
+  it("isStatsEditable: an admin is exempt from the freeze but not from 'played'", () => {
+    const opts = { isAdmin: true };
+    expect(isStatsEditable(g(isoOffset(-(STATS_FREEZE_DAYS + 30))), opts)).toBe(true);
+    expect(isStatsEditable(g(isoOffset(1)), opts)).toBe(false); // nothing to record yet
+    expect(isStatsEditable(undefined, opts)).toBe(false);
+  });
+
   it("getStatsLockDaysLeft counts down, null once frozen or in the future", () => {
-    expect(getStatsLockDaysLeft(g(isoOffset(-3)))).toBe(STATS_FREEZE_DAYS - 3);
+    expect(getStatsLockDaysLeft(g(isoOffset(-1)))).toBe(STATS_FREEZE_DAYS - 1);
     expect(getStatsLockDaysLeft(g(isoOffset(1)))).toBeNull();
     expect(getStatsLockDaysLeft(g(isoOffset(-(STATS_FREEZE_DAYS + 2))))).toBeNull();
   });
@@ -125,9 +136,11 @@ describe("readiness (count vs. nobody-has-answered)", () => {
     expect(playerStatusLabel(3, 8)).toBe("Not enough players");
     expect(playerStatusLabel(6, 9)).toBe("Just enough players");
     expect(playerStatusLabel(7, 9)).toBe("Enough players");
+    expect(playerStatusLabel(GAME_FULL_PLAYERS, 9)).toBe("Full — RSVP closed");
     expect(readinessClass(3, 8)).toBe("game-card danger");
     expect(readinessClass(6, 9)).toBe("game-card warning");
     expect(readinessClass(7, 9)).toBe("game-card success");
+    expect(readinessClass(GAME_FULL_PLAYERS, 9)).toBe("game-card success"); // full is still "good"
   });
 
   it("reports 'no responses yet' instead of a red 'not enough' when nobody has answered", () => {
@@ -145,5 +158,34 @@ describe("readiness (count vs. nobody-has-answered)", () => {
   it("falls back to count-only behaviour when responses are not supplied", () => {
     expect(playerStatusLabel(0)).toBe("Not enough players");
     expect(readinessClass(0)).toBe("game-card danger");
+  });
+});
+
+describe("full game (enough players — RSVP closes)", () => {
+  it("is full at GAME_FULL_PLAYERS In, not before", () => {
+    expect(isGameFull(GAME_FULL_PLAYERS - 1)).toBe(false);
+    expect(isGameFull(GAME_FULL_PLAYERS)).toBe(true);
+    expect(isGameFull(GAME_FULL_PLAYERS + 1)).toBe(true);
+  });
+
+  it("treats a missing count as not full", () => {
+    expect(isGameFull(undefined)).toBe(false);
+    expect(isGameFull(null)).toBe(false);
+    expect(isGameFull(0)).toBe(false);
+  });
+
+  it("lets an In player drop out, so a freed spot reopens the match", () => {
+    expect(isRsvpAllowedWhenFull("playing", "cant")).toBe(true);
+    expect(isRsvpAllowedWhenFull("playing", "if_needed")).toBe(true);
+    expect(isRsvpAllowedWhenFull("playing", null)).toBe(true); // Clear RSVP
+  });
+
+  it("blocks everything that does not free a spot", () => {
+    expect(isRsvpAllowedWhenFull("playing", "playing")).toBe(false); // no-op re-click
+    expect(isRsvpAllowedWhenFull(null, "playing")).toBe(false); // late sign-up
+    expect(isRsvpAllowedWhenFull("cant", "playing")).toBe(false);
+    expect(isRsvpAllowedWhenFull("if_needed", "playing")).toBe(false);
+    expect(isRsvpAllowedWhenFull("cant", "if_needed")).toBe(false); // pointless churn while full
+    expect(isRsvpAllowedWhenFull("cant", null)).toBe(false);
   });
 });

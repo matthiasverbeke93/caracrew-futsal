@@ -1,6 +1,11 @@
 import { useMemo } from "react";
-import { ATTENDANCE_OPTIONS, attendanceLabel } from "../constants";
-import { isAttendanceEditable, nextUpcomingGamesByCalendar } from "../utils/game";
+import { ATTENDANCE_OPTIONS, GAME_FULL_PLAYERS, attendanceLabel } from "../constants";
+import {
+  isAttendanceEditable,
+  isGameFull,
+  isRsvpAllowedWhenFull,
+  nextUpcomingGamesByCalendar,
+} from "../utils/game";
 import { cleanOpponentName } from "../utils/opponent";
 import { formatFixtureTileLine } from "../utils/formatMatch";
 
@@ -10,6 +15,7 @@ export default function MyNextGamesTiles({
   games,
   attendance,
   currentPlayer,
+  gameStatusById,
   selectedGameId,
   onJumpToGame,
   onMarkAttendance,
@@ -43,6 +49,7 @@ export default function MyNextGamesTiles({
           eyebrow={TILE_EYEBROWS[index] ?? `Match ${index + 1}`}
           myStatus={statusByGameId.get(game.id) ?? null}
           editable={isAttendanceEditable(game, games)}
+          gameFull={isGameFull(gameStatusById?.[game.id]?.playingCount)}
           showOpenButton={selectedGameId !== game.id}
           onJumpToGame={onJumpToGame}
           onMarkAttendance={onMarkAttendance}
@@ -57,6 +64,7 @@ function NextGameTile({
   eyebrow,
   myStatus,
   editable,
+  gameFull,
   showOpenButton,
   onJumpToGame,
   onMarkAttendance,
@@ -94,28 +102,38 @@ function NextGameTile({
       </div>
 
       <div className="my-next-game-actions" role="group" aria-label="Quick attendance">
-        {ATTENDANCE_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            className={`my-next-game-btn status-${opt.value} ${
-              myStatus === opt.value ? "active" : ""
-            }`}
-            onClick={() => onMarkAttendance(game.id, opt.value)}
-            disabled={!editable}
-            title={!editable ? "RSVP not editable for this fixture" : undefined}
-            aria-pressed={myStatus === opt.value}
-            aria-label={opt.label}
-          >
-            {opt.label}
-          </button>
-        ))}
+        {ATTENDANCE_OPTIONS.map((opt) => {
+          // A full fixture only accepts an In player dropping out.
+          const allowed = !gameFull || isRsvpAllowedWhenFull(myStatus, opt.value);
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              className={`my-next-game-btn status-${opt.value} ${
+                myStatus === opt.value ? "active" : ""
+              }`}
+              onClick={() => onMarkAttendance(game.id, opt.value)}
+              disabled={!editable || !allowed}
+              title={
+                !editable
+                  ? "RSVP not editable for this fixture"
+                  : !allowed
+                    ? `Match full — ${GAME_FULL_PLAYERS} players are already In`
+                    : undefined
+              }
+              aria-pressed={myStatus === opt.value}
+              aria-label={opt.label}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Reserved footer keeps the RSVP buttons above it aligned tile-to-tile,
           whether or not a tile has a Clear/Marked line (see .my-next-game-footer). */}
       <div className="my-next-game-footer">
-        {editable && myStatus ? (
+        {editable && myStatus && (!gameFull || myStatus === "playing") ? (
           <button
             type="button"
             className="my-next-game-clear"
@@ -128,6 +146,14 @@ function NextGameTile({
         {myStatus ? (
           <p className="my-next-game-status">
             Marked <strong>{attendanceLabel(myStatus)}</strong>.
+          </p>
+        ) : null}
+
+        {/* Only the people it actually blocks need telling — and keeping it off the
+            "I'm In" tiles keeps the footer at two lines, so tiles stay aligned. */}
+        {gameFull && myStatus !== "playing" ? (
+          <p className="my-next-game-full">
+            Full — {GAME_FULL_PLAYERS} In, RSVP closed.
           </p>
         ) : null}
       </div>

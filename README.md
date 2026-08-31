@@ -53,7 +53,7 @@ Friday schedule (GitHub Actions) runs `scripts/send-weekly-digest.mjs`: upcoming
 
 **How it works** in the header opens `GuideModal` — the player-facing guide (RSVP options, how to read the headcount, the two editing windows, a deadlines table, the calendar feed). It has its own link, `?guide=1`, so it can be shared with people who have no account: <https://caracrew.org/?guide=1>. The modal shows that link with a copy button.
 
-Every number in it is **read from the constant that enforces it** (`STATS_FREEZE_DAYS`, `MOTM_VOTING_DAYS`, `MIN_PLAYERS_WARNING` / `JUST_RIGHT_PLAYERS`, `ATTENDANCE_OPTIONS`) and the feed URL from `window.location.origin`, so changing a rule updates the guide with it. **Do not hardcode a number there.**
+Every number in it is **read from the constant that enforces it** (`STATS_FREEZE_DAYS`, `MOTM_VOTING_DAYS`, `MIN_PLAYERS_WARNING` / `JUST_RIGHT_PLAYERS` / `GAME_FULL_PLAYERS`, `ATTENDANCE_OPTIONS`) and the feed URL from `window.location.origin`, so changing a rule updates the guide with it. **Do not hardcode a number there.**
 
 ## Bug reports
 
@@ -111,8 +111,36 @@ scrolling past in the log.
 
 ## Editing windows
 - **Attendance** is editable for the next 3 upcoming games only; later future fixtures stay locked until they enter that window.
-- **Stats** (goals/assists) lock 5 days after the game (`STATS_FREEZE_DAYS` in `src/utils/game.js`). The freeze is absolute — admins included.
+- **A full match closes RSVP.** Once `GAME_FULL_PLAYERS` (8, `src/constants.js`) people are marked **In**, that
+  fixture has enough players and RSVP locks — for admins and guests too (`isGameFull` in `src/utils/game.js`).
+  The single exception is a player who is already In switching to **Out** / **If needed** / clearing their answer
+  (`isRsvpAllowedWhenFull`): that frees the spot, drops the count below 8 and reopens the match for everybody.
+  Without that exception the headcount would freeze at 8 and go stale as soon as somebody pulled out. Enforced in
+  `useFutsalData` (`saveAttendance`, `saveGuestAttendance`, `addGuestPlayer`) as well as in the UI, and the
+  Friday digest reports "Full — n In" instead of chasing the people who have not answered.
+- **Stats** (goals/assists) lock **2 days** after the game (`STATS_FREEZE_DAYS` in `src/utils/game.js`) — people
+  remember a match for about a day. The freeze binds **players only**: `isStatsEditable(game, { isAdmin })`
+  exempts admins, so a late correction is always possible. Nobody, admin included, can enter stats for a game
+  that has not been played.
 - **MOTM voting** opens at estimated full-time (kickoff + 2h) and closes 5 days later (`MOTM_VOTING_DAYS` in `src/utils/motm.js`). A MotM win only appears in the season stats once voting has closed, so the winner now shows up 5 days after the match rather than the next day.
+
+## Goalkeepers
+
+Two separate things, deliberately:
+
+- **`players.is_goalkeeper`** — "this player keeps goal". Set per player in the **admin panel** (`→ Keeper`,
+  which shows a `Keeper` pill and a `GK` badge in the attendance/stats lists). It drives the **per-fixture
+  check**: `gameStatusById[id].keeperIn` / `.keeperMissing` is true when a flagged keeper has actually
+  answered **In** for that game (a keeper added as a guest counts, via `guest_players.source_player_id`).
+  Surfaces as a `No GK` chip in the fixtures list, a **No goalkeeper** filter, a red line on the match panel,
+  and a line in the Friday digest. When *nobody* is flagged the check stays silent (`keeperUnknown`) — that is
+  a missing setting, not a missing goalie.
+- **`player_stats.kept_goal` / `guest_players.kept_goal`** — "this player went in goal in *this* match".
+  A tick in the **Keeper** column of the Stats tab, post-game, and deliberately **not** tied to the roster
+  flag: it is regularly somebody who never keeps goal. Shown as *"In goal: …"* on a played fixture.
+
+Both live behind `supabase/player_goalkeeper.sql` (which also swaps `admin_update_player` for a 4-argument
+version carrying `goalkeeper_arg`). The pure logic is `src/utils/goalkeeper.js` (`getGoalkeeperSummary`).
 
 ## Accounts and permissions
 
@@ -125,7 +153,10 @@ Email + password auth via Supabase. Reads stay public; writes are scoped:
 | Edit own goals / assists                | Signed-in, linked player (own row)     |
 | Vote MOTM                               | Any signed-in user (one per game)      |
 | Set final score                         | Admin                                  |
-| Add / remove ad-hoc guest               | Admin                                  |
+| Add / remove ad-hoc guest               | Admin (not while the match is full)    |
+| Edit stats after the freeze              | Admin                                  |
+| Mark a player as goalkeeper (roster)     | Admin                                  |
+| Mark who kept goal in a match            | Signed-in linked player (own row), admin |
 | Override anyone's attendance or stats   | Admin                                  |
 
 ### Forgot password

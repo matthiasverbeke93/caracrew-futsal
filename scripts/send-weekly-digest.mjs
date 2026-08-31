@@ -26,7 +26,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { DEFAULT_SEASON_SLUG } from "../src/seasons.js";
 import { TEAM_NAME } from "../src/constants.js";
-import { nextUpcomingGamesByCalendar } from "../src/utils/game.js";
+import { isGameFull, nextUpcomingGamesByCalendar } from "../src/utils/game.js";
 import { isMotmVotingOpen, getMotmVotingEnd } from "../src/utils/motm.js";
 import { formatMatchCalendarDateTime } from "../src/utils/formatMatch.js";
 import { cleanOpponentName } from "../src/utils/opponent.js";
@@ -229,6 +229,18 @@ async function main() {
     attendanceScoped = att || [];
   }
 
+  // Guests count toward the In headcount in the app, so the digest needs them too —
+  // otherwise a full fixture still looks short-handed here.
+  let guestsScoped = [];
+  if (gameIds.length > 0) {
+    const { data: gp, error: gpErr } = await supabase
+      .from("guest_players")
+      .select("*")
+      .in("game_id", gameIds);
+    if (gpErr) throw gpErr;
+    guestsScoped = gp || [];
+  }
+
   let motmScoped = [];
   if (gameIds.length > 0) {
     const { data: mv, error: mErr } = await supabase
@@ -257,10 +269,42 @@ async function main() {
       const row = attendanceScoped.find((a) => a.game_id === nextGame.id && a.player_id === pl.id);
       if (!row) missing.push(pl.name);
     }
+    // "Do we have a goalie?" — the same check the app makes: a roster keeper who
+    // has actually said In (a keeper added as a guest counts via source_player_id).
+    const keeperIds = new Set(
+      (players || []).filter((p) => p.is_goalkeeper).map((p) => p.id)
+    );
+    const keeperIn =
+      keeperIds.size > 0 &&
+      (attendanceScoped.some(
+        (a) => a.game_id === nextGame.id && a.status === "playing" && keeperIds.has(a.player_id)
+      ) ||
+        guestsScoped.some(
+          (g) =>
+            g.game_id === nextGame.id &&
+            g.status === "playing" &&
+            keeperIds.has(g.source_player_id)
+        ));
+    const keeperWarning =
+      keeperIds.size > 0 && !keeperIn
+        ? '<p style="margin:10px 0 0;color:#b91c1c;font-size:14px;"><strong>No goalkeeper has said In for this match.</strong></p>'
+        : "";
+
+    const playingCount =
+      attendanceScoped.filter((a) => a.game_id === nextGame.id && a.status === "playing").length +
+      guestsScoped.filter((g) => g.game_id === nextGame.id && g.status === "playing").length;
+    const full = isGameFull(playingCount);
     const opp = escapeHtml(cleanOpponentName(nextGame.opponent));
     const when = escapeHtml(fmtWhen(nextGame));
     const loc = escapeHtml(nextGame.location || "Venue TBD");
-    if (missing.length) {
+    if (full) {
+      // RSVP is closed for this match, so chasing the people without an answer
+      // would be asking them to press a button that is disabled.
+      rsvpBody = `
+        <p style="margin:0;"><strong>vs ${opp}</strong><br/>${when} · ${loc}</p>
+        <p style="margin:10px 0 0;color:#166534;font-size:14px;"><strong>Full — ${playingCount} In.</strong> RSVP is closed for this match; no answer needed.</p>
+        ${keeperWarning}`;
+    } else if (missing.length) {
       rsvpBody = `
         <p style="margin:0 0 8px;"><strong>vs ${opp}</strong><br/>${when} · ${loc}</p>
         <p style="margin:0 0 8px;color:#b45309;font-size:14px;"><strong>${
@@ -268,11 +312,13 @@ async function main() {
         }</strong> fixed roster player(s) still need to RSVP:</p>
         <ul style="margin:0;padding-left:20px;">
           ${missing.map((n) => `<li>${escapeHtml(n)}</li>`).join("")}
-        </ul>`;
+        </ul>
+        ${keeperWarning}`;
     } else {
       rsvpBody = `
         <p style="margin:0;"><strong>vs ${opp}</strong><br/>${when} · ${loc}</p>
-        <p style="margin:10px 0 0;color:#166534;font-size:14px;">Everyone on the fixed roster has an RSVP saved for this match.</p>`;
+        <p style="margin:10px 0 0;color:#166534;font-size:14px;">Everyone on the fixed roster has an RSVP saved for this match.</p>
+        ${keeperWarning}`;
     }
   } else {
     rsvpBody = '<p style="margin:0;">No upcoming fixtures left in this season block.</p>';

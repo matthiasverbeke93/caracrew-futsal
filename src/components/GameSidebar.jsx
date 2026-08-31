@@ -540,6 +540,12 @@ export default function GameSidebar({
                     {showSidebarMatchStats && !played && (
                       <span>{playerStatusLabel(playing, responses)}</span>
                     )}
+                    {/* Enough bodies is not the same as having a goalie. */}
+                    {showSidebarMatchStats && !played && responses > 0 && status?.keeperMissing && (
+                      <span className="no-keeper-chip" title="No goalkeeper has said In">
+                        No GK
+                      </span>
+                    )}
                     {showSidebarMatchStats && hasScore && (
                       <span className="result-chip-mini" title="Caracrew – opponent">
                         {game.home_score}–{game.away_score}

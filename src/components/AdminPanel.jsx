@@ -64,7 +64,7 @@ export default function AdminPanel({ open, onClose, onChanged }) {
       supabase.rpc("admin_list_auth_users"),
       supabase
         .from("players")
-        .select("id, name, fixed, is_admin, auth_user_id, archived_at")
+        .select("id, name, fixed, is_admin, is_goalkeeper, auth_user_id, archived_at")
         .order("name", { ascending: true }),
       supabase
         .from("bug_reports")
@@ -221,6 +221,17 @@ export default function AdminPanel({ open, onClose, onChanged }) {
     );
   }
 
+  async function toggleGoalkeeper(player) {
+    await run(`keeper-${player.id}`, () =>
+      supabase.rpc("admin_update_player", {
+        player_id_arg: player.id,
+        name_arg: null,
+        fixed_arg: null,
+        goalkeeper_arg: !player.is_goalkeeper,
+      })
+    );
+  }
+
   function startRename(player) {
     setEditingId(player.id);
     setEditingName(player.name);
@@ -355,6 +366,7 @@ export default function AdminPanel({ open, onClose, onChanged }) {
               <strong>{p.name}</strong>
             )}
             {p.is_admin && <span className="admin-pill role-admin">Admin</span>}
+            {p.is_goalkeeper && <span className="admin-pill role-keeper">Keeper</span>}
             {!p.fixed && <span className="admin-pill role-guest">Guest</span>}
             {isArchived && <span className="admin-pill role-archived">Archived</span>}
           </div>
@@ -400,6 +412,19 @@ export default function AdminPanel({ open, onClose, onChanged }) {
                 title={p.fixed ? "Mark as guest" : "Promote to fixed roster"}
               >
                 {p.fixed ? "→ Guest" : "→ Fixed"}
+              </button>
+              <button
+                type="button"
+                className="admin-btn"
+                disabled={busyKey === `keeper-${p.id}`}
+                onClick={() => toggleGoalkeeper(p)}
+                title={
+                  p.is_goalkeeper
+                    ? "This player is a goalkeeper — unmark"
+                    : "Mark as goalkeeper: fixtures warn when no keeper is In"
+                }
+              >
+                {p.is_goalkeeper ? "Not keeper" : "→ Keeper"}
               </button>
               <button
                 type="button"

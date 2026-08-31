@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { isSeasonVotingLocked } from "../seasons.js";
-import { isAttendanceEditable, isPlayed, isStatsEditable } from "../utils/game";
+import {
+  isAttendanceEditable,
+  isGameFull,
+  isPlayed,
+  isRsvpAllowedWhenFull,
+  isStatsEditable,
+} from "../utils/game";
 import { useToast } from "./useToast.jsx";
 
 /** Shown when an optimistic write fails and we roll the UI back. */
@@ -178,6 +184,10 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
           fixed: !isGuest,
           isGuest,
           archived: !!player.archived_at,
+          // Normalised here so the UI never touches the raw column, and so the app
+          // still works before `supabase/player_goalkeeper.sql` has been run
+          // (missing column → undefined → false).
+          isGoalkeeper: !!player.is_goalkeeper,
         };
       }),
     [visiblePlayers]
@@ -288,6 +298,11 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
 
   const gameStatusById = useMemo(() => {
     const statusMap = {};
+    // Roster keepers, so every fixture can be checked for a goalie — not just the
+    // selected one (the sidebar and the "No goalkeeper" filter need all of them).
+    const keeperIds = new Set(
+      playersWithRole.filter((p) => p.isGoalkeeper).map((p) => p.id)
+    );
 
     for (const game of games) {
       const gameAttendanceRows = attendance.filter((row) => row.game_id === game.id);
@@ -307,6 +322,18 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
           !hasScoreTarget ||
           actualGoals < scoreTarget);
 
+      // A keeper only counts once they are actually In. `keeperUnknown` keeps the
+      // check quiet when nobody is flagged as a keeper at all — that is a missing
+      // setting, not a missing goalie.
+      const keeperIn =
+        keeperIds.size > 0 &&
+        (gameAttendanceRows.some(
+          (row) => row.status === "playing" && keeperIds.has(row.player_id)
+        ) ||
+          gameGuestRows.some(
+            (row) => row.status === "playing" && keeperIds.has(row.source_player_id)
+          ));
+
       let playerReadiness = "players_right";
       if (playingCount <= 5) playerReadiness = "players_not_enough";
       else if (playingCount === 6) playerReadiness = "players_just_enough";
@@ -317,6 +344,9 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
         statsMissing,
         playerReadiness,
         playingCount,
+        keeperUnknown: keeperIds.size === 0,
+        keeperIn,
+        keeperMissing: keeperIds.size > 0 && !keeperIn,
         actualGoals,
         actualAssists,
         expectedGoals: scoreTarget,
@@ -325,7 +355,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     }
 
     return statusMap;
-  }, [attendance, games, guestPlayersVisible, stats]);
+  }, [attendance, games, guestPlayersVisible, playersWithRole, stats]);
 
   const filteredGames = useMemo(() => {
     if (!gameFilters.length) return games;
@@ -341,6 +371,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
         if (filter === "players_not_enough") return status.playerReadiness === "players_not_enough";
         if (filter === "players_just_enough") return status.playerReadiness === "players_just_enough";
         if (filter === "players_right") return status.playerReadiness === "players_right";
+        if (filter === "no_keeper") return !status.played && status.keeperMissing;
         return true;
       });
     });
@@ -386,6 +417,16 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     const game = gameIdArg ? games.find((g) => g.id === gameIdArg) : selectedGame;
     if (!isAttendanceEditable(game, games)) return;
     if (!canEditAttendanceFor(playerId)) return;
+
+    // Enough players already: a full fixture only accepts an In player dropping out.
+    const currentStatus =
+      attendance.find((a) => a.game_id === gameId && a.player_id === playerId)?.status ?? null;
+    if (
+      isGameFull(gameStatusById[gameId]?.playingCount) &&
+      !isRsvpAllowedWhenFull(currentStatus, status ?? null)
+    ) {
+      return;
+    }
 
     if (status === null || status === undefined) {
       const snapshot = attendance;
@@ -435,6 +476,13 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
   async function saveGuestAttendance(playerId, status) {
     if (!isAttendanceEditable(selectedGame, games)) return;
     if (!isAdmin) return;
+    const currentGuestStatus = selectedGameGuests.find((g) => g.id === playerId)?.status ?? null;
+    if (
+      isGameFull(gameStatusById[selectedGameId]?.playingCount) &&
+      !isRsvpAllowedWhenFull(currentGuestStatus, status ?? null)
+    ) {
+      return;
+    }
     const updated_at = new Date().toISOString();
     const snapshot = guestPlayers;
     setGuestPlayers((prev) =>
@@ -456,9 +504,9 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     const gameId = selectedGameId;
     if (!gameId) return;
     // Mirror saveAttendance: check the time window as well as ownership. StatsTab
-    // already disables the inputs outside it (for admins too — the freeze is
-    // absolute), so this only closes the gap between the UI and the write.
-    if (!isStatsEditable(selectedGame)) return;
+    // already disables the inputs outside it, so this only closes the gap between
+    // the UI and the write. Admins are exempt from the freeze, not from "played".
+    if (!isStatsEditable(selectedGame, { isAdmin })) return;
     if (!canEditAttendanceFor(playerId)) return;
     const existing = gameStats.find((s) => s.player_id === playerId);
     const goals = field === "goals" ? Number(value || 0) : existing?.goals ?? 0;
@@ -469,11 +517,23 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
         : existing
           ? existing.played !== false
           : true;
+    // Who actually went in goal — unrelated to `players.is_goalkeeper`, which is
+    // about who *is* a keeper (see utils/goalkeeper.js).
+    const kept_goal =
+      field === "kept_goal" ? Boolean(value) : Boolean(existing?.kept_goal);
     const updated_at = new Date().toISOString();
     const snapshot = stats;
     setStats((prev) => {
       const idx = prev.findIndex((s) => s.game_id === gameId && s.player_id === playerId);
-      const row = { game_id: gameId, player_id: playerId, goals, assists, played, updated_at };
+      const row = {
+        game_id: gameId,
+        player_id: playerId,
+        goals,
+        assists,
+        played,
+        kept_goal,
+        updated_at,
+      };
       if (idx >= 0) {
         const next = [...prev];
         next[idx] = row;
@@ -487,6 +547,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       goals,
       assists,
       played,
+      kept_goal,
       updated_at,
     });
     if (error) {
@@ -502,14 +563,16 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     const existing = selectedGameGuests.find((g) => g.id === playerId);
     const goals = field === "goals" ? Number(value || 0) : existing?.goals || 0;
     const assists = field === "assists" ? Number(value || 0) : existing?.assists || 0;
+    const kept_goal =
+      field === "kept_goal" ? Boolean(value) : Boolean(existing?.kept_goal);
     const updated_at = new Date().toISOString();
     const snapshot = guestPlayers;
     setGuestPlayers((prev) =>
-      prev.map((g) => (g.id === playerId ? { ...g, goals, assists, updated_at } : g))
+      prev.map((g) => (g.id === playerId ? { ...g, goals, assists, kept_goal, updated_at } : g))
     );
     const { error } = await supabase
       .from("guest_players")
-      .update({ goals, assists, updated_at })
+      .update({ goals, assists, kept_goal, updated_at })
       .eq("id", playerId);
     if (error) {
       console.error(error);
@@ -525,6 +588,9 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     if (!firstName || !lastName || !selectedGameId) return;
     if (!isAttendanceEditable(selectedGame, games)) return;
     if (!isAdmin) return;
+    // A new guest is inserted as "playing", so adding one to a full fixture would
+    // push it past GAME_FULL_PLAYERS.
+    if (isGameFull(gameStatusById[selectedGameId]?.playingCount)) return;
     const fullName = `${firstName} ${lastName}`.replace(/\s+/g, " ").trim();
     const existingExternal = playersWithRole.find(
       (entry) => entry.name.toLowerCase().trim() === fullName.toLowerCase()

@@ -1,8 +1,10 @@
-import { ATTENDANCE_OPTIONS } from "../constants";
+import { ATTENDANCE_OPTIONS, GAME_FULL_PLAYERS } from "../constants";
 import {
   isAttendanceEditable,
   isAttendanceEditableByCalendar,
   isAttendanceInUpcomingWindow,
+  isGameFull,
+  isRsvpAllowedWhenFull,
 } from "../utils/game";
 import { isSeasonAttendanceLocked } from "../seasons";
 import { groupPlayersByAttendance, hasAnyAttendanceVote } from "../utils/attendanceGroups";
@@ -22,6 +24,7 @@ export default function AttendanceTab({
   onOpenPlayer,
   selectedGame,
   allGames,
+  playingCount,
   canEditAttendanceFor,
   canManageGame,
   isSignedIn,
@@ -35,6 +38,14 @@ export default function AttendanceTab({
     !lockedBecausePlayed &&
     !isAttendanceInUpcomingWindow(selectedGame, allGames, 3);
   const attendanceOpen = isAttendanceEditable(selectedGame, allGames);
+  // Enough players already: the fixture is full and RSVP closes, except for an In
+  // player dropping out (which frees the spot and reopens the match).
+  const gameFull = attendanceOpen && isGameFull(playingCount);
+
+  /** Is this specific answer still allowed, given the full-game lock? */
+  function optionAllowed(current, next) {
+    return !gameFull || isRsvpAllowedWhenFull(current, next);
+  }
 
   function statusOf(player) {
     return (
@@ -57,6 +68,13 @@ export default function AttendanceTab({
     return `Only ${player.name} or an admin can edit this`;
   }
 
+  function fullTitle(current, next) {
+    if (optionAllowed(current, next)) return undefined;
+    return current === "playing"
+      ? `Already ${GAME_FULL_PLAYERS} players In — you can only switch to Out or If needed`
+      : `Match full — ${GAME_FULL_PLAYERS} players are already In`;
+  }
+
   function renderPlayerCard(player) {
     const current = statusOf(player);
     const isAdHoc = player.type === "ad_hoc_guest";
@@ -77,6 +95,11 @@ export default function AttendanceTab({
             <span className={player.type === "fixed" ? "fixed-badge" : "guest-badge"}>
               {player.type === "fixed" ? "Fixed" : "Guest"}
             </span>
+            {player.isGoalkeeper && (
+              <span className="keeper-badge" title="Goalkeeper">
+                GK
+              </span>
+            )}
           </strong>
           {isAdHoc && (
             <button
@@ -90,25 +113,30 @@ export default function AttendanceTab({
           )}
         </div>
 
-        {ATTENDANCE_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            className={`attendance-opt attendance-opt--${option.value}${
-              current === option.value ? " active" : ""
-            }`}
-            disabled={!rowEditable}
-            title={!rowEditable ? disabledTitle(player) : undefined}
-            onClick={() =>
-              isAdHoc
-                ? saveGuestAttendance(player.id, option.value)
-                : saveAttendance(player.id, option.value)
-            }
-          >
-            {option.label}
-          </button>
-        ))}
-        {!isAdHoc && rowEditable && current && (
+        {ATTENDANCE_OPTIONS.map((option) => {
+          const allowed = optionAllowed(current, option.value);
+          return (
+            <button
+              key={option.value}
+              type="button"
+              className={`attendance-opt attendance-opt--${option.value}${
+                current === option.value ? " active" : ""
+              }`}
+              disabled={!rowEditable || !allowed}
+              title={
+                !rowEditable ? disabledTitle(player) : fullTitle(current, option.value)
+              }
+              onClick={() =>
+                isAdHoc
+                  ? saveGuestAttendance(player.id, option.value)
+                  : saveAttendance(player.id, option.value)
+              }
+            >
+              {option.label}
+            </button>
+          );
+        })}
+        {!isAdHoc && rowEditable && current && optionAllowed(current, null) && (
           <button
             type="button"
             className="attendance-clear-rsvp"
@@ -140,6 +168,14 @@ export default function AttendanceTab({
       {lockedBecauseOutsideWindow && (
         <div className="warning-box">
           RSVP is locked for this match. Attendance voting opens for the next 3 upcoming games only.
+        </div>
+      )}
+
+      {gameFull && (
+        <div className="info-banner">
+          <strong>Match full.</strong> {GAME_FULL_PLAYERS} players are In, so RSVP is closed for this
+          match — we have enough. If you are In and can no longer make it, switch yourself to{" "}
+          <strong>Out</strong> to free the spot and reopen voting.
         </div>
       )}
 
@@ -187,7 +223,7 @@ export default function AttendanceTab({
               if (e.key === "Enter") addGuestPlayer();
             }}
             placeholder="First name"
-            disabled={!canManageGame || !attendanceOpen}
+            disabled={!canManageGame || !attendanceOpen || gameFull}
           />
           <input
             value={newGuestLastName}
@@ -196,12 +232,18 @@ export default function AttendanceTab({
               if (e.key === "Enter") addGuestPlayer();
             }}
             placeholder="Last name"
-            disabled={!canManageGame || !attendanceOpen}
+            disabled={!canManageGame || !attendanceOpen || gameFull}
           />
           <button
             onClick={addGuestPlayer}
-            disabled={!canManageGame || !attendanceOpen}
-            title={!canManageGame ? "Admin only" : ""}
+            disabled={!canManageGame || !attendanceOpen || gameFull}
+            title={
+              !canManageGame
+                ? "Admin only"
+                : gameFull
+                  ? `Match full — ${GAME_FULL_PLAYERS} players are already In`
+                  : ""
+            }
           >
             +
           </button>

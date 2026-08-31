@@ -1,16 +1,71 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { MIN_PLAYERS_WARNING, TEAM_NAME } from "../constants";
 import { getDifficulty } from "../utils/difficulty";
-import { isPlayed } from "../utils/game";
+import { isGameFull, isPlayed } from "../utils/game";
 import {
   buildCurrentPageGameShareUrl,
   buildGameWhatsAppShareUrl,
   buildWhatsAppNudgeUrl,
   formatFixtureShareText,
 } from "../utils/formatMatch";
+import { goalkeeperNames } from "../utils/goalkeeper";
 import { getHeadToHeadSummary } from "../utils/headToHead";
 import { focusInitialMenuItem, handleMenuArrowKeys } from "../utils/menuNav";
 import { cleanOpponentName } from "../utils/opponent";
+
+/**
+ * The per-fixture goalkeeper check.
+ *
+ * Two different questions, so two different lines: *before* the match it is "is a
+ * keeper In?" (roster flag × RSVP), and *after* it is "who actually kept goal?"
+ * (the per-game flag, which is often somebody who is not a keeper at all).
+ */
+function renderKeeperLine({ keeperSummary, played, anyResponses, canManageGame }) {
+  if (!keeperSummary) return null;
+  const { anyKeeperKnown, hasKeeper, hasRecordedKeeper, recorded, playing, ifNeeded } =
+    keeperSummary;
+
+  if (played) {
+    if (hasRecordedKeeper) {
+      return (
+        <div className="keeper-line keeper-line--info">
+          🧤 In goal: {goalkeeperNames(recorded)}
+        </div>
+      );
+    }
+    // Only the person who can fix it gets nagged about it.
+    return canManageGame ? (
+      <div className="keeper-line keeper-line--info">
+        🧤 No keeper recorded for this match.
+        <span className="keeper-line-detail">Tick “Keeper” on the Stats tab.</span>
+      </div>
+    ) : null;
+  }
+
+  // Nothing to check against until somebody is flagged as a keeper in the admin panel.
+  if (!anyKeeperKnown) return null;
+  // …and before the first RSVP "no keeper In" is not news, it is just an empty match.
+  if (!anyResponses) return null;
+
+  if (hasKeeper) {
+    return (
+      <div className="keeper-line keeper-line--ok">
+        🧤 Keeper In: {goalkeeperNames(playing)}
+      </div>
+    );
+  }
+
+  return (
+    <div className="keeper-line keeper-line--warn">
+      🧤 No goalkeeper In.
+      {ifNeeded.length > 0 && (
+        <span className="keeper-line-detail">
+          On standby: {goalkeeperNames(ifNeeded)}
+        </span>
+      )}
+    </div>
+  );
+}
 
 function FinalScoreFields({ game, canManageGame, saveFinalScore }) {
   const [homeScoreInput, setHomeScoreInput] = useState(() =>
@@ -66,6 +121,7 @@ function FinalScoreFields({ game, canManageGame, saveFinalScore }) {
 export default function SelectedGamePanel({
   selectedGame,
   counts,
+  keeperSummary,
   allGames,
   fixedPlayers,
   gameAttendance,
@@ -89,7 +145,10 @@ export default function SelectedGamePanel({
   const missingFixed = (fixedPlayers || []).filter(
     (p) => !(gameAttendance || []).some((a) => a.player_id === p.id)
   );
-  const canNudge = !played && missingFixed.length > 0 && canManageGame;
+  // Nothing to chase once the match is full — RSVP is closed for the people who
+  // have not answered, so a nudge would ask them to press a disabled button.
+  const canNudge =
+    !played && missingFixed.length > 0 && canManageGame && !isGameFull(counts.playing);
 
   useEffect(() => {
     if (!shareMenuOpen) return undefined;
@@ -163,6 +222,13 @@ export default function SelectedGamePanel({
     });
     window.open(wa, "_blank", "noopener,noreferrer");
   }
+
+  const keeperLine = renderKeeperLine({
+    keeperSummary,
+    played,
+    anyResponses: counts.playing + counts.if_needed + counts.cant > 0,
+    canManageGame,
+  });
 
   const resultChip =
     played &&
@@ -307,6 +373,15 @@ export default function SelectedGamePanel({
         counts.playing < MIN_PLAYERS_WARNING && (
           <div className="warning-box">Low player count: only {counts.playing} marked In.</div>
         )}
+
+      {keeperLine}
+
+      {!played && isGameFull(counts.playing) && (
+        <div className="full-box">
+          Match full — {counts.playing} players In. RSVP is closed; if somebody drops out the spot
+          reopens.
+        </div>
+      )}
 
       {showAttendanceSummary && (
         <div className="count-grid">

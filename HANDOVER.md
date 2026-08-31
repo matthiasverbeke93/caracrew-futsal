@@ -154,10 +154,12 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   - Setting **`VITE_SITE_URL=https://caracrew.org`** in the production build makes `redirectTo`
     deterministic instead of "whichever host the visitor happened to load".
 
-- 🔴 **RUN `supabase/player_goalkeeper.sql` BEFORE OR WITH THE NEXT DEPLOY.** It adds
-  `players.is_goalkeeper`, `player_stats.kept_goal`, `guest_players.kept_goal` and the 4-argument
-  `admin_update_player`. Without it the admin panel's `→ Keeper` button and the Stats tab's Keeper
-  tick both fail (unknown column / unknown argument); everything else degrades quietly.
+- ✅ **CLOSED 2026-08-31 — `supabase/player_goalkeeper.sql` has been run.** Verified against the live
+  DB before pushing: `players.is_goalkeeper`, `player_stats.kept_goal` and `guest_players.kept_goal`
+  all select, and `rpc/admin_update_player` resolves the 4-argument named call (returns the
+  function's own *"Not authorised"* for an anon caller, which is the guard firing, not a missing
+  signature). The push was deliberately held until then: the stats upsert carries `kept_goal`, so
+  shipping first would have broken every goals/assists save.
 
 - 🟡 **RUN `supabase/bug_reports.sql` BEFORE THE NEXT DEPLOY.** The new "Report a bug"
   button inserts into a table that does not exist yet; until the migration is run the
@@ -425,8 +427,9 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
     (unknown argument) and the Keeper tick fails on insert; the read path degrades quietly, because
     `is_goalkeeper` is normalised to `isGoalkeeper: !!player.is_goalkeeper` in `playersWithRole` and a missing
     column is simply `undefined`.
-  - Verified: `lint` clean, `test` 248 passing (18 files, new `utils/goalkeeper.test.js`), `build` clean.
-    **Not eyeballed in a browser.**
+  - Verified: `lint` clean, `test` 248 passing (18 files, new `utils/goalkeeper.test.js`), `build` clean,
+    and the three new columns + the 4-argument RPC confirmed against the live DB over PostgREST before
+    pushing. **Not eyeballed in a browser.**
 
 - **2026-08-31** — *A match with 8 players In is full: RSVP closes.*
   - **The rule.** `GAME_FULL_PLAYERS = 8` (`src/constants.js`) + `isGameFull(playingCount)` and

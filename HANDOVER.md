@@ -399,6 +399,17 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-01** — *Admin panel: player rows no longer overflow.*
+  - The Players tab rows were a single non-wrapping flex line with `.admin-player-actions { flex-shrink: 0 }`.
+    Six buttons plus the account `<select>` are wider than the 720px `.admin-panel`, so the name column was
+    crushed to ~70px (names wrapping onto two lines, the role pill colliding with the buttons) and the rest
+    spilled out as a horizontal scrollbar on the modal.
+  - `.admin-claim-row` / `.admin-player-row` now `flex-wrap: wrap`, the meta column is `flex: 1 1 200px`, and
+    the action strip wraps (`margin-left: auto` instead of `flex-shrink: 0`). Wide enough → still one row;
+    too narrow → the buttons drop to their own line under the name instead of overflowing. The ≤640px rule
+    that stacks the row keeps working; it just drops the auto margin.
+  - CSS only — `lint`, `build` and `test` (248) all clean. **Not eyeballed by Claude** (no browser tooling
+    here): worth a look at the Claims tab too, which shares the same two rules.
 - **2026-08-31** — *Stats window cut to 2 days, admins exempt; goalkeepers.*
   - **`STATS_FREEZE_DAYS` 5 → 2**, and the freeze is no longer absolute: `isStatsEditable` took an options
     object (`{ nowMs, isAdmin }`) and returns true for an admin however old the game is. Everyone is still

@@ -836,7 +836,10 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px 12px;
+  /* The action strip is wider than the modal on its own, so let it drop to its
+     own line instead of crushing the name column into a two-line wrap. */
+  flex-wrap: wrap;
   padding: 10px 12px;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -845,6 +848,7 @@ button {
 
 .admin-claim-meta,
 .admin-player-meta {
+  flex: 1 1 200px;
   min-width: 0;
 }
 
@@ -894,10 +898,11 @@ button {
 
 .admin-claim-actions,
 .admin-player-actions {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
-  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .admin-btn {
@@ -1083,7 +1088,7 @@ button {
   }
   .admin-claim-actions,
   .admin-player-actions {
-    flex-wrap: wrap;
+    margin-left: 0;
   }
 }
 

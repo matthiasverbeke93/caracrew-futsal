@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   buildGameWhatsAppShareUrl,
+  buildWhatsAppMatchOpenUrl,
   buildWhatsAppNudgeUrl,
+  buildWhatsAppStatsChaseUrl,
   formatFixtureRowDateTime,
   formatFixtureShareText,
   formatMatchShortDate,
@@ -175,5 +177,73 @@ describe("buildWhatsAppNudgeUrl", () => {
     expect(msg.split("\n")[1]).toBe("");
     expect(msg).not.toContain("Still waiting on");
     expect(msg).toContain("No reply 0");
+  });
+});
+
+describe("buildWhatsAppMatchOpenUrl", () => {
+  it("opens with the fixture and carries the squad rule instead of a tally", () => {
+    const lines = messageOf(buildWhatsAppMatchOpenUrl(GAME)).split("\n");
+    expect(lines[0]).toBe("*K. Caracrew SK vs Nova FC*");
+    expect(lines[1]).toMatch(WHEN_WHERE);
+    expect(lines.join("\n")).toContain("First 8 In play");
+  });
+
+  it("closes with the fixture link and the bot signature", () => {
+    const msg = messageOf(buildWhatsAppMatchOpenUrl(GAME));
+    expect(msg).toContain("Let us know here:");
+    expect(msg).toContain("game=42");
+    expect(msg.trimEnd().endsWith("_— Attendance Bot 3000_")).toBe(true);
+  });
+
+  it("has no tally to print, so it never mentions one", () => {
+    const msg = messageOf(buildWhatsAppMatchOpenUrl(GAME));
+    expect(msg).not.toContain("Roster");
+    expect(msg).not.toContain("No reply");
+  });
+});
+
+describe("buildWhatsAppStatsChaseUrl", () => {
+  const PLAYED = { ...GAME, home_score: 4, away_score: 3 };
+  const snapshot = { played: 8, recorded: 5, goalsRecorded: 3, goalsFinal: 4, freezeDays: 2 };
+
+  it("leads with the fixture and its final score, then the stats tally", () => {
+    const msg = messageOf(buildWhatsAppStatsChaseUrl(PLAYED, ["Jan"], snapshot));
+    const lines = msg.split("\n");
+    expect(lines[0]).toBe("*K. Caracrew SK vs Nova FC*");
+    expect(lines[1]).toMatch(WHEN_WHERE);
+    expect(msg).toContain("Final score 4 – 3");
+    expect(msg).toContain("*Stats* · 5 of 8 recorded · 3 of 4 goals in");
+  });
+
+  it("lists who still owes stats as a sentence", () => {
+    const msg = messageOf(buildWhatsAppStatsChaseUrl(PLAYED, ["Jan", "Piet", "Bram"], snapshot));
+    expect(msg).toContain("Still to add: Jan, Piet and Bram.");
+    expect(msg).toContain("Add yours here:");
+    expect(msg).toContain("game=42");
+    expect(msg.trimEnd().endsWith("_— Attendance Bot 3000_")).toBe(true);
+  });
+
+  it("drops the goals clause when the final score is not in yet", () => {
+    const msg = messageOf(
+      buildWhatsAppStatsChaseUrl(GAME, ["Jan"], { ...snapshot, goalsFinal: null })
+    );
+    expect(msg).toContain("*Stats* · 5 of 8 recorded");
+    expect(msg).not.toContain("goals in");
+  });
+
+  it("changes the ask once the window has closed rather than pointing at dead inputs", () => {
+    const open = messageOf(buildWhatsAppStatsChaseUrl(PLAYED, ["Jan"], snapshot));
+    expect(open).toContain("Stats lock 2 days after the match.");
+    const shut = messageOf(
+      buildWhatsAppStatsChaseUrl(PLAYED, ["Jan"], { ...snapshot, frozen: true })
+    );
+    expect(shut).toContain("Stats are locked now");
+    expect(shut).not.toContain("Stats lock 2 days");
+  });
+
+  it("still sends a usable message when nobody is named", () => {
+    const msg = messageOf(buildWhatsAppStatsChaseUrl(PLAYED, [], snapshot));
+    expect(msg).not.toContain("Still to add:");
+    expect(msg).toContain("*Stats* · 5 of 8 recorded");
   });
 });

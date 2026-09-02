@@ -399,6 +399,32 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-02** — *Two more admin-only WhatsApp messages, next to the nudge.*
+  - **`Announce new match`** (upcoming) and **`Chase stats (n)`** (played) join `Nudge missing`
+    in the Share menu, under an `Admin only` caption so it is obvious which entries other people
+    never see. All three are gated on `canManageGame`, as the nudge already was.
+  - **Announce** carries the squad rule rather than a tally — it is the first message in a match's
+    life, so there are no answers to count: *"New match open for RSVP. First 8 In play — first come,
+    first served."* Only offered when RSVP genuinely is open: `isAttendanceEditable(game, allGames)`
+    (the next-3 window) **and** not already full, otherwise the message would point at disabled
+    buttons.
+  - **Chase stats** is the nudge's counterpart at the other end of a match's life, same shape for the
+    same reason. Two deliberate rules: the goals clause (`3 of 4 goals in`) is **dropped when there is
+    no final score yet** — that is the admin's own job, not the group's — and once the window has
+    closed the ask changes to *"Stats are locked now — send them to me and I'll add them"* rather than
+    pointing people at inputs they cannot use (admins stay exempt, so it is still fixable).
+  - **Who gets chased: roster players who were In and have no `player_stats` row.** Guests are
+    excluded on purpose — `saveGuestStat` is admin-only, so there is nobody in the group chat to ask.
+    Guest **goals** do count toward the reconciliation line, so the panel now takes `gameStats` and a
+    new `gameGuests` (the fixture's guest rows, newly returned by `useFutsalData`).
+  - Caveat worth knowing before trusting `Chase stats (n)`: a player with **nothing to record** never
+    creates a `player_stats` row, so they read as owing. That is the same heuristic the sidebar's
+    existing `Stats missing` pill uses (`gameStatsRows.length < playingCount`), so this is consistent
+    rather than new — but it means the count is "hasn't touched the form", not "definitely owes goals".
+  - The `_— Attendance Bot 3000_` footer is now one `BOT_SIGNATURE` constant shared by all three.
+  - Verified: `lint` clean, `test` 269 passing, `build` clean. Both message bodies were printed and
+    read end-to-end. **Not eyeballed in a browser.**
+
 - **2026-09-02** — *Venues link to Google Maps; List/Calendar is a real toggle.*
   - **Venue → Google Maps.** `src/data/venues.js` maps each `games.location` string to a street
     address, transcribed from the region's own hall list (https://www.lzvcup.be/sportshalls/11,

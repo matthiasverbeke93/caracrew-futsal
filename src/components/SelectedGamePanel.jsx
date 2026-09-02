@@ -1,11 +1,19 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { MIN_PLAYERS_WARNING, TEAM_NAME } from "../constants";
 import { getDifficulty } from "../utils/difficulty";
-import { isGameFull, isPlayed } from "../utils/game";
+import {
+  STATS_FREEZE_DAYS,
+  isAttendanceEditable,
+  isGameFull,
+  isPlayed,
+  isStatsFrozen,
+} from "../utils/game";
 import {
   buildCurrentPageGameShareUrl,
   buildGameWhatsAppShareUrl,
+  buildWhatsAppMatchOpenUrl,
   buildWhatsAppNudgeUrl,
+  buildWhatsAppStatsChaseUrl,
   formatFixtureShareText,
 } from "../utils/formatMatch";
 import { goalkeeperNames } from "../utils/goalkeeper";
@@ -126,6 +134,8 @@ export default function SelectedGamePanel({
   allGames,
   fixedPlayers,
   gameAttendance,
+  gameStats,
+  gameGuests,
   opponentStrengths,
   seasonSlug,
   saveFinalScore,
@@ -150,6 +160,24 @@ export default function SelectedGamePanel({
   // have not answered, so a nudge would ask them to press a disabled button.
   const canNudge =
     !played && missingFixed.length > 0 && canManageGame && !isGameFull(counts.playing);
+
+  // Announcing "RSVP is open" is only true once it actually is: inside the next-3 window,
+  // and not already full. Outside it the buttons are disabled, so the message would lie.
+  const canAnnounce =
+    !played &&
+    canManageGame &&
+    isAttendanceEditable(selectedGame, allGames) &&
+    !isGameFull(counts.playing);
+
+  // Who played and still owes goals/assists. Roster only — a guest's stats are admin-entered
+  // (`saveGuestStat`), so there is nobody in the group chat to chase for them.
+  const playedRoster = (fixedPlayers || []).filter((p) =>
+    (gameAttendance || []).some((a) => a.player_id === p.id && a.status === "playing")
+  );
+  const owingStats = playedRoster.filter(
+    (p) => !(gameStats || []).some((row) => row.player_id === p.id)
+  );
+  const canChaseStats = played && canManageGame && owingStats.length > 0;
 
   useEffect(() => {
     if (!shareMenuOpen) return undefined;
@@ -224,6 +252,31 @@ export default function SelectedGamePanel({
     window.open(wa, "_blank", "noopener,noreferrer");
   }
 
+  function handleAnnounce() {
+    window.open(buildWhatsAppMatchOpenUrl(selectedGame), "_blank", "noopener,noreferrer");
+  }
+
+  function handleChaseStats() {
+    const recordedGoals =
+      (gameStats || []).reduce((sum, row) => sum + (row.goals || 0), 0) +
+      (gameGuests || []).reduce((sum, row) => sum + (row.goals || 0), 0);
+    const wa = buildWhatsAppStatsChaseUrl(
+      selectedGame,
+      owingStats.map((p) => p.name.split(" ")[0]),
+      {
+        played: playedRoster.length,
+        recorded: playedRoster.length - owingStats.length,
+        goalsRecorded: recordedGoals,
+        // Null when the scoreline is not in yet — that is the admin's own job, so the
+        // message drops the goals clause rather than chasing the group for it.
+        goalsFinal: selectedGame.home_score ?? null,
+        frozen: isStatsFrozen(selectedGame),
+        freezeDays: STATS_FREEZE_DAYS,
+      }
+    );
+    window.open(wa, "_blank", "noopener,noreferrer");
+  }
+
   const keeperLine = renderKeeperLine({
     keeperSummary,
     played,
@@ -290,6 +343,25 @@ export default function SelectedGamePanel({
               >
                 Share in WhatsApp
               </button>
+              {(canAnnounce || canNudge || canChaseStats) && (
+                <div className="share-menu-section" aria-hidden="true">
+                  Admin only
+                </div>
+              )}
+              {canAnnounce && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="share-menu-item"
+                  title="Announce in WhatsApp that this fixture is open for RSVP"
+                  onClick={() => {
+                    setShareMenuOpen(false);
+                    handleAnnounce();
+                  }}
+                >
+                  Announce new match
+                </button>
+              )}
               {canNudge && (
                 <button
                   type="button"
@@ -302,6 +374,20 @@ export default function SelectedGamePanel({
                   }}
                 >
                   Nudge missing ({missingFixed.length})
+                </button>
+              )}
+              {canChaseStats && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="share-menu-item"
+                  title={`Chase ${owingStats.map((p) => p.name).join(", ")} for goals/assists`}
+                  onClick={() => {
+                    setShareMenuOpen(false);
+                    handleChaseStats();
+                  }}
+                >
+                  Chase stats ({owingStats.length})
                 </button>
               )}
             </div>

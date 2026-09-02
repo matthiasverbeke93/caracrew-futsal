@@ -232,6 +232,7 @@ export default function App() {
     allGamePlayers,
     gameAttendance,
     gameStats,
+    gameGuests,
     stats,
     selectedGameTotals,
     counts,
@@ -512,6 +513,8 @@ export default function App() {
                 allGames={games}
                 fixedPlayers={fixedPlayers}
                 gameAttendance={gameAttendance}
+                gameStats={gameStats}
+                gameGuests={gameGuests}
                 opponentStrengths={opponentStrengths}
                 seasonSlug={seasonSlug}
                 saveFinalScore={saveFinalScore}

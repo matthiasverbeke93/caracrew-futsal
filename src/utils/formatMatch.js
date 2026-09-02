@@ -1,4 +1,4 @@
-import { TEAM_NAME } from "../constants.js";
+import { GAME_FULL_PLAYERS, TEAM_NAME } from "../constants.js";
 import { DEFAULT_SEASON_SLUG } from "../seasons.js";
 import { cleanOpponentName } from "./opponent.js";
 
@@ -184,6 +184,79 @@ export function buildGameWhatsAppShareUrl(game) {
   return `https://wa.me/?text=${encodeURIComponent(message)}`;
 }
 
+/**
+ * The footer every automated group message carries. It stays a footer, not a headline: it
+ * tells the group this is a bot reminder rather than someone singling players out, without
+ * stealing the first line from the fixture. `_…_` is WhatsApp italics.
+ */
+const BOT_SIGNATURE = "_— Attendance Bot 3000_";
+
+/**
+ * Prefilled WhatsApp announcement that a fixture has opened for RSVP — admin-only, and the
+ * first message in a match's life, so it carries the squad rule rather than a tally: there
+ * are no answers yet to count.
+ */
+export function buildWhatsAppMatchOpenUrl(game) {
+  const shareUrl = buildCurrentPageGameShareUrl(game.id, game.season_slug);
+  const lines = formatFixtureShareLines(game, { bold: true });
+  lines.push(
+    "",
+    `New match open for RSVP. First ${GAME_FULL_PLAYERS} In play — first come, first served.`,
+    "",
+    "Let us know here:",
+    shareUrl,
+    "",
+    BOT_SIGNATURE
+  );
+  return `https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`;
+}
+
+/**
+ * Prefilled WhatsApp chase for the players who played but have not recorded goals/assists.
+ *
+ * The counterpart to the RSVP nudge, at the other end of a match's life. Same shape for the
+ * same reason — who/when/where, then the tally, then the names, then one link.
+ *
+ * Two deliberate omissions. The goals line is skipped when there is **no final score yet**:
+ * that is the admin's own job, not something to chase the group for. And when the window has
+ * already closed the message says so rather than pointing people at inputs that are disabled
+ * — an admin can still enter them, so the ask changes rather than disappearing.
+ */
+export function buildWhatsAppStatsChaseUrl(game, missingNames, statsSnapshot = {}) {
+  const shareUrl = buildCurrentPageGameShareUrl(game.id, game.season_slug);
+  const {
+    played = 0,
+    recorded = 0,
+    goalsRecorded = 0,
+    goalsFinal = null,
+    frozen = false,
+    freezeDays = 2,
+  } = statsSnapshot;
+
+  const owingNames = (missingNames || []).map((n) => String(n ?? "").trim()).filter(Boolean);
+  const lines = formatFixtureShareLines(game, { bold: true });
+
+  const tally = [`${recorded} of ${played} recorded`];
+  if (goalsFinal != null) tally.push(`${goalsRecorded} of ${goalsFinal} goals in`);
+  lines.push("", `*Stats* · ${tally.join(" · ")}`);
+
+  const owing = formatNameList(owingNames);
+  if (owing) lines.push("", `Still to add: ${owing}.`);
+
+  lines.push(
+    frozen
+      ? "Stats are locked now — send them to me and I'll add them."
+      : `Stats lock ${freezeDays} days after the match.`,
+    "",
+    "Add yours here:",
+    shareUrl,
+    "",
+    BOT_SIGNATURE
+  );
+
+  return `https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`;
+}
+
 /** "Jan", "Jan and Piet", "Jan, Piet and Bram" — the nudge should read like a sentence, not a CSV. */
 function formatNameList(names) {
   const clean = (names || []).map((n) => String(n ?? "").trim()).filter(Boolean);
@@ -244,10 +317,7 @@ export function buildWhatsAppNudgeUrl(game, missingNames, rosterSnapshot = {}) {
   const waiting = formatNameList(waitingNames);
   if (waiting) lines.push("", `Still waiting on ${waiting}.`);
 
-  // The bot signature stays a footer, not a headline: it tells the group this is an
-  // automated reminder rather than someone singling players out, without stealing the
-  // first line from the fixture. `_…_` is WhatsApp italics.
-  lines.push("", "Confirm here:", shareUrl, "", "_— Attendance Bot 3000_");
+  lines.push("", "Confirm here:", shareUrl, "", BOT_SIGNATURE);
 
   return `https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`;
 }

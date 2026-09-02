@@ -727,6 +727,9 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     allGamePlayers,
     gameAttendance,
     gameStats,
+    // The fixture's guest rows — guests carry their own goals/assists, so anything that
+    // reconciles a scoreline needs them alongside `gameStats`.
+    gameGuests: selectedGameGuests,
     stats,
     selectedGameTotals,
     counts,

@@ -3,6 +3,7 @@ import { DEFAULT_SEASON_SLUG } from "../seasons.js";
 import { cleanOpponentName } from "./opponent.js";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const SHORT_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /**
  * Normalise DB `game_date` (date-only, ISO datetime string, or Date) to `YYYY-MM-DD`.
@@ -34,6 +35,25 @@ export function formatMatchShortDate(gameOrRawDate) {
   if (!dateOnly) return "";
   const [yyyy, mm, dd] = dateOnly.split("-");
   return `${dd}-${mm}-${yyyy.slice(2)}`;
+}
+
+/**
+ * `Sun 06-09-26 · 20:00` — the one date line for both sidebar fixture views.
+ *
+ * The weekday is what the team actually plans around (a Thursday 21:00 hall slot reads very
+ * differently from a Sunday morning), abbreviated because the row also has to fit an opponent
+ * name. `game_time` is a Postgres `time`, i.e. `20:00:00`, so the seconds are trimmed; a
+ * fixture with no kickoff yet shows `--:--` rather than a dangling separator. The weekday is
+ * read off a **noon** Date so no timezone can shift the day — the local-day-string rule.
+ */
+export function formatFixtureRowDateTime(game) {
+  const dateOnly = normalizeGameDateOnly(game);
+  const time = game?.game_time ? String(game.game_time).slice(0, 5) : "--:--";
+  if (!dateOnly) return time;
+  const shortDate = formatMatchShortDate(dateOnly);
+  const d = new Date(`${dateOnly}T12:00:00`);
+  const day = Number.isNaN(d.getTime()) ? "" : SHORT_DAYS[d.getDay()];
+  return `${day ? `${day} ` : ""}${shortDate} · ${time}`;
 }
 
 export function formatMatchDayTime(game) {

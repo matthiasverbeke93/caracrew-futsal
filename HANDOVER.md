@@ -423,7 +423,19 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
     `.view-toggle` showing both options, the selected one lifted out in white and the other muted,
     in the same idiom as `.filter-status-row`. `aria-expanded` → `aria-pressed` per segment, which
     is what a view switch is. `.calendar-toggle-button` is gone (renamed, incl. its focus rule).
-  - Verified: `lint` clean, `test` 257 passing (19 files, new `utils/venue.test.js`), `build` clean.
+  - **The venue link carries Google Maps' own navigate arrow** (inline SVG in `VenueLink`, sized in
+    `em` so it tracks the 13px panel line and the 11px tile line). The anchor stays `display: inline`
+    on purpose — `inline-flex` stopped a long hall name from wrapping inside the narrow tile.
+  - **Fixture rows now read `Sun 06-09-26 · 21:00`.** The list view was rendering raw DB values
+    (`2026-09-06 · 21:00:00`: ISO date, seconds and all) while the calendar view used
+    `formatMatchShortDate`; both now go through one `formatFixtureRowDateTime(game)`, which adds the
+    abbreviated weekday, trims the Postgres `time` to `HH:MM` and shows `--:--` for a fixture with no
+    kick-off. Weekday comes off the ISO prefix, not `Date` math, so no timezone can shift it.
+    `formatMatchShortDate` stays as the DD-MM-YY primitive. 4 tests.
+  - Still raw ISO, deliberately out of scope: the **match panel** meta line
+    (`SelectedGamePanel`, `{game_date} · {game_time}`) and the dashboard tiles, which use
+    `formatMatchCalendarDateTime` ("Sun, 6 Sept 2026"). Worth unifying if it starts to grate.
+  - Verified: `lint` clean, `test` 261 passing (19 files, new `utils/venue.test.js`), `build` clean.
     **Not eyeballed in a browser** — worth a look at the toolbar, where the toggle now sits next to
     the Subscribe pill.
 

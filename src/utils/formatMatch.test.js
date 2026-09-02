@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildGameWhatsAppShareUrl,
   buildWhatsAppNudgeUrl,
+  formatFixtureRowDateTime,
   formatFixtureShareText,
   formatMatchShortDate,
 } from "./formatMatch.js";
@@ -27,6 +28,37 @@ describe("formatMatchShortDate", () => {
     expect(formatMatchShortDate({ game_date: null })).toBe("");
     expect(formatMatchShortDate({})).toBe("");
     expect(formatMatchShortDate("not a date")).toBe("");
+  });
+});
+
+describe("formatFixtureRowDateTime", () => {
+  it("leads with the abbreviated weekday and trims the seconds off game_time", () => {
+    expect(formatFixtureRowDateTime({ game_date: "2026-08-22", game_time: "21:00:00" })).toBe(
+      "Sat 22-08-26 · 21:00"
+    );
+    expect(formatFixtureRowDateTime({ game_date: "2026-09-06", game_time: "18:00:00" })).toBe(
+      "Sun 06-09-26 · 18:00"
+    );
+  });
+
+  it("reads the weekday off the local day string, not off Date math", () => {
+    // The day is taken from the ISO prefix, so an offset on the timestamp cannot shift it.
+    expect(
+      formatFixtureRowDateTime({ game_date: "2026-08-22T00:30:00+02:00", game_time: "21:00" })
+    ).toBe("Sat 22-08-26 · 21:00");
+  });
+
+  it("shows --:-- for a fixture with no kick-off yet", () => {
+    expect(formatFixtureRowDateTime({ game_date: "2026-08-22" })).toBe("Sat 22-08-26 · --:--");
+    expect(formatFixtureRowDateTime({ game_date: "2026-08-22", game_time: null })).toBe(
+      "Sat 22-08-26 · --:--"
+    );
+  });
+
+  it("falls back to the time alone when the date is missing or unparseable", () => {
+    expect(formatFixtureRowDateTime({ game_time: "20:00:00" })).toBe("20:00");
+    expect(formatFixtureRowDateTime({ game_date: "not a date" })).toBe("--:--");
+    expect(formatFixtureRowDateTime(null)).toBe("--:--");
   });
 });
 

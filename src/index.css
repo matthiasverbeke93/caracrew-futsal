@@ -111,17 +111,37 @@ h3 {
 
 /* A fixture's venue, linked to Google Maps. Colour is inherited on purpose: this sits on the
    light match panel and on the dark "my next games" tile, so only the underline reacts. */
+/* Inline, not inline-flex: a long hall name has to be able to wrap inside the 11px tile line. */
 .venue-link {
   color: inherit;
+  text-decoration: none;
+}
+
+.venue-link-text {
   text-decoration: underline;
   text-decoration-style: dotted;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
 }
 
-.venue-link:hover,
-.venue-link:focus-visible {
+/* Sized in em so it tracks whatever text it sits in — 13px panel line, 11px tile line. */
+.venue-link-icon {
+  display: inline-block;
+  width: 0.95em;
+  height: 0.95em;
+  margin-left: 3px;
+  vertical-align: -0.12em;
+  opacity: 0.75;
+}
+
+.venue-link:hover .venue-link-text,
+.venue-link:focus-visible .venue-link-text {
   text-decoration-style: solid;
+}
+
+.venue-link:hover .venue-link-icon,
+.venue-link:focus-visible .venue-link-icon {
+  opacity: 1;
 }
 
 

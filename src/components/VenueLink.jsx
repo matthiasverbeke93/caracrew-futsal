@@ -1,5 +1,20 @@
 import { venueMapsUrl } from "../utils/venue";
 
+/** Google Maps' own "navigate" arrow, so the link reads as a map link at a glance. */
+function NavigationIcon() {
+  return (
+    <svg
+      className="venue-link-icon"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M21 3 3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z" />
+    </svg>
+  );
+}
+
 /**
  * A fixture's venue, linked to Google Maps.
  *
@@ -22,7 +37,8 @@ export default function VenueLink({ location, fallback = "Venue TBD", className 
       rel="noreferrer"
       title={`Open ${text} in Google Maps`}
     >
-      {text}
+      <span className="venue-link-text">{text}</span>
+      <NavigationIcon />
     </a>
   );
 }

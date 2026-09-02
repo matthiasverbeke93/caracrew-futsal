@@ -7,7 +7,8 @@ import {
   nextUpcomingGamesByCalendar,
 } from "../utils/game";
 import { cleanOpponentName } from "../utils/opponent";
-import { formatFixtureTileLine } from "../utils/formatMatch";
+import { fixtureTileParts } from "../utils/formatMatch";
+import VenueLink from "./VenueLink";
 
 const TILE_EYEBROWS = ["Soonest", "Next up", "Later"];
 
@@ -72,7 +73,7 @@ function NextGameTile({
   const rawOpponent = game.opponent ? String(game.opponent).trim() : "";
   const cleaned = cleanOpponentName(game.opponent);
   const opponent = (cleaned && cleaned.trim()) || rawOpponent || "Opponent TBD";
-  const whenLine = formatFixtureTileLine(game);
+  const { when: whenText, venue } = fixtureTileParts(game);
 
   const rsvpMod = myStatus ? `my-next-game-card--rsvp-${myStatus}` : "";
 
@@ -87,7 +88,10 @@ function NextGameTile({
           <h2 className="my-next-game-title">
             <span className="my-next-game-vs">vs</span> {opponent}
           </h2>
-          <p className="my-next-game-when">{whenLine}</p>
+          <p className="my-next-game-when">
+            {whenText ? `${whenText} · ` : ""}
+            <VenueLink location={venue} />
+          </p>
         </div>
         {showOpenButton ? (
           <button

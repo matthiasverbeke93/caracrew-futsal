@@ -399,6 +399,34 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-02** — *Venues link to Google Maps; List/Calendar is a real toggle.*
+  - **Venue → Google Maps.** `src/data/venues.js` maps each `games.location` string to a street
+    address, transcribed from the region's own hall list (https://www.lzvcup.be/sportshalls/11,
+    the same street/city pairs its "Route" buttons use). **De Nekker is not on that page** — it is
+    a provincial centre, address from denekker.be — and it is our most-used venue (16 fixtures),
+    so it is worth knowing the table is not purely LZV-derived. All 7 venues currently in the DB
+    resolve to a real address.
+  - `utils/venue.js` builds `https://www.google.com/maps/search/?api=1&query=<street, city, Belgium>`
+    — the **search** endpoint, not `maps/dir/` like LZV's Route button: clicking a venue should show
+    you where it is, not start navigating. An unlisted hall falls back to its own name + Belgium,
+    so a new venue still links usefully; the table is an accuracy upgrade, not a gate.
+  - **Where it renders:** `SelectedGamePanel`'s meta line and the `MyNextGamesTiles` tiles, via
+    `components/VenueLink.jsx`. **Not** the sidebar fixture rows, the "next fixtures" list or the
+    calendar cells — those are all `<button>`s, and an `<a>` inside a `<button>` is invalid HTML.
+    The linked copy is on the panel the row opens. If the sidebar ever needs it, the row has to stop
+    being a button first.
+  - `formatFixtureTileLine` was split into `fixtureTileParts(game)` → `{ when, venue }` so the tile
+    can render the venue as a link; the old function now composes from it and is unchanged for
+    callers.
+  - **List/Calendar toggle.** Was one dark pill labelled with the view you were *not* in
+    ("Calendar" while in list mode) — equally readable as a state label. Now a two-segment
+    `.view-toggle` showing both options, the selected one lifted out in white and the other muted,
+    in the same idiom as `.filter-status-row`. `aria-expanded` → `aria-pressed` per segment, which
+    is what a view switch is. `.calendar-toggle-button` is gone (renamed, incl. its focus rule).
+  - Verified: `lint` clean, `test` 257 passing (19 files, new `utils/venue.test.js`), `build` clean.
+    **Not eyeballed in a browser** — worth a look at the toolbar, where the toggle now sits next to
+    the Subscribe pill.
+
 - **2026-09-01** — *Admin panel: player rows no longer overflow.*
   - The Players tab rows were a single non-wrapping flex line with `.admin-player-actions { flex-shrink: 0 }`.
     Six buttons plus the account `<select>` are wider than the 720px `.admin-panel`, so the name column was

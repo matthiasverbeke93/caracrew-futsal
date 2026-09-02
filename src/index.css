@@ -109,6 +109,22 @@ h3 {
   outline-offset: 2px;
 }
 
+/* A fixture's venue, linked to Google Maps. Colour is inherited on purpose: this sits on the
+   light match panel and on the dark "my next games" tile, so only the underline reacts. */
+.venue-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.venue-link:hover,
+.venue-link:focus-visible {
+  text-decoration-style: solid;
+}
+
+
 :focus:not(:focus-visible) {
   outline: none;
 }
@@ -116,7 +132,7 @@ h3 {
 button:focus-visible,
 .dashboard-nav-btn:focus-visible,
 .player-link:focus-visible,
-.calendar-toggle-button:focus-visible,
+.view-toggle-btn:focus-visible,
 .calendar-game-item:focus-visible,
 .game-card:focus-visible {
   outline: 2px solid var(--accent);
@@ -2370,13 +2386,39 @@ button {
   color: #64748b;
 }
 
-.calendar-toggle-button {
+/* List / Calendar segmented toggle. Same idiom as `.filter-status-row`: a grey track, the
+   selected segment lifted out in white, the other one muted but still readable. */
+.view-toggle {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
   border-radius: 999px;
-  padding: 7px 12px;
-  background: #020617;
-  color: white;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.view-toggle-btn {
+  border-radius: 999px;
+  padding: 5px 11px;
+  background: transparent;
+  color: #64748b;
+  border: 1px solid transparent;
   cursor: pointer;
   font-size: 12px;
+  font-weight: 600;
+}
+
+.view-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text-strong, #0f172a);
+}
+
+.view-toggle-btn.active {
+  background: #fff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  cursor: default;
 }
 
 .sidebar-toolbar-actions {

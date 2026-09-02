@@ -65,16 +65,26 @@ export function formatMatchCalendarDateTime(game) {
   return time ? `${datePart} · ${time}` : datePart;
 }
 
-/** One line for dashboard tiles: date/time · venue. */
-export function formatFixtureTileLine(game) {
+/**
+ * The two halves of a dashboard tile's line, kept separate so the venue can be rendered as a
+ * Google Maps link (`components/VenueLink`) instead of plain text. `venue` is null when the
+ * fixture has no location — the caller shows "Venue TBD".
+ */
+export function fixtureTileParts(game) {
   const formatted = formatMatchCalendarDateTime(game);
-  const core =
+  const when =
     formatted ||
     normalizeGameDateOnly(game) ||
     (game?.game_date ? String(game.game_date).trim().slice(0, 16) : "");
   const loc = game?.location?.trim();
-  const venue = loc || "Venue TBD";
-  return core ? `${core} · ${venue}` : venue;
+  return { when, venue: loc || null };
+}
+
+/** One line for dashboard tiles: date/time · venue. */
+export function formatFixtureTileLine(game) {
+  const { when, venue } = fixtureTileParts(game);
+  const venueText = venue || "Venue TBD";
+  return when ? `${when} · ${venueText}` : venueText;
 }
 
 /** Short locale string for timestamps (admin lists, claim history). */

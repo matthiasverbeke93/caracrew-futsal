@@ -8,6 +8,15 @@ import { useLayoutEffect, useMemo, useState } from "react";
 
 const STATUS_SEGMENT_IDS = ["all", "upcoming", "played"];
 
+/**
+ * The two fixture views, as a segmented toggle rather than one button labelled with the view
+ * you are *not* in — which read as a state ("this is the list") as often as an action.
+ */
+const VIEW_OPTIONS = [
+  { id: "list", label: "List", calendar: false },
+  { id: "calendar", label: "Calendar", calendar: true },
+];
+
 const EMPTY_COUNTS = { playing: 0, ifNeeded: 0, responses: 0 };
 
 const RSVP_CHIP = {
@@ -317,15 +326,23 @@ export default function GameSidebar({
           </h2>
           <div className="sidebar-toolbar-actions">
             <CalendarSubscribe seasonSlug={seasonSlug} />
-            <button
-              className="calendar-toggle-button"
-              type="button"
-              aria-expanded={showCalendar}
-              aria-controls="fixtures-scroll-region"
-              onClick={() => setShowCalendar((prev) => !prev)}
-            >
-              {showCalendar ? "List" : "Calendar"}
-            </button>
+            <div className="view-toggle" role="group" aria-label="Fixtures view">
+              {VIEW_OPTIONS.map((opt) => {
+                const active = showCalendar === opt.calendar;
+                return (
+                  <button
+                    key={opt.id}
+                    className={`view-toggle-btn ${active ? "active" : ""}`}
+                    type="button"
+                    aria-pressed={active}
+                    aria-controls="fixtures-scroll-region"
+                    onClick={() => setShowCalendar(opt.calendar)}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 

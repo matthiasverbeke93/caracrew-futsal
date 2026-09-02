@@ -12,6 +12,7 @@ import { goalkeeperNames } from "../utils/goalkeeper";
 import { getHeadToHeadSummary } from "../utils/headToHead";
 import { focusInitialMenuItem, handleMenuArrowKeys } from "../utils/menuNav";
 import { cleanOpponentName } from "../utils/opponent";
+import VenueLink from "./VenueLink";
 
 /**
  * The per-fixture goalkeeper check.
@@ -308,7 +309,8 @@ export default function SelectedGamePanel({
         </div>
       </div>
       <p>
-        {selectedGame.game_date} · {selectedGame.game_time} · {selectedGame.location}
+        {selectedGame.game_date} · {selectedGame.game_time} ·{" "}
+        <VenueLink location={selectedGame.location} />
       </p>
 
       <div className="selected-game-context">

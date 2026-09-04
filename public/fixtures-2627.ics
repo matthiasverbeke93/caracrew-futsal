@@ -25,14 +25,13 @@ END:VTIMEZONE
 BEGIN:VEVENT
 UID:2627-2026-09-06-2100-vt-09@caracrew.org
 DTSTAMP:20270509T000000Z
-DTSTART;TZID=Europe/Brussels:20260906T210000
-DTEND;TZID=Europe/Brussels:20260906T220000
+DTSTART;TZID=Europe/Brussels:20260906T200000
+DTEND;TZID=Europe/Brussels:20260906T210000
 SUMMARY:VT 09 vs K. Caracrew SK
-LOCATION:Winketkaai Mechelen
-DESCRIPTION:Competition: LZV Cup · 26-27\nAway at VT 09\nVenue: Winketkaai
-  Mechelen\nOpponent form: Very easy — position 10\, 0.00 pts/match\n\nMat
- ch page: https://caracrew.org/?game=2627-2026-09-06-2100-vt-09&season=262
- 7
+LOCATION:IHAM Mechelen
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at VT 09\nVenue: IHAM Meche
+ len\nOpponent form: Very easy — position 10\, 0.00 pts/match\n\nMatch pag
+ e: https://caracrew.org/?game=2627-2026-09-06-2100-vt-09&season=2627
 URL:https://caracrew.org/?game=2627-2026-09-06-2100-vt-09&season=2627
 CATEGORIES:K. Caracrew SK,Futsal
 STATUS:CONFIRMED
@@ -215,11 +214,12 @@ UID:2627-2027-01-28-2100-bankzitters-united@caracrew.org
 DTSTAMP:20270509T000000Z
 DTSTART;TZID=Europe/Brussels:20270128T210000
 DTEND;TZID=Europe/Brussels:20270128T220000
-SUMMARY:K. Caracrew SK vs Bankzitters United
+SUMMARY:K. Caracrew SK vs FC De Wandelgang
 LOCATION:Winketkaai Mechelen
-DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Bankzitters United\nVenu
- e: Winketkaai Mechelen\n\nMatch page: https://caracrew.org/?game=2627-202
- 7-01-28-2100-bankzitters-united&season=2627
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs FC De Wandelgang\nVenue:
+  Winketkaai Mechelen\nOpponent form: Very easy — position 12\, 0.00 pts/m
+ atch\n\nMatch page: https://caracrew.org/?game=2627-2027-01-28-2100-bankz
+ itters-united&season=2627
 URL:https://caracrew.org/?game=2627-2027-01-28-2100-bankzitters-united&sea
  son=2627
 CATEGORIES:K. Caracrew SK,Futsal
@@ -253,6 +253,22 @@ DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs VT 09\nVenue: Winketkaai
  ch page: https://caracrew.org/?game=2627-2027-02-25-2100-vt-09&season=262
  7
 URL:https://caracrew.org/?game=2627-2027-02-25-2100-vt-09&season=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:2627-2027-02-27-2030-fc-de-wandelgang@caracrew.org
+DTSTAMP:20270509T000000Z
+DTSTART;TZID=Europe/Brussels:20270227T203000
+DTEND;TZID=Europe/Brussels:20270227T213000
+SUMMARY:FC De Wandelgang vs K. Caracrew SK
+LOCATION:Winketkaai Mechelen
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at FC De Wandelgang\nVenue:
+  Winketkaai Mechelen\nOpponent form: Very easy — position 12\, 0.00 pts/m
+ atch\n\nMatch page: https://caracrew.org/?game=2627-2027-02-27-2030-fc-de
+ -wandelgang&season=2627
+URL:https://caracrew.org/?game=2627-2027-02-27-2030-fc-de-wandelgang&seaso
+ n=2627
 CATEGORIES:K. Caracrew SK,Futsal
 STATUS:CONFIRMED
 END:VEVENT

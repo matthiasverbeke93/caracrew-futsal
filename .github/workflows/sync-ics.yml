@@ -9,6 +9,10 @@ on:
     branches: [main]
     paths:
       - "scripts/gen-ics.mjs"
+      - "scripts/check-lzv-drift.mjs"
+      - "src/utils/icsRevision.js"
+      - "src/utils/calendarDrift.js"
+      - "src/utils/lzvCalendar.js"
       - "src/seasons.js"
       - "src/constants.js"
 
@@ -47,3 +51,17 @@ jobs:
             git commit -m "chore: refresh calendar feeds [skip ci]"
             git push
           fi
+
+      # LAST, and allowed to fail the job. The steps above only re-render `games` into .ics; they
+      # cannot notice that LZV has MOVED a fixture, because the move never reached `games`. That is
+      # how fixture 1 of 26-27 kept 7 RSVPs for the wrong hall at the wrong hour until two days
+      # before kickoff (see HANDOVER.md, 2026-09-04). This step diffs LZV's live feed against
+      # `games` and fails with the fix-up SQL in the job summary. It is read-only on purpose — a
+      # withdrawn club is not a decision for a cron job, so a human runs the SQL.
+      - name: Check LZV for fixture drift
+        run: node scripts/check-lzv-drift.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          LZV_SEASON_SLUG: ${{ vars.LZV_SEASON_SLUG || '2627' }}
+          LZV_OUR_TEAM_ID: ${{ vars.LZV_OUR_TEAM_ID || '742' }}

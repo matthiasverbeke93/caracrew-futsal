@@ -70,8 +70,14 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   `opponent_strength`, `player_claims`. Every `games` / `opponent_strength` row carries a `season_slug`.
   Migrations live in `supabase/*.sql` and are idempotent/safe to re-run.
 - **GitHub Actions:** `sync-lzv.yml` (weekly final scores from lzvcup.be), `sync-palmares.yml` (monthly opponent
-  strength), `weekly-digest.yml` (Friday RSVP/MOTM digest email via Resend). Driven by repo vars
-  `LZV_SEASON_SLUG` / `LZV_TEAM_URL` / `LZV_OUR_TEAM_ID` and secrets (`RESEND_API_KEY`, etc.).
+  strength), `weekly-digest.yml` (Friday RSVP/MOTM digest email via Resend), `sync-ics.yml` (daily: regenerate
+  the `.ics` feeds **from `games`**, then diff LZV's live feed against `games` and fail on drift). Driven by repo
+  vars `LZV_SEASON_SLUG` / `LZV_TEAM_URL` / `LZV_OUR_TEAM_ID` and secrets (`RESEND_API_KEY`, etc.).
+- 🔴 **Which job knows what about the calendar.** Nothing writes a fixture change automatically, and the jobs do
+  not overlap the way the names suggest: `sync-lzv` reads **results only** (so it is silent about a fixture not
+  yet played), `sync-ics` renders `games` into `.ics` and **never contacts LZV**, and `calendar:import` is a
+  manual local script that prints SQL. The only thing that notices a *reschedule* is the drift check
+  (`scripts/check-lzv-drift.mjs`), and it deliberately only reports — see the 2026-09-04 log entry.
 
 ## Domain rules that shape the code
 - **Seasons:** multi-season via `season_slug` (`2526` = 25-26, `2627` = 26-27). `SeasonSwitcher` is a single
@@ -399,6 +405,43 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-04** — *A moved fixture that no job could see: the drift check, and a feed that says it changed.*
+  - **What happened.** LZV moved fixture 1 of 26-27 on 2026-09-03 (21:00 Winketkaai → **20:00 IHAM Mechelen**),
+    two days before kickoff, with 14 RSVPs on the row and 7 players In. Running **Sync calendar feeds** changed
+    nothing and reported success, which is correct behaviour and the whole problem: `gen-ics.mjs` renders
+    `games` into `.ics` and never reads lzvcup.be, so the regenerated file was byte-identical. `sync-lzv` reads
+    results only and had nothing to say about a fixture not yet played. **No job in the repo could see a
+    reschedule.**
+  - **Also drifted, unnoticed since the seed:** `Bankzitters United` had been renamed **FC De Wandelgang**, and
+    the away leg at that club (2027-02-27, added to the feed 2026-08-24) was missing from `games` entirely — 21
+    fixtures stored against 22 published.
+  - **Fixed by hand, not by re-import** (`supabase/fix_2627_calendar_drift.sql`, applied + verified: 22 fixtures,
+    zero drift, all 14 RSVPs still attached). The importer would have made it worse: `games.id` is
+    `<season>-<date>-<hhmm>-<opponent>`, so it encodes **the kickoff time and the opponent name as well as the
+    date**. A 21:00 → 20:00 move gives a new id, `on conflict (id)` misses, and you get a second row with the
+    original's RSVPs stranded. Both updates therefore keep the id they had, even though `…-2100-vt-09` now
+    describes a 20:00 fixture. The id is opaque; the app reads `game_time`.
+  - **New: `npm run calendar:drift`** (`scripts/check-lzv-drift.mjs` + `src/utils/calendarDrift.js`), also the
+    last step of `sync-ics.yml`. Diffs LZV's feed against `games`, **fails the job**, and puts the fix-up SQL in
+    the job summary. Matches by id → date → opponent+home/away, so a fixture moved to a new date is followed
+    rather than reported as add+remove; refuses to guess when two fixtures are genuinely indistinguishable.
+    **Read-only on purpose** — a service-role key exists in CI, but "moved to Thursday" and "the club withdrew"
+    look identical to a diff and only one is mechanical. Removals are emitted as comments only: deleting a
+    postponed fixture would take its RSVPs with it. An empty feed is not drift (LZV serves nothing between
+    seasons).
+  - **The feeds now carry `SEQUENCE` + `LAST-MODIFIED`** (`src/utils/icsRevision.js`). They shipped neither, and
+    `DTSTAMP` was pinned to the latest fixture *date* — so to a client that checks, a moved kickoff was not new
+    information. The revision is read back out of the previously committed feed and bumped only on a real content
+    change, which preserves the property the old `feedStamp()` hack existed for: an unchanged fixture re-renders
+    byte-for-byte and the nightly job produces no diff. A pre-`SEQUENCE` feed bumps to 1 once (deliberately, not
+    0: RFC 5545 breaks an equal-`SEQUENCE` tie on `DTSTAMP`, and the old stamp sits in the *future*, so
+    re-publishing at 0 is exactly what a strict client discards).
+  - ⚠️ **Do not oversell that last part to the team.** `SEQUENCE` fixes the "may be ignored" case; it does not
+    make anyone's phone refresh. Google Calendar can sit on a subscribed URL for 12–48h. **A kickoff moving
+    inside 48h needs a message in the group chat**, not a calendar feed.
+  - Verification: `npm test` (297 pass, incl. 30 new across `calendarDrift`/`icsRevision`), `npm run lint`,
+    `npm run build`, `gen-ics.mjs` run twice to confirm byte-identical output, and the drift checker exercised
+    against a doctored feed for all four cases (time+venue, date move, added, removed).
 - **2026-09-02** — *Two more admin-only WhatsApp messages, next to the nudge.*
   - **`Announce new match`** (upcoming) and **`Chase stats (n)`** (played) join `Nudge missing`
     in the Share menu, under an `Admin only` caption so it is obvious which entries other people

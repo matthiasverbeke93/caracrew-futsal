@@ -17,7 +17,8 @@
     "digest:weekly": "node scripts/send-weekly-digest.mjs",
     "bugs:send": "node scripts/send-bug-reports.mjs",
     "ics:gen": "node scripts/gen-ics.mjs",
-    "calendar:import": "node scripts/import-lzv-calendar.mjs"
+    "calendar:import": "node scripts/import-lzv-calendar.mjs",
+    "calendar:drift": "node scripts/check-lzv-drift.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",

@@ -155,8 +155,11 @@ contained by, another's; the 25-26 set has no such pair (checked).
 
 ## 3. Calendar feeds
 
-Automatic within a day — `sync-ics.yml` runs daily and the `SUPABASE_ANON_KEY` secret is confirmed present. To
-force it:
+Automatic within a day — `sync-ics.yml` runs daily and the `SUPABASE_ANON_KEY` secret is confirmed present.
+
+⚠️ **The feeds are rendered FROM `games`, not from LZV.** `gen-ics.mjs` never contacts lzvcup.be, so running
+"Sync calendar feeds" after LZV moves a fixture produces a byte-identical file and reports success. The feed
+can only be as right as the `games` row behind it — fix the row first (§8), then regenerate. To force it:
 
 ```bash
 set -a; . ./.env; set +a      # gen-ics.mjs reads process.env and does NOT load .env
@@ -166,6 +169,15 @@ npm run ics:gen
 Then commit `public/fixtures-2627.ics` + `public/fixtures.ics`. `*.ics` is pinned `-text` in `.gitattributes`
 (RFC 5545 needs CRLF) — don't undo that. Confirm the deploy pipeline actually republishes `public/*.ics`;
 subscribers read the deployed file, not the DB.
+
+**Each event carries a `SEQUENCE` and a `LAST-MODIFIED`** (`src/utils/icsRevision.js`). RFC 5545 lets a client
+ignore an "update" that does not out-rank the copy it holds, and the feed used to ship no `SEQUENCE` at all with
+a `DTSTAMP` pinned to the latest fixture *date* — so a moved kickoff was, to a strict client, not new
+information. The revision is read back out of the previously committed feed and bumped only when the event's
+content actually differs, which is what keeps a scheduled regen from producing a diff every night. Practical
+consequence: **the generator's job is done the moment the file changes; how fast a subscriber sees it is the
+client's refresh interval** (Google Calendar can sit on a subscribed URL for 12–48h). If somebody needs a
+moved kickoff *now*, tell them — do not wait for their calendar app.
 
 ## 4. Confirm the repo vars
 
@@ -208,8 +220,45 @@ substring match either way). So opponent spelling is forgiving but **the date mu
 mismatch is silent apart from a `No DB row for <date> vs <opponent>` warning in the workflow log — the score
 just never lands. Check that log after the first few rounds.
 
-**Reschedules: edit in place, never re-import.** The `id` encodes the date, so re-importing a moved match
-creates a *second* row and leaves the original stranded. `attendance`, `player_stats`, `guest_players` and
+**Reschedules: edit in place, never re-import.** The `id` is `<season>-<date>-<hhmm>-<opponent>`, so it encodes
+the date, **the kickoff time and the opponent's name** — change any of the three and the importer's
+`on conflict (id)` no longer matches, creating a *second* row and leaving the original stranded. A 21:00 → 20:00
+move is enough to do it; so is a club renaming itself. `attendance`, `player_stats`, `guest_players` and
 `motm_votes` all FK to `game_id`, so a fresh row silently abandons every RSVP already collected. Update
 `game_date` / `game_time` (and `location` / `title` if the venue side changed) on the existing row and keep the
 id, even though the id then disagrees with the date. That is the lesser evil.
+
+## 8. Drift detection — the check that was missing
+
+`npm run calendar:drift` (also the last step of `sync-ics.yml`, daily) diffs LZV's live feed against `games` and
+**fails the job** when they disagree, printing the fix-up SQL into the workflow's job summary.
+
+```bash
+set -a; . ./.env; set +a
+npm run calendar:drift                      # exit 1 on drift
+npm run calendar:drift -- --out drift.sql   # write the SQL too
+npm run calendar:drift -- --no-fail         # look without failing
+```
+
+**Why it has to exist:** none of the other jobs could see a reschedule. `sync-lzv` only fetches *results*, so it
+says nothing about a fixture that has not been played yet; `sync-ics` renders `games` into `.ics` and never reads
+LZV at all; the importer is a manual local script. On **2026-09-04** that gap surfaced — LZV had moved fixture 1
+of 26-27 the previous afternoon (21:00 Winketkaai → 20:00 IHAM) and every job was green while 7 players held
+RSVPs for the wrong hall at the wrong hour, two days before kickoff.
+
+**It is read-only, deliberately.** A service-role key exists in CI (the score sync uses it) so this *could*
+self-apply, and it must not: a feed change can mean "moved to Thursday" or "that club withdrew and its fixtures
+are being redistributed", and only the first is mechanical. So the job hands you SQL and a human runs it.
+
+**What it reports** (`src/utils/calendarDrift.js`, matching by id → date → opponent+home/away):
+
+| | |
+| --- | --- |
+| **Changed** | date, time, venue, opponent or title differs → an `update` **keyed on the id the row already has** |
+| **In the feed, missing from `games`** | → a plain `insert` |
+| **In `games`, gone from the feed** | → *comments only.* Usually postponed-without-a-date; deleting takes the RSVPs with it |
+
+Every generated `update` keeps the existing id even when the new date/time would imply a different one — see the
+trap in §7. Where two fixtures are genuinely indistinguishable (same opponent, same side, both moved) it reports
+add + remove rather than guessing which one moved. An **empty feed is not treated as drift**: LZV serves nothing
+between seasons, and crying "22 fixtures deleted" every summer would train everyone to ignore the job.

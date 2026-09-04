@@ -109,6 +109,14 @@ exact `update` to run. Then re-run it to fill the score. See [`CALENDAR-IMPORT.m
 Findings are emitted as GitHub Actions `::warning::` annotations, so they surface in the run summary instead of
 scrolling past in the log.
 
+**A reschedule LZV has published but nobody has applied** is caught separately, because the score sync only ever
+sees fixtures that have already been *played*. `check-lzv-drift.mjs` runs as the last step of `sync-ics.yml`
+(daily) and as `npm run calendar:drift`: it diffs LZV's official iCalendar feed against `games`, fails the job on
+any difference, and writes the `update`/`insert` SQL into the job summary. It never writes to the database
+itself — a moved kickoff and a withdrawn club look identical to a diff, and only one of them is mechanical.
+The calendar feeds are generated *from* `games`, so a drift means the published `.ics` is wrong too, and
+regenerating it changes nothing until the row is fixed.
+
 ## Editing windows
 - **Attendance** is editable for the next 3 upcoming games only; later future fixtures stay locked until they enter that window.
 - **A full match closes RSVP.** Once `GAME_FULL_PLAYERS` (8, `src/constants.js`) people are marked **In**, that

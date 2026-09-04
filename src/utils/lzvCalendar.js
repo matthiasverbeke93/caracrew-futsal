@@ -351,7 +351,7 @@ export function toGameRows(events, options = {}) {
 }
 
 /** SQL string literal, single quotes doubled; bare NULL for null/undefined. */
-function sqlLiteral(value) {
+export function sqlLiteral(value) {
   if (value == null) return "null";
   return `'${String(value).replace(/'/g, "''")}'`;
 }
@@ -384,9 +384,11 @@ export function buildInsertSql(rows, options = {}) {
 -- Scores are left null; the weekly sync-lzv job fills them.
 --
 -- Re-runnable: refreshes the mutable columns on an id clash and never touches home_score/away_score.
--- NOTE: a rescheduled match changes game_date, which changes the id, so re-importing it would create a
--- SECOND row and orphan every RSVP (attendance/player_stats/guest_players/motm_votes all FK to game_id).
--- Move a fixture by updating game_date/game_time on the EXISTING row instead. See CALENDAR-IMPORT.md.
+-- NOTE: the id is <season>-<date>-<hhmm>-<opponent>, so a rescheduled match — a new DATE, a new KICKOFF TIME,
+-- or a renamed club — gets a new id, and re-importing it would create a SECOND row and orphan every RSVP
+-- (attendance/player_stats/guest_players/motm_votes all FK to game_id). Move a fixture by updating
+-- game_date/game_time/location on the EXISTING row instead. "npm run calendar:drift" writes that SQL.
+-- See CALENDAR-IMPORT.md.
 
 begin;
 

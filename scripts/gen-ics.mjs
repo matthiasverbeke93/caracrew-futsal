@@ -6,13 +6,14 @@
 // Env (falls back to the Vite-prefixed names so a local .env works):
 //   SUPABASE_URL / VITE_SUPABASE_URL
 //   SUPABASE_ANON_KEY / VITE_SUPABASE_ANON_KEY
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { SEASON_OPTIONS, DEFAULT_SEASON_SLUG, seasonLabel } from "../src/seasons.js";
 import { TEAM_NAME } from "../src/constants.js";
 import { cleanOpponentName } from "../src/utils/opponent.js";
 import { isHomeFromTitle } from "../src/utils/lzvCalendar.js";
+import { reviseEvents } from "../src/utils/icsRevision.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -67,19 +68,6 @@ function fold(line) {
   }
   parts.push(" " + rest);
   return parts.join("\r\n");
-}
-
-// Stable per-feed timestamp derived from the latest fixture date, NOT the run time —
-// so a scheduled regen only produces a diff when the fixtures themselves change.
-function feedStamp(games) {
-  let latest = "20240101";
-  for (const g of games) {
-    if (g.game_date) {
-      const d = String(g.game_date).replace(/-/g, "");
-      if (d > latest) latest = d;
-    }
-  }
-  return `${latest}T000000Z`;
 }
 
 /** Local (Europe/Brussels floating) datetime value from game_date + game_time. */
@@ -190,7 +178,37 @@ function describeGame(g, slug, label, strengths) {
   return lines.join("\n");
 }
 
-function buildCalendar(slug, games, strengths, dtstamp) {
+/** One VEVENT as `{ uid, lines }` — content properties only; `SEQUENCE`/`DTSTAMP`/`LAST-MODIFIED`
+ *  are added by `reviseEvents` so they can be compared against the feed we published last time. */
+function buildEvent(g, slug, label, strengths) {
+  const opp = g.opponent || "Opponent TBD";
+  const summary = g.title || `${TEAM_NAME} vs ${opp}`;
+  return {
+    uid: `${escapeText(g.id)}@caracrew.org`,
+    lines: [
+      `DTSTART;TZID=Europe/Brussels:${localDT(g.game_date, g.game_time, 0)}`,
+      `DTEND;TZID=Europe/Brussels:${localDT(g.game_date, g.game_time, 1)}`,
+      `SUMMARY:${escapeText(summary)}`,
+      g.location ? `LOCATION:${escapeText(g.location)}` : null,
+      `DESCRIPTION:${escapeText(describeGame(g, slug, label, strengths))}`,
+      `URL:${gamePageUrl(g, slug)}`,
+      `CATEGORIES:${escapeText(TEAM_NAME)},Futsal`,
+      "STATUS:CONFIRMED",
+    ].filter(Boolean),
+  };
+}
+
+/** The previously published feed, or "" the first time round — the source of each event's last
+ *  known revision. A missing file is normal (fresh clone, new season) and must not be fatal. */
+function readPreviousFeed(path) {
+  try {
+    return readFileSync(path, "utf8");
+  } catch {
+    return "";
+  }
+}
+
+function buildCalendar(slug, games, strengths, previousText, now) {
   const label = seasonLabel(slug);
   const lines = [
     "BEGIN:VCALENDAR",
@@ -203,28 +221,32 @@ function buildCalendar(slug, games, strengths, dtstamp) {
     ...VTIMEZONE,
   ];
 
-  for (const g of games) {
-    if (!g.game_date) continue;
-    const opp = g.opponent || "Opponent TBD";
-    const summary = g.title || `${TEAM_NAME} vs ${opp}`;
+  const events = reviseEvents(
+    games.filter((g) => g.game_date).map((g) => buildEvent(g, slug, label, strengths)),
+    previousText,
+    now
+  );
+
+  for (const e of events) {
     lines.push(
       "BEGIN:VEVENT",
-      `UID:${escapeText(g.id)}@caracrew.org`,
-      `DTSTAMP:${dtstamp}`,
-      `DTSTART;TZID=Europe/Brussels:${localDT(g.game_date, g.game_time, 0)}`,
-      `DTEND;TZID=Europe/Brussels:${localDT(g.game_date, g.game_time, 1)}`,
-      `SUMMARY:${escapeText(summary)}`,
-      g.location ? `LOCATION:${escapeText(g.location)}` : null,
-      `DESCRIPTION:${escapeText(describeGame(g, slug, label, strengths))}`,
-      `URL:${gamePageUrl(g, slug)}`,
-      `CATEGORIES:${escapeText(TEAM_NAME)},Futsal`,
-      "STATUS:CONFIRMED",
+      `UID:${e.uid}`,
+      `DTSTAMP:${e.dtstamp}`,
+      `SEQUENCE:${e.sequence}`,
+      `LAST-MODIFIED:${e.dtstamp}`,
+      ...e.lines,
       "END:VEVENT"
     );
   }
 
   lines.push("END:VCALENDAR");
-  return lines.filter(Boolean).map(fold).join("\r\n") + "\r\n";
+  const ics = lines.filter(Boolean).map(fold).join("\r\n") + "\r\n";
+  return {
+    ics,
+    revised: events.filter((e) => e.reason === "content"),
+    fresh: events.filter((e) => e.reason === "new"),
+    migrated: events.filter((e) => e.reason === "migrated").length,
+  };
 }
 
 async function main() {
@@ -233,11 +255,26 @@ async function main() {
       "Missing SUPABASE_URL/ANON_KEY (or VITE_ equivalents). See .env / repo secrets."
     );
   }
+  const now = new Date();
   for (const { slug } of SEASON_OPTIONS) {
     const [games, strengths] = await Promise.all([fetchGames(slug), fetchStrengths(slug)]);
-    const ics = buildCalendar(slug, games, strengths, feedStamp(games));
-    writeFileSync(join(PUBLIC_DIR, `fixtures-${slug}.ics`), ics);
+    const target = join(PUBLIC_DIR, `fixtures-${slug}.ics`);
+    const { ics, revised, fresh, migrated } = buildCalendar(
+      slug,
+      games,
+      strengths,
+      readPreviousFeed(target),
+      now
+    );
+    writeFileSync(target, ics);
     console.log(`[ics] fixtures-${slug}.ics — ${games.length} fixtures`);
+    // Say which events got a SEQUENCE bump: this is the line that tells you a subscriber's
+    // calendar is about to move, and the one to look for when a change "did not arrive".
+    for (const e of revised) console.log(`[ics]   revised → SEQUENCE ${e.sequence}  ${e.uid}`);
+    for (const e of fresh) console.log(`[ics]   new event         ${e.uid}`);
+    if (migrated) {
+      console.log(`[ics]   ${migrated} event(s) re-stamped onto SEQUENCE 1 (one-off: previous feed carried none)`);
+    }
     if (slug === DEFAULT_SEASON_SLUG) {
       writeFileSync(join(PUBLIC_DIR, "fixtures.ics"), ics);
       console.log(`[ics] fixtures.ics — mirror of default season ${slug}`);

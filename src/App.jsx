@@ -555,6 +555,7 @@ export default function App() {
                     allGamePlayers={allGamePlayers}
                     selectedGame={selectedGame}
                     gameStats={gameStats}
+                    gameAttendance={gameAttendance}
                     selectedGameTotals={selectedGameTotals}
                     saveGuestStat={saveGuestStat}
                     saveStat={saveStat}

@@ -79,3 +79,24 @@ export function countPlayerMotmWins(playerId, games, votes, nowMs = Date.now()) 
   return wins;
 }
 
+
+/**
+ * Who can be nominated for player of the match.
+ *
+ * Two filters, both deliberate:
+ * - **Roster only.** Guests (`guest` / `ad_hoc_guest`) never appear on the ballot,
+ *   whether or not they turned up — MotM is a club award.
+ * - **RSVP'd "In".** Only players who actually answered `playing` for this fixture.
+ *   `if_needed` and `cant` are not "playing", and a blank RSVP means we have no
+ *   evidence they were there, so the ballot stays the size of the squad that showed up
+ *   instead of the whole roster.
+ *
+ * Name lookups for existing votes must NOT go through here — an old vote may point at
+ * someone who no longer qualifies, and it still needs a name.
+ */
+export function getMotmCandidates(allGamePlayers, gameAttendance) {
+  const playingIds = new Set(
+    (gameAttendance || []).filter((a) => a.status === "playing").map((a) => a.player_id)
+  );
+  return (allGamePlayers || []).filter((p) => p.type === "fixed" && playingIds.has(p.id));
+}

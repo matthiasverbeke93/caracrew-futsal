@@ -170,7 +170,9 @@ export default function GuideModal({ onClose }) {
               <strong>
                 {MOTM_VOTING_DAYS} day{MOTM_VOTING_DAYS === 1 ? "" : "s"}
               </strong>
-              . One vote each, and the winner appears in the season stats once voting closes.
+              . One vote each, and the winner appears in the season stats once voting closes. You
+              can only vote for roster players who marked themselves <strong>In</strong> for that
+              match — guests are never on the ballot.
             </p>
           </section>
 

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { MOTM_VOTING_DAYS, getMotmLeaderIds, isMotmVotingOpen } from "./motm.js";
+import {
+  MOTM_VOTING_DAYS,
+  getMotmCandidates,
+  getMotmLeaderIds,
+  isMotmVotingOpen,
+} from "./motm.js";
 
 /** Local YYYY-MM-DD offset from today. */
 function isoOffset(days) {
@@ -88,5 +93,38 @@ describe("isMotmVotingOpen", () => {
       expect(isMotmVotingOpen(game, at("22:00"))).toBe(false);
       expect(isMotmVotingOpen(game, at("20:00"))).toBe(false);
     });
+  });
+});
+
+describe("getMotmCandidates", () => {
+  const players = [
+    { id: "a", name: "Ann", type: "fixed" },
+    { id: "b", name: "Bo", type: "fixed" },
+    { id: "c", name: "Cas", type: "fixed" },
+    { id: "d", name: "Dre", type: "fixed" },
+    { id: "g1", name: "Pool guest", type: "guest" },
+    { id: "g2", name: "Ad-hoc guest", type: "ad_hoc_guest", status: "playing" },
+  ];
+  const attendance = [
+    { player_id: "a", status: "playing" },
+    { player_id: "b", status: "if_needed" },
+    { player_id: "c", status: "cant" },
+    { player_id: "g1", status: "playing" },
+    // "d" never answered
+  ];
+
+  it("keeps only roster players who RSVP'd In", () => {
+    expect(getMotmCandidates(players, attendance).map((p) => p.id)).toEqual(["a"]);
+  });
+
+  it("never includes guests, even when they are marked In", () => {
+    const ids = getMotmCandidates(players, attendance).map((p) => p.id);
+    expect(ids).not.toContain("g1");
+    expect(ids).not.toContain("g2");
+  });
+
+  it("returns [] when nobody is In, and tolerates missing input", () => {
+    expect(getMotmCandidates(players, [])).toEqual([]);
+    expect(getMotmCandidates(undefined, undefined)).toEqual([]);
   });
 });

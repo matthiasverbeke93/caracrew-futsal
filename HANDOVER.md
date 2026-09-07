@@ -405,6 +405,17 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-07** — *MotM ballot is now only the roster players who RSVP'd In.*
+  - **Why.** The vote grid listed every player in `allGamePlayers` — the whole roster plus guests — so you
+    could hand player of the match to someone who was not at the game. Two rules asked for: only players who
+    marked themselves **In**, and never guests.
+  - **What changed.** New `getMotmCandidates(allGamePlayers, gameAttendance)` in `utils/motm.js` (tested):
+    keeps `type === "fixed"` players whose `attendance.status === "playing"`. `StatsTab` takes a new
+    `gameAttendance` prop (passed from `App.jsx`) and maps the ballot over that instead, with a hint when
+    nobody is In. `if_needed`, `cant` and a blank RSVP all fall outside the ballot. Guide text updated.
+  - **Deliberately untouched:** the winner line and the closed-voting tally still resolve names through
+    `allGamePlayers` — historical votes may point at someone who no longer qualifies and still need a name.
+    No server-side/RLS check was added; this is a UI-level ballot restriction only.
 - **2026-09-07** — *The last played match is pinned to the top of the sidebar list.*
   - **Why.** "All" sorts upcoming soonest-first and only then played most-recent-first, so with a full
     season loaded the match that just happened — the one whose goals/assists still need entering — sat at

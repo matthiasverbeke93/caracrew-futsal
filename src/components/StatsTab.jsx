@@ -10,6 +10,7 @@ import { supabase } from "../lib/supabase";
 import { isSeasonVotingLocked } from "../seasons";
 import {
   MOTM_VOTING_DAYS,
+  getMotmCandidates,
   getMotmLeaderIds,
   getMotmVotingEnd,
   getMotmVotingStart,
@@ -20,6 +21,7 @@ export default function StatsTab({
   allGamePlayers,
   selectedGame,
   gameStats,
+  gameAttendance,
   selectedGameTotals,
   saveGuestStat,
   saveStat,
@@ -102,6 +104,12 @@ export default function StatsTab({
   const motmLeaders = useMemo(
     () => getMotmLeaderIds(selectedGame.id, motmVotes),
     [motmVotes, selectedGame.id]
+  );
+
+  // Ballot = roster players who RSVP'd In for this fixture; guests are never eligible.
+  const motmCandidates = useMemo(
+    () => getMotmCandidates(allGamePlayers, gameAttendance),
+    [allGamePlayers, gameAttendance]
   );
 
   const showMotmBlock = isPlayed(selectedGame) && !!motmEnd;
@@ -200,9 +208,14 @@ export default function StatsTab({
             <p className="motm-hint">No votes recorded for this game.</p>
           )}
           {motmMessage && <p className="error-inline">{motmMessage}</p>}
-          {votingOpen && canVote && (
+          {votingOpen && canVote && motmCandidates.length === 0 && (
+            <p className="motm-hint">
+              Nobody is marked In for this match, so there is nobody to vote for.
+            </p>
+          )}
+          {votingOpen && canVote && motmCandidates.length > 0 && (
             <div className="motm-vote-grid">
-              {allGamePlayers.map((player) => (
+              {motmCandidates.map((player) => (
                 <button
                   key={player.id}
                   type="button"

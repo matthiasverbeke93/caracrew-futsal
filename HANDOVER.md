@@ -405,6 +405,20 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-07** — *The last played match is pinned to the top of the sidebar list.*
+  - **Why.** "All" sorts upcoming soonest-first and only then played most-recent-first, so with a full
+    season loaded the match that just happened — the one whose goals/assists still need entering — sat at
+    the bottom of ~20 fixtures. Completing stats meant scrolling past every fixture still to come.
+  - **What changed.** `GameSidebar` now pins the most recent played fixture to the head of the **list**
+    view (`pinnedLastPlayedId` / `listGames`), marked with an accent left rail and a green **Last played**
+    pill; the existing **Stats missing** pill rides alongside it, so the card says both why it is on top
+    and what is outstanding. Pinned only when the list holds both blocks — which is exactly the All view;
+    "Upcoming" has nothing played to pin and "Played" already leads with it.
+  - **Deliberately untouched:** the shared `sortedFilteredGames` sort in `useFutsalData` (so the
+    auto-selection effect still opens the next *upcoming* fixture, not the pinned one) and the **calendar**
+    view, which groups by month and stays chronological.
+  - Verification: `npm run lint`, `npm test` (297 pass), `npm run build`. Visual check is the user's —
+    no browser automation in this workspace.
 - **2026-09-04** — *A moved fixture that no job could see: the drift check, and a feed that says it changed.*
   - **What happened.** LZV moved fixture 1 of 26-27 on 2026-09-03 (21:00 Winketkaai → **20:00 IHAM Mechelen**),
     two days before kickoff, with 14 RSVPs on the row and 7 players In. Running **Sync calendar feeds** changed

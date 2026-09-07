@@ -19,6 +19,11 @@ const VIEW_OPTIONS = [
 
 const EMPTY_COUNTS = { playing: 0, ifNeeded: 0, responses: 0 };
 
+/** Sortable kickoff key from the local-day strings we store (never Date math — see HANDOVER). */
+function kickoffKey(game) {
+  return `${game.game_date || ""}T${game.game_time || ""}`;
+}
+
 const RSVP_CHIP = {
   playing: { label: "You are marked In", short: "In", className: "my-rsvp-in" },
   cant: { label: "You are marked Out", short: "Out", className: "my-rsvp-out" },
@@ -281,6 +286,36 @@ export default function GameSidebar({
     return m;
   }, [attendance, guestPlayers]);
 
+  /**
+   * The match whose stats still need completing is the one that just happened — but "All"
+   * lists every upcoming fixture first and only then the played ones, so it sits at the very
+   * bottom. Pin the most recent played match to the top of the list instead.
+   *
+   * Only when the list actually mixes the two blocks, which is exactly the "All" view:
+   * "Upcoming" has nothing played to pin, and "Played" already leads with it.
+   */
+  const pinnedLastPlayedId = useMemo(() => {
+    let last = null;
+    let hasUpcoming = false;
+    for (const game of games) {
+      const status = gameStatusById[game.id];
+      if (!status) continue;
+      if (!status.played) {
+        hasUpcoming = true;
+        continue;
+      }
+      if (!last || kickoffKey(game) > kickoffKey(last)) last = game;
+    }
+    return hasUpcoming && last ? last.id : null;
+  }, [games, gameStatusById]);
+
+  const listGames = useMemo(() => {
+    if (!pinnedLastPlayedId) return games;
+    const pinned = games.find((g) => g.id === pinnedLastPlayedId);
+    if (!pinned) return games;
+    return [pinned, ...games.filter((g) => g.id !== pinnedLastPlayedId)];
+  }, [games, pinnedLastPlayedId]);
+
   const showSidebarMatchStats = activeMainTab !== "stats";
   const statusSegment = getStatusSegment(gameFilters);
   const hasExtraFiltersActive = GAME_EXTRA_FILTERS.some((f) => gameFilters.includes(f.id));
@@ -479,7 +514,7 @@ export default function GameSidebar({
 
           {!showCalendar &&
             !loading &&
-            games.map((game) => {
+            listGames.map((game) => {
               const { playing, ifNeeded, responses } =
                 countsByGameId.get(game.id) ?? EMPTY_COUNTS;
               const status = gameStatusById[game.id];
@@ -499,6 +534,7 @@ export default function GameSidebar({
               const attendanceNext = attendanceHighlightIds?.has(game.id);
               const myRow = currentPlayerId && myAttendanceByGameId?.get(game.id);
               const nextRank = nextAttendanceGames?.findIndex((g) => g.id === game.id) ?? -1;
+              const isPinnedLastPlayed = game.id === pinnedLastPlayedId;
 
               return (
                 <button
@@ -507,12 +543,24 @@ export default function GameSidebar({
                   type="button"
                   className={`${cardClass} ${game.id === selectedGameId ? "selected" : ""} ${
                     attendanceNext ? "attendance-next" : ""
-                  }`}
+                  } ${isPinnedLastPlayed ? "last-played" : ""}`}
                   onClick={() => onSelectGame(game.id)}
                 >
                   <div className="game-top">
                     <strong>{cleanOpponentName(game.opponent)}</strong>
-                    {attendanceNext && !played && nextRank >= 0 ? (
+                    {isPinnedLastPlayed ? (
+                      <span className="game-top-pills">
+                        <span
+                          className="game-status-pill is-last-played"
+                          title="Most recent match — pinned so its stats can be completed"
+                        >
+                          Last played
+                        </span>
+                        {showSidebarMatchStats && status?.statsMissing ? (
+                          <span className="game-status-pill is-stats-missing">Stats missing</span>
+                        ) : null}
+                      </span>
+                    ) : attendanceNext && !played && nextRank >= 0 ? (
                       <span
                         className="next-fixture-rank-badge"
                         title="Mark attendance — upcoming priority fixture"

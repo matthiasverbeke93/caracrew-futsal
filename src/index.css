@@ -2746,6 +2746,30 @@ button {
   font-weight: 700;
 }
 
+/* The most recent played match is pinned to the top of the "All" list so its stats can be
+   completed (see GameSidebar). The accent rail says "promoted", not "out of date order". */
+.game-card.last-played {
+  border-color: var(--accent-muted);
+}
+
+.game-card.last-played::before {
+  background: var(--accent);
+}
+
+.game-top-pills {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.game-top .game-status-pill.is-last-played {
+  color: var(--on-accent);
+  background: var(--accent);
+  font-weight: 700;
+}
+
 .mini-counts {
   display: flex;
   gap: 8px;

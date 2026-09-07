@@ -405,6 +405,17 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-07** — *The fixtures sidebar no longer changes when you open the Stats tab.*
+  - **Why.** Since `f311dae` (2026-05-12) `GameSidebar` took an `activeMainTab` prop and derived
+    `showSidebarMatchStats = activeMainTab !== "stats"`, which stripped the RSVP/readiness layer from both
+    sidebar views the moment you opened a match's Stats tab — readiness tint and count chip in **calendar**
+    view; those plus the "Stats missing" pill, the "x of y In" label, the "No GK" chip, the score chip and
+    the difficulty badge in **list** view. The intent was to stop RSVP colouring competing with stats entry,
+    but in practice the sidebar silently rewriting itself on a tab switch reads as a glitch, and it was
+    documented nowhere.
+  - **What changed.** `showSidebarMatchStats` and the `activeMainTab` prop are gone; every chip, pill, tint
+    and badge now renders on the same rules regardless of which tab is open. Net −15 lines, several
+    three-branch ternaries collapsed back to two.
 - **2026-09-07** — *MotM ballot is now only the roster players who RSVP'd In.*
   - **Why.** The vote grid listed every player in `allGamePlayers` — the whole roster plus guests — so you
     could hand player of the match to someone who was not at the game. Two rules asked for: only players who

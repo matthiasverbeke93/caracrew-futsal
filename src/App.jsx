@@ -450,7 +450,6 @@ export default function App() {
           seasonSlug={seasonSlug}
           currentPlayerId={currentPlayer?.id ?? null}
           nextAttendanceGames={sidebarNextAttendanceGames}
-          activeMainTab={tab}
           motmVotes={motmVotes}
           voterUserId={user?.id ?? null}
         />

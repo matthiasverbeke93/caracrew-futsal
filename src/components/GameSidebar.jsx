@@ -224,7 +224,6 @@ export default function GameSidebar({
   seasonSlug,
   currentPlayerId,
   nextAttendanceGames,
-  activeMainTab = "attendance",
   motmVotes = [],
   voterUserId = null,
 }) {
@@ -316,7 +315,6 @@ export default function GameSidebar({
     return [pinned, ...games.filter((g) => g.id !== pinnedLastPlayedId)];
   }, [games, pinnedLastPlayedId]);
 
-  const showSidebarMatchStats = activeMainTab !== "stats";
   const statusSegment = getStatusSegment(gameFilters);
   const hasExtraFiltersActive = GAME_EXTRA_FILTERS.some((f) => gameFilters.includes(f.id));
 
@@ -450,12 +448,9 @@ export default function GameSidebar({
                         countsByGameId.get(game.id) ?? EMPTY_COUNTS;
                       const status = gameStatusById[game.id];
                       const playedCal = status?.played;
-                      const tone =
-                        !showSidebarMatchStats && !playedCal
-                          ? "neutral"
-                          : status?.played
-                            ? "neutral"
-                            : readinessClass(playing, responses).replace("game-card ", "");
+                      const tone = status?.played
+                        ? "neutral"
+                        : readinessClass(playing, responses).replace("game-card ", "");
 
                       const attendanceNext = attendanceHighlightIds?.has(game.id);
                       const myRowCal =
@@ -483,15 +478,13 @@ export default function GameSidebar({
                               </span>
                             )}
                             <strong>{cleanOpponentName(game.opponent)}</strong>
-                            {showSidebarMatchStats && (
-                              <AttendanceCountChip
-                                playing={playing}
-                                ifNeeded={ifNeeded}
-                                responses={responses}
-                                played={playedCal}
-                                compact
-                              />
-                            )}
+                            <AttendanceCountChip
+                              playing={playing}
+                              ifNeeded={ifNeeded}
+                              responses={responses}
+                              played={playedCal}
+                              compact
+                            />
                             {currentPlayerId || voterUserId ? (
                               <MyRsvpChip
                                 game={game}
@@ -520,15 +513,10 @@ export default function GameSidebar({
               const status = gameStatusById[game.id];
 
               const played = status?.played;
-              const cardClass =
-                !showSidebarMatchStats && !played
-                  ? "game-card neutral"
-                  : played
-                    ? "game-card neutral"
-                    : readinessClass(playing, responses);
-              const difficulty =
-                showSidebarMatchStats &&
-                getDifficulty(game.opponent, opponentStrengths, seasonSlug);
+              const cardClass = played
+                ? "game-card neutral"
+                : readinessClass(playing, responses);
+              const difficulty = getDifficulty(game.opponent, opponentStrengths, seasonSlug);
               const hasScore =
                 played && game.home_score != null && game.away_score != null;
               const attendanceNext = attendanceHighlightIds?.has(game.id);
@@ -556,7 +544,7 @@ export default function GameSidebar({
                         >
                           Last played
                         </span>
-                        {showSidebarMatchStats && status?.statsMissing ? (
+                        {status?.statsMissing ? (
                           <span className="game-status-pill is-stats-missing">Stats missing</span>
                         ) : null}
                       </span>
@@ -569,7 +557,7 @@ export default function GameSidebar({
                       </span>
                     ) : attendanceNext && !played ? (
                       <span className="attendance-next-badge">Attendance</span>
-                    ) : played && showSidebarMatchStats && status?.statsMissing ? (
+                    ) : played && status?.statsMissing ? (
                       <span className="game-status-pill is-stats-missing">Stats missing</span>
                     ) : (
                       <span className="game-status-pill">
@@ -592,7 +580,7 @@ export default function GameSidebar({
                         voterUserId={voterUserId}
                       />
                     ) : null}
-                    {showSidebarMatchStats && !played && (
+                    {!played && (
                       <AttendanceCountChip
                         playing={playing}
                         ifNeeded={ifNeeded}
@@ -600,21 +588,19 @@ export default function GameSidebar({
                         played={played}
                       />
                     )}
-                    {showSidebarMatchStats && !played && (
-                      <span>{playerStatusLabel(playing, responses)}</span>
-                    )}
+                    {!played && <span>{playerStatusLabel(playing, responses)}</span>}
                     {/* Enough bodies is not the same as having a goalie. */}
-                    {showSidebarMatchStats && !played && responses > 0 && status?.keeperMissing && (
+                    {!played && responses > 0 && status?.keeperMissing && (
                       <span className="no-keeper-chip" title="No goalkeeper has said In">
                         No GK
                       </span>
                     )}
-                    {showSidebarMatchStats && hasScore && (
+                    {hasScore && (
                       <span className="result-chip-mini" title="Caracrew – opponent">
                         {game.home_score}–{game.away_score}
                       </span>
                     )}
-                    {showSidebarMatchStats && difficulty && (
+                    {difficulty && (
                       <span className="mini-diff">
                         {difficulty.label} · P{difficulty.position}
                       </span>

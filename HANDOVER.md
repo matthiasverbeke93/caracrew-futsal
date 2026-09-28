@@ -69,8 +69,8 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
 - **Supabase tables:** `games`, `players`, `attendance`, `player_stats`, `guest_players`, `motm_votes`,
   `opponent_strength`, `player_claims`. Every `games` / `opponent_strength` row carries a `season_slug`.
   Migrations live in `supabase/*.sql` and are idempotent/safe to re-run.
-- **GitHub Actions:** `sync-lzv.yml` (weekly final scores from lzvcup.be), `sync-palmares.yml` (monthly opponent
-  strength), `weekly-digest.yml` (Friday RSVP/MOTM digest email via Resend), `sync-ics.yml` (daily: regenerate
+- **GitHub Actions:** `sync-lzv.yml` (weekly final scores from lzvcup.be), `sync-palmares.yml` (daily opponent
+  strength + current standings, which feed the stats-page league table), `weekly-digest.yml` (Friday RSVP/MOTM digest email via Resend), `sync-ics.yml` (daily: regenerate
   the `.ics` feeds **from `games`**, then diff LZV's live feed against `games` and fail on drift). Driven by repo
   vars `LZV_SEASON_SLUG` / `LZV_TEAM_URL` / `LZV_OUR_TEAM_ID` and secrets (`RESEND_API_KEY`, etc.).
 - 🔴 **Which job knows what about the calendar.** Nothing writes a fixture change automatically, and the jobs do
@@ -405,6 +405,12 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-28** — *Stats-page league table was stuck at all zeros.* The opponent rows come from
+  `opponent_strength`, written only by `sync-palmares.yml`, which ran on the 1st of each month. Its last run
+  (1 Sept) predated the 6 Sept opener, so three rounds in every opponent still read 0 pts/match. Schedule is
+  now **daily 06:30 UTC** (~20s, a dozen LZV page fetches); ran it manually once — 11 opponents updated.
+  Our own row is still computed from `games` scores, so it lags until the Sunday `sync-lzv` run or an admin
+  enters the score.
 - **2026-09-07** — *The fixtures sidebar no longer changes when you open the Stats tab.*
   - **Why.** Since `f311dae` (2026-05-12) `GameSidebar` took an `activeMainTab` prop and derived
     `showSidebarMatchStats = activeMainTab !== "stats"`, which stripped the RSVP/readiness layer from both

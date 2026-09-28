@@ -2,9 +2,11 @@ name: Sync opponent palmares
 
 on:
   schedule:
-    # First day of each month, 06:30 UTC. Palmares only updates between seasons,
-    # so monthly is more than enough.
-    - cron: "30 6 1 * *"
+    # Daily, 06:30 UTC. The current-season standings (position, pts/match,
+    # played) feed the stats-page league table and change with every round
+    # other teams play, so monthly left the table weeks out of date. The run
+    # is ~20s and a dozen page fetches, so daily costs nothing.
+    - cron: "30 6 * * *"
   workflow_dispatch: {}
 
 permissions:

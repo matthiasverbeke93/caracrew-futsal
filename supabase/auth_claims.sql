@@ -1,3 +1,5 @@
+-- ⚠ If you re-run this file, re-run hardening_2026_09.sql afterwards: it supersedes the policies,
+-- grants and admin_* function bodies defined here (same permissions, stricter guards).
 -- Self-service player claim flow + admin helper functions.
 --
 -- 1. New `player_claims` table: a signed-in user proposes "I am player X",
@@ -96,7 +98,8 @@ security definer
 set search_path = public
 as $$
 declare
-  c player_claims%rowtype;
+  c        player_claims%rowtype;
+  existing uuid;
 begin
   if not is_admin_user() then
     raise exception 'Not authorised';
@@ -104,6 +107,14 @@ begin
   select * into c from player_claims where id = claim_id for update;
   if not found or c.status <> 'pending' then
     raise exception 'Claim not found or already decided';
+  end if;
+  -- Anti-steal guard (kept in sync with fix_rls_lockdown.sql): never overwrite another link.
+  select auth_user_id into existing from players where id = c.player_id;
+  if existing is not null and existing <> c.user_id then
+    raise exception 'Player % is already linked to another account', c.player_id;
+  end if;
+  if exists (select 1 from players where auth_user_id = c.user_id and id <> c.player_id) then
+    raise exception 'That account is already linked to a different player';
   end if;
   update players
      set auth_user_id = c.user_id,

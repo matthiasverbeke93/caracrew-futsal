@@ -1,3 +1,5 @@
+-- ⚠ If you re-run this file, re-run hardening_2026_09.sql afterwards: it supersedes the policies,
+-- grants and admin_* function bodies defined here (same permissions, stricter guards).
 -- ============================================================================
 -- bug_reports — in-app "Report a bug" button.
 -- Run this in the Supabase SQL editor BEFORE deploying the frontend that uses

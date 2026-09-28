@@ -5,12 +5,23 @@
 -- (RLS makes those admin/service-role only), so this cannot be run from the app or a local script.
 --
 -- Touches ONLY season_slug = '2627'. Season 2526 and the players roster are never referenced.
--- Safe to re-run: every statement is an unconditional delete on a 2627 filter.
+-- ⚠ HISTORICAL — ALREADY RUN 2026-08-17. Do NOT re-run: 2627 now holds the REAL season (official
+-- fixtures, RSVPs, stats, MOTM votes) and every statement below is an unconditional delete on it.
+-- The guard below aborts if any played data exists, so an accidental run is a no-op error.
 --
 -- Census taken 2026-08-17 before the wipe — expected deletions:
 --   games 30 | opponent_strength 15 | attendance 61 | guest_players 3 | player_stats 0 | motm_votes 0
 
 begin;
+
+do $$
+begin
+  if exists (select 1 from player_stats ps join games g on g.id = ps.game_id where g.season_slug = '2627')
+     or exists (select 1 from motm_votes mv join games g on g.id = mv.game_id where g.season_slug = '2627')
+     or exists (select 1 from games where season_slug = '2627' and home_score is not null) then
+    raise exception 'clear_season_2627.sql: 2627 has real results — refusing to wipe the season';
+  end if;
+end $$;
 
 -- Dependents first. (guest_players and motm_votes also cascade from games, but be explicit —
 -- attendance and player_stats are deleted by filter, so order matters for those two.)

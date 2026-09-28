@@ -14,18 +14,10 @@ create policy "motm_votes_public_read"
 on motm_votes for select
 using (true);
 
+-- Write policies live in hardening_2026_09.sql (supersedes fix_rls_lockdown.sql). The original
+-- `using (true)` insert/update/delete policies that used to follow here reopened anonymous writes
+-- whenever this file was re-run (the 2026-08-19 incident class) and have been removed. Drop them
+-- defensively in case an old copy was ever applied:
 drop policy if exists "motm_votes_public_insert" on motm_votes;
-create policy "motm_votes_public_insert"
-on motm_votes for insert
-with check (true);
-
 drop policy if exists "motm_votes_public_update" on motm_votes;
-create policy "motm_votes_public_update"
-on motm_votes for update
-using (true)
-with check (true);
-
 drop policy if exists "motm_votes_public_delete" on motm_votes;
-create policy "motm_votes_public_delete"
-on motm_votes for delete
-using (true);

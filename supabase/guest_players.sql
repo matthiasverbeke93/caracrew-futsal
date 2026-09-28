@@ -22,18 +22,10 @@ create policy "guest_players_public_read"
 on guest_players for select
 using (true);
 
+-- Write policies live in hardening_2026_09.sql (supersedes fix_rls_lockdown.sql). The original
+-- `using (true)` insert/update/delete policies that used to follow here reopened anonymous writes
+-- whenever this file was re-run (the 2026-08-19 incident class) and have been removed. Drop them
+-- defensively in case an old copy was ever applied:
 drop policy if exists "guest_players_public_insert" on guest_players;
-create policy "guest_players_public_insert"
-on guest_players for insert
-with check (true);
-
 drop policy if exists "guest_players_public_update" on guest_players;
-create policy "guest_players_public_update"
-on guest_players for update
-using (true)
-with check (true);
-
 drop policy if exists "guest_players_public_delete" on guest_players;
-create policy "guest_players_public_delete"
-on guest_players for delete
-using (true);

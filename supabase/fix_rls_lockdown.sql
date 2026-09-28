@@ -1,3 +1,5 @@
+-- ⚠ If you re-run this file, re-run hardening_2026_09.sql afterwards: it supersedes the policies,
+-- grants and admin_* function bodies defined here (same permissions, stricter guards).
 -- ============================================================================
 -- SECURITY FIX — close anon write access to games / players / attendance /
 -- player_stats.  Run this in the Supabase SQL editor BEFORE sharing the app.

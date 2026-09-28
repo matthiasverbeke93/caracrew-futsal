@@ -28,6 +28,11 @@ function fmtPer(n) {
   return n.toFixed(2);
 }
 
+/** League-table cell: "—" until the standings sync has filled the column. */
+function cellValue(n) {
+  return n != null ? n : "—";
+}
+
 const PPG_W = 760;
 const PPG_H = 240;
 const PPG_PAD_X = 28;
@@ -504,6 +509,14 @@ export default function SeasonOverviewPage({
                 <tr>
                   <th className="league-rank-col">#</th>
                   <th>Team</th>
+                  <th className="league-num-col" title="Played">P</th>
+                  <th className="league-num-col" title="Won">W</th>
+                  <th className="league-num-col" title="Drawn">D</th>
+                  <th className="league-num-col" title="Lost">L</th>
+                  <th className="league-num-col" title="Goals for">GF</th>
+                  <th className="league-num-col" title="Goals against">GA</th>
+                  <th className="league-num-col" title="Goal difference">GD</th>
+                  <th className="league-num-col" title="Points">Pts</th>
                   <th className="league-ppm-col">Pts/match</th>
                 </tr>
               </thead>
@@ -518,6 +531,16 @@ export default function SeasonOverviewPage({
                       {cleanOpponentName(row.team)}
                       {row.isUs && <span className="league-us-badge">us</span>}
                     </td>
+                    <td className="league-num-col">{cellValue(row.played)}</td>
+                    <td className="league-num-col">{cellValue(row.wins)}</td>
+                    <td className="league-num-col">{cellValue(row.draws)}</td>
+                    <td className="league-num-col">{cellValue(row.losses)}</td>
+                    <td className="league-num-col">{cellValue(row.gf)}</td>
+                    <td className="league-num-col">{cellValue(row.ga)}</td>
+                    <td className="league-num-col">
+                      {row.gd != null && row.gd > 0 ? `+${row.gd}` : cellValue(row.gd)}
+                    </td>
+                    <td className="league-num-col league-pts-col">{cellValue(row.points)}</td>
                     <td className="league-ppm-col">
                       {row.ptnPerMatch != null ? row.ptnPerMatch.toFixed(2) : "—"}
                     </td>

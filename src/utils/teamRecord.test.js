@@ -78,6 +78,34 @@ describe("buildLeagueTable", () => {
     expect(table[3]).toMatchObject({ rank: 4, team: "Charlie", ptnPerMatch: null });
   });
 
+  it("carries the full standings row, deriving goal difference", () => {
+    const full = [
+      {
+        name: "Delta",
+        team_id: "4",
+        current_ptn_per_match: 2,
+        current_played: 3,
+        current_wins: 2,
+        current_draws: 0,
+        current_losses: 1,
+        current_gf: 20,
+        current_ga: 12,
+        current_points: 6,
+      },
+    ];
+    const record = computeTeamRecord([g("a", "2025-09-10", 5, 2)]);
+    const table = buildLeagueTable(full, record, "Caracrew");
+    expect(table.find((r) => r.team === "Delta")).toMatchObject({
+      played: 3, wins: 2, draws: 0, losses: 1, gf: 20, ga: 12, gd: 8, points: 6,
+    });
+    expect(table.find((r) => r.isUs)).toMatchObject({
+      played: 1, wins: 1, draws: 0, losses: 0, gf: 5, ga: 2, gd: 3, points: 3,
+    });
+    // Rows synced before the standings columns existed show nulls, not zeros.
+    const legacy = buildLeagueTable(opponents, record, "Caracrew").find((r) => r.team === "Alpha");
+    expect(legacy).toMatchObject({ played: null, wins: null, gd: null, points: null });
+  });
+
   it("sends our team below all scored teams with no played games (null pts/match)", () => {
     const table = buildLeagueTable(opponents, computeTeamRecord([]), "Caracrew");
     const us = table.find((r) => r.isUs);

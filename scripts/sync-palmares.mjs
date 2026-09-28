@@ -242,19 +242,35 @@ async function main() {
       currentPlayed: currentRow?.played ?? null,
     };
     const strength = computeStrengthScore(combined);
-    const { error } = await supabase
+    const baseRow = {
+      season_slug: SEASON_SLUG,
+      team_id: opp.team_id,
+      name: opp.name,
+      last_synced: new Date().toISOString(),
+      current_position: combined.currentPosition,
+      current_ptn_per_match: combined.currentPtnPerMatch,
+      current_played: combined.currentPlayed,
+      history: parsed.history,
+      strength_score: strength,
+    };
+    // The full standings row for the stats-page league table.
+    // See supabase/opponent_strength_standings.sql.
+    const standingsCols = {
+      current_wins: currentRow?.wins ?? null,
+      current_draws: currentRow?.draws ?? null,
+      current_losses: currentRow?.losses ?? null,
+      current_gf: currentRow?.gf ?? null,
+      current_ga: currentRow?.ga ?? null,
+      current_points: currentRow?.points ?? null,
+    };
+    let { error } = await supabase
       .from("opponent_strength")
-      .upsert({
-        season_slug: SEASON_SLUG,
-        team_id: opp.team_id,
-        name: opp.name,
-        last_synced: new Date().toISOString(),
-        current_position: combined.currentPosition,
-        current_ptn_per_match: combined.currentPtnPerMatch,
-        current_played: combined.currentPlayed,
-        history: parsed.history,
-        strength_score: strength,
-      });
+      .upsert({ ...baseRow, ...standingsCols });
+    if (error && (error.code === "PGRST204" || /column/i.test(error.message))) {
+      // Migration not run yet: keep syncing the columns that do exist.
+      console.warn(`[palmares] standings columns missing, run opponent_strength_standings.sql`);
+      ({ error } = await supabase.from("opponent_strength").upsert(baseRow));
+    }
     if (error) {
       console.error(`[palmares] upsert failed:`, error.message);
       continue;

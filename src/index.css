@@ -1955,9 +1955,22 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-.league-table .league-ppm-col {
+.league-table {
+  min-width: 600px;
+}
+
+.league-table .league-ppm-col,
+.league-table .league-num-col {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.league-table .league-num-col {
+  width: 3em;
+}
+
+.league-table .league-pts-col {
+  font-weight: 700;
 }
 
 .league-table .league-row.is-us {

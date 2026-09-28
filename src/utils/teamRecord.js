@@ -70,22 +70,42 @@ export function computeTeamRecord(games) {
  * label it as such in the UI. Teams without a points/match value sort to the bottom.
  */
 export function buildLeagueTable(opponentStrengths, record, teamName) {
+  const num = (v) => (v != null ? Number(v) : null);
   const rows = (opponentStrengths || [])
     .filter((o) => o && o.name)
-    .map((o) => ({
-      team: o.name,
-      teamId: o.team_id ?? null,
-      ptnPerMatch:
-        o.current_ptn_per_match != null ? Number(o.current_ptn_per_match) : null,
-      snapshotPosition: o.current_position ?? null,
-      isUs: false,
-    }));
+    .map((o) => {
+      const gf = num(o.current_gf);
+      const ga = num(o.current_ga);
+      return {
+        team: o.name,
+        teamId: o.team_id ?? null,
+        ptnPerMatch: num(o.current_ptn_per_match),
+        snapshotPosition: o.current_position ?? null,
+        played: num(o.current_played),
+        wins: num(o.current_wins),
+        draws: num(o.current_draws),
+        losses: num(o.current_losses),
+        gf,
+        ga,
+        gd: gf != null && ga != null ? gf - ga : null,
+        points: num(o.current_points),
+        isUs: false,
+      };
+    });
 
   const us = {
     team: teamName,
     teamId: null,
     ptnPerMatch: record.played > 0 ? Math.round(record.pointsPerGame * 100) / 100 : null,
     snapshotPosition: null,
+    played: record.played,
+    wins: record.wins,
+    draws: record.draws,
+    losses: record.losses,
+    gf: record.gf,
+    ga: record.ga,
+    gd: record.gd,
+    points: record.points,
     isUs: true,
   };
 

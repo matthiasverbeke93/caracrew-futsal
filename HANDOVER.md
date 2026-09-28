@@ -405,6 +405,12 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-28** — *League table shows the full standings row.* Columns are now P / W / D / L / GF / GA / GD /
+  Pts / Pts/match (still ranked by pts/match). `sync-palmares.mjs` already parsed every standings column but
+  saved only three; it now also writes `current_wins/draws/losses/gf/ga/points` (GD derived in
+  `buildLeagueTable`). ⚠ **Needs `supabase/opponent_strength_standings.sql` run in the SQL editor** — until
+  then the sync falls back to the old columns (warns, keeps working) and the new cells show "—". Our row comes
+  from `computeTeamRecord`, as before.
 - **2026-09-28** — *Stats-page league table was stuck at all zeros.* The opponent rows come from
   `opponent_strength`, written only by `sync-palmares.yml`, which ran on the 1st of each month. Its last run
   (1 Sept) predated the 6 Sept opener, so three rounds in every opponent still read 0 pts/match. Schedule is

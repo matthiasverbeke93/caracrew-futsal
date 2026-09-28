@@ -405,6 +405,18 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-28** — *LZV result-form bookmarklet (Admin → LZV tab).* After each game the admin retypes stats
+  into lzvcup.be's 3-step wizard (`/myteam/result/add/<team>/<result>/<step>`, behind the LZV login). The new
+  bookmark fills it from our data: step 1 score **only when LZV's box is empty** (warns when a set score
+  differs; `home_score` = our goals), step 2 every row's Gespeeld/Keeper/Goals/Assists (rows not in our
+  `player_stats` with `played !== false` are cleared). Step 3 (referee fairplay) stays manual. It never submits.
+  Name matching (`matchLzvRows`): exact (accent/case-insensitive), then a unique whole-word part, judged
+  against the whole list so an ambiguous surname is never guessed. Guests and unmatched names are listed in
+  the overlay for hand entry. Logic in `src/utils/lzvFill.js` — `runLzvFill`/`matchLzvRows` are serialised
+  via `toString()`, so **keep them self-contained and ASCII-only**. Tests run it against saved copies of the
+  three LZV pages (`src/utils/__fixtures__/lzv-step{1,2,3}.html`, token redacted) under jsdom (new dev dep);
+  also checked once that the rolldown-minified build still runs standalone. Only the saved page with a
+  prefilled score was available — the blank-score markup is assumed to use the same `score1`/`score2` names.
 - **2026-09-28** — *Full-project review + fixes.* Four parallel reviews (frontend, utils, scripts/CI, Supabase);
   everything not needing a decision was fixed. ✅ **`supabase/hardening_2026_09.sql` applied live 2026-09-28**:
   admin_* RPCs no longer executable by anon/PUBLIC; TRUNCATE/TRIGGER/REFERENCES revoked from API roles; 7 FK

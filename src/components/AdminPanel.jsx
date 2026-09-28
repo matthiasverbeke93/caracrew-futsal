@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { formatShortDateTime } from "../utils/formatMatch";
 import { BUG_KINDS, BUG_SEVERITIES } from "../utils/bugReport";
 import { auditGameScores, suggestedScoreFix } from "../utils/scoreAudit";
+import LzvBookmarklet from "./LzvBookmarklet";
 
 const BUG_KIND_LABEL = Object.fromEntries(BUG_KINDS.map((k) => [k.value, k.label]));
 const BUG_SEVERITY_LABEL = Object.fromEntries(BUG_SEVERITIES.map((s) => [s.value, s.label]));
@@ -588,6 +589,13 @@ export default function AdminPanel({ open, onClose, onChanged }) {
               <span className="admin-tab-badge">{wrongScores.length}</span>
             )}
           </button>
+          <button
+            type="button"
+            className={tab === "lzv" ? "active" : ""}
+            onClick={() => setTab("lzv")}
+          >
+            LZV
+          </button>
         </div>
 
         {error && <div className="auth-error admin-error">{error}</div>}
@@ -906,6 +914,8 @@ export default function AdminPanel({ open, onClose, onChanged }) {
             })}
           </div>
         )}
+
+        {tab === "lzv" && <LzvBookmarklet />}
       </div>
     </div>
   );

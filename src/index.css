@@ -4889,3 +4889,27 @@ input[type="number"] {
 .guide-share-btn:hover {
   background: var(--accent-strong);
 }
+
+/* Admin → LZV: the draggable result-form bookmarklet */
+.lzv-bookmarklet-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 10px;
+}
+
+.lzv-bookmarklet {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: grab;
+}
+
+.lzv-bookmarklet-steps {
+  padding-left: 18px;
+}

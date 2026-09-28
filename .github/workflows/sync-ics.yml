@@ -16,13 +16,22 @@ on:
       - "src/seasons.js"
       - "src/constants.js"
 
+# Read-only by default; only the job that pushes the feeds gets write access.
 permissions:
-  contents: write
+  contents: read
+
+# A push-triggered run overlapping the cron or a manual dispatch would race on `git push`.
+# Queue instead of cancelling, so no day's feed is skipped.
+concurrency:
+  group: sync-ics
+  cancel-in-progress: false
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: write
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
@@ -49,6 +58,9 @@ jobs:
             echo "No fixture changes — feeds unchanged."
           else
             git commit -m "chore: refresh calendar feeds [skip ci]"
+            # Something may have landed on main during the run; replay the feed commit on top
+            # rather than failing non-fast-forward and not publishing today's feed.
+            git pull --rebase
             git push
           fi
 

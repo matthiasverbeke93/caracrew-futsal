@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { createClient } from "@supabase/supabase-js";
 import { DEFAULT_SEASON_SLUG } from "../src/seasons.js";
+import { fetchWithRetry } from "./http.mjs";
 
 const SEASON_SLUG = process.env.LZV_SEASON_SLUG || DEFAULT_SEASON_SLUG;
 
@@ -38,13 +39,17 @@ function normalizeName(name) {
 }
 
 async function fetchText(url) {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent": UA,
-      Accept: "text/html,application/xhtml+xml",
-      "Accept-Language": "nl-BE,nl;q=0.9,en;q=0.8",
+  const res = await fetchWithRetry(
+    url,
+    {
+      headers: {
+        "User-Agent": UA,
+        Accept: "text/html,application/xhtml+xml",
+        "Accept-Language": "nl-BE,nl;q=0.9,en;q=0.8",
+      },
     },
-  });
+    { label: "palmares" }
+  );
   if (!res.ok) {
     throw new Error(`Fetch failed for ${url}: ${res.status} ${res.statusText}`);
   }
@@ -102,6 +107,31 @@ export function parseCurrentStandings(html) {
     });
   }
   return out;
+}
+
+/**
+ * Why a parsed standings row can't be trusted, or null when it adds up. The parser assigns
+ * numbers by position, so one extra numeric column on LZV's side would shift every field
+ * silently — the league's own arithmetic catches that.
+ */
+export function standingsRowProblem(row) {
+  const { played, wins, draws, losses, points } = row;
+  if (![played, wins, draws, losses, points].every(Number.isInteger)) return "non-integer count";
+  if (played !== wins + draws + losses) return `played ${played} ≠ W+D+L ${wins + draws + losses}`;
+  if (points !== 3 * wins + draws) return `points ${points} ≠ 3W+D ${3 * wins + draws}`;
+  return null;
+}
+
+/** Split parsed standings into rows that add up and the ones that don't (with the reason). */
+export function validateStandings(standings) {
+  const valid = new Map();
+  const rejected = [];
+  for (const [teamId, row] of standings) {
+    const problem = standingsRowProblem(row);
+    if (problem) rejected.push({ teamId, name: row.name, problem });
+    else valid.set(teamId, row);
+  }
+  return { valid, rejected };
 }
 
 export function parseTeamPage(html, teamId) {
@@ -217,10 +247,39 @@ async function main() {
   );
   const overviewHtml = await fetchText(TEAM_OVERVIEW_URL);
   const opponents = discoverOpponents(overviewHtml, OUR_TEAM_ID);
-  const standings = parseCurrentStandings(overviewHtml);
-  console.log(`[palmares] Found ${opponents.length} opponents; standings rows: ${standings.size}.`);
+  const parsedStandings = parseCurrentStandings(overviewHtml);
+  console.log(
+    `[palmares] Found ${opponents.length} opponents; standings rows: ${parsedStandings.size}.`
+  );
+
+  // Every guard below runs before the first write. A markup change that parses to nothing used
+  // to upsert every opponent with null standings and still exit 0, blanking the league table and
+  // the difficulty ratings behind a green run.
+  if (opponents.length === 0) {
+    throw new Error("No opponents found on the overview page — markup changed? Nothing written.");
+  }
+  if (parsedStandings.size === 0) {
+    throw new Error("Opponents found but no standings rows parsed — markup changed? Nothing written.");
+  }
+  const { valid: standings, rejected } = validateStandings(parsedStandings);
+  for (const r of rejected) {
+    console.warn(`::warning::[palmares] skipping standings row ${r.name} (${r.teamId}): ${r.problem}`);
+  }
+  if (standings.size === 0) {
+    throw new Error("No standings row adds up (columns shifted?). Nothing written.");
+  }
+
+  // Stored history, so a page whose palmares block fails to parse keeps what we had rather than
+  // overwriting it with []. A team with genuinely no history (new this season) has none stored.
+  const { data: storedRows, error: storedError } = await supabase
+    .from("opponent_strength")
+    .select("team_id, history")
+    .eq("season_slug", SEASON_SLUG);
+  if (storedError) throw new Error(`Reading stored rows failed: ${storedError.message}`);
+  const storedHistory = new Map((storedRows || []).map((r) => [r.team_id, r.history]));
 
   let updated = 0;
+  let failed = 0;
   for (const opp of opponents) {
     const url = `https://www.lzvcup.be/teams/detail/${opp.team_id}`;
     console.log(`[palmares] -> ${opp.name} (${opp.team_id})`);
@@ -229,9 +288,17 @@ async function main() {
       html = await fetchText(url);
     } catch (err) {
       console.error(`[palmares] fetch failed:`, err.message);
+      failed += 1;
       continue;
     }
     const parsed = parseTeamPage(html, opp.team_id);
+    const previous = storedHistory.get(opp.team_id);
+    if (parsed.history.length === 0 && Array.isArray(previous) && previous.length > 0) {
+      console.warn(
+        `::warning::[palmares] ${opp.name}: no palmares parsed, keeping ${previous.length} stored season(s)`
+      );
+      parsed.history = previous;
+    }
     const currentRow = standings.get(opp.team_id) || null;
     const combined = {
       ...parsed,
@@ -273,6 +340,7 @@ async function main() {
     }
     if (error) {
       console.error(`[palmares] upsert failed:`, error.message);
+      failed += 1;
       continue;
     }
     updated += 1;
@@ -280,6 +348,11 @@ async function main() {
   }
 
   console.log(`[palmares] Done. Updated ${updated} opponents.`);
+  // Exit red on any failure: a rotated service key fails every upsert, and that used to be
+  // logged and then reported as a successful run.
+  if (failed > 0 || updated === 0) {
+    throw new Error(`${failed} of ${opponents.length} opponent(s) failed; ${updated} updated.`);
+  }
 }
 
 const isMain =

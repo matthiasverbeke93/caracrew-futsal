@@ -23,8 +23,10 @@ jobs:
         with:
           node-version: "24"
 
+      # From the lockfile, not `npm install <pkg>`: that resolved `latest` of the Supabase client and
+      # ran it next to the service-role key. --ignore-scripts: no install hooks in this job either.
       - name: Install runtime deps
-        run: npm install --omit=dev --no-audit --no-fund @supabase/supabase-js
+        run: npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 
       - name: Run sync script
         run: node scripts/sync-lzv.mjs

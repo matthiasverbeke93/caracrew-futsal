@@ -25,6 +25,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import { maskEmail, redactEmails, sendResendEmail } from "./mail.mjs";
 
 /** Give up mailing a row after this many failed attempts, so one poison report
  *  cannot fail the job forever. It stays visible in the admin panel. */
@@ -149,20 +150,6 @@ export function formatBugReportEmail(report, { appUrl = "" } = {}) {
   return { subject, html, text };
 }
 
-async function sendOneEmail(resendKey, payload) {
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-  const body = await res.text();
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${body}`);
-  return body;
-}
-
 async function main() {
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -211,7 +198,7 @@ async function main() {
       `${reports.length} report(s) waiting and BUG_REPORT_TO_EMAIL is unset — nowhere to send them`
     );
   }
-  console.log(`[bugs] ${reports.length} report(s) to mail -> ${dryRun ? "(dry run)" : to}`);
+  console.log(`[bugs] ${reports.length} report(s) to mail -> ${dryRun ? "(dry run)" : maskEmail(to)}`);
 
   // Rows that hit the attempt ceiling are dropped from the queue, not lost — say so,
   // otherwise "I filed a report and heard nothing" has no explanation.
@@ -236,12 +223,15 @@ async function main() {
   for (const [i, report] of reports.entries()) {
     const { subject, html, text } = formatBugReportEmail(report, { appUrl });
     if (dryRun) {
-      console.log(`  - ${report.id} ${subject}`);
+      // Id only: the subject quotes the report text, which is anonymous input on a public log.
+      console.log(`  - ${report.id}`);
       continue;
     }
     if (i > 0) await sleep(600); // Resend allows ~2 req/s
     try {
-      await sendOneEmail(resendKey, { from, to: [to], subject, html, text });
+      // Keyed on the row, so a mail Resend accepted but whose response was lost (or whose stamp
+      // failed) is not delivered a second time on the next run.
+      await sendResendEmail(resendKey, { from, to: [to], subject, html, text }, `bug-report-${report.id}`);
       const { error: stampErr } = await supabase
         .from("bug_reports")
         .update({ emailed_at: new Date().toISOString(), email_error: null })
@@ -255,16 +245,20 @@ async function main() {
         console.log(`[bugs] sent ${report.id}`);
       }
     } catch (err) {
-      const msg = err?.message || String(err);
+      const msg = redactEmails(err?.message || String(err));
       failures.push({ id: report.id, message: msg });
       console.error(`[bugs] FAILED ${report.id}: ${msg}`);
-      await supabase
+      const { error: attemptErr } = await supabase
         .from("bug_reports")
         .update({
           email_error: msg.slice(0, 1000),
           email_attempts: (report.email_attempts ?? 0) + 1,
         })
         .eq("id", report.id);
+      // If the counter can't be bumped, MAX_ATTEMPTS never trips and this row fails every run.
+      if (attemptErr) {
+        console.error(`[bugs] could not record the attempt for ${report.id}: ${attemptErr.message}`);
+      }
     }
   }
 

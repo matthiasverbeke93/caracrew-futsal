@@ -14,6 +14,7 @@ import { TEAM_NAME } from "../src/constants.js";
 import { cleanOpponentName } from "../src/utils/opponent.js";
 import { isHomeFromTitle } from "../src/utils/lzvCalendar.js";
 import { reviseEvents } from "../src/utils/icsRevision.js";
+import { fetchWithRetry } from "./http.mjs";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -57,31 +58,58 @@ function escapeText(s) {
     .replace(/\r?\n/g, "\\n");
 }
 
-// RFC 5545 line folding: no content line longer than 75 octets; continuations start with a space.
-function fold(line) {
-  if (line.length <= 74) return line;
-  const parts = [line.slice(0, 74)];
-  let rest = line.slice(74);
-  while (rest.length > 73) {
-    parts.push(" " + rest.slice(0, 73));
-    rest = rest.slice(73);
+// RFC 5545 line folding: no content line longer than 75 *octets*; continuations start with a
+// space (which counts toward the 75). Counted on UTF-8 bytes, not UTF-16 units — the
+// DESCRIPTION carries "·", "—" and "–", which are 2–3 bytes each — and never splits a code
+// point, so an emoji in a venue or opponent name cannot turn into invalid UTF-8.
+export function fold(line, limit = 75) {
+  if (Buffer.byteLength(line, "utf8") <= limit) return line;
+  const parts = [];
+  let chunk = "";
+  let bytes = 0;
+  for (const ch of line) {
+    const size = Buffer.byteLength(ch, "utf8");
+    if (bytes + size > limit) {
+      parts.push(chunk);
+      chunk = " ";
+      bytes = 1;
+    }
+    chunk += ch;
+    bytes += size;
   }
-  parts.push(" " + rest);
+  parts.push(chunk);
   return parts.join("\r\n");
 }
 
-/** Local (Europe/Brussels floating) datetime value from game_date + game_time. */
-function localDT(dateStr, timeStr, addHours = 0) {
+/** Local (Europe/Brussels floating) datetime value from game_date + game_time. The hour offset
+ *  goes through Date.UTC so a late kickoff rolls over the month and year too (23:00 on the 31st
+ *  used to emit day 32). UTC is only used as a calendar here — the value stays floating local. */
+export function localDT(dateStr, timeStr, addHours = 0) {
   const [y, m, d] = String(dateStr).split("-").map(Number);
   const [hh = 20, mm = 0] = String(timeStr || "20:00:00").split(":").map(Number);
-  let hour = hh + addHours;
-  let day = d;
-  if (hour >= 24) {
-    hour -= 24;
-    day += 1;
-  }
+  const t = new Date(Date.UTC(y, m - 1, d, hh + addHours, mm));
   const p = (n) => String(n).padStart(2, "0");
-  return `${y}${p(m)}${p(day)}T${p(hour)}${p(mm)}00`;
+  return (
+    `${t.getUTCFullYear()}${p(t.getUTCMonth() + 1)}${p(t.getUTCDate())}` +
+    `T${p(t.getUTCHours())}${p(t.getUTCMinutes())}00`
+  );
+}
+
+/** Number of VEVENTs in an .ics text. */
+export function countEvents(icsText) {
+  return (String(icsText).match(/^BEGIN:VEVENT\r?$/gm) || []).length;
+}
+
+/**
+ * Why a new feed must not replace the old one, or null when it may. An RLS-denied anon select
+ * answers `200 []`, not an error, so "no fixtures" is indistinguishable from "cannot see the
+ * fixtures" — and CI commits whatever is written. Emptying a feed that had events therefore needs
+ * an explicit ICS_ALLOW_EMPTY=1 (e.g. a season really was wiped).
+ */
+export function emptyFeedRefusal(previousText, nextEventCount, allowEmpty = false) {
+  const before = countEvents(previousText);
+  if (allowEmpty || nextEventCount > 0 || before === 0) return null;
+  return `would replace ${before} event(s) with an empty feed — refusing (set ICS_ALLOW_EMPTY=1 if intended)`;
 }
 
 // --- opponent standing / difficulty (mirrors src/utils/difficulty.js) ---
@@ -97,6 +125,7 @@ function normalizeName(name) {
 function findStrengthRow(opponent, strengths) {
   if (!opponent || !strengths?.length) return null;
   const n = normalizeName(opponent);
+  if (!n) return null; // "".includes-anything would match the first row
   return (
     strengths.find((s) => normalizeName(s.name) === n) ||
     strengths.find((s) => {
@@ -131,9 +160,11 @@ async function fetchGames(slug) {
     `${SUPABASE_URL}/rest/v1/games?season_slug=eq.${encodeURIComponent(slug)}` +
     `&select=id,opponent,game_date,game_time,location,title,home_score,away_score` +
     `&order=game_date.asc`;
-  const res = await fetch(url, {
-    headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
-  });
+  const res = await fetchWithRetry(
+    url,
+    { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } },
+    { label: "ics" }
+  );
   if (!res.ok) throw new Error(`Fetch failed for ${slug}: ${res.status} ${res.statusText}`);
   return res.json();
 }
@@ -142,10 +173,15 @@ async function fetchStrengths(slug) {
   const url =
     `${SUPABASE_URL}/rest/v1/opponent_strength?season_slug=eq.${encodeURIComponent(slug)}` +
     `&select=name,current_position,current_ptn_per_match`;
-  const res = await fetch(url, {
-    headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
-  });
-  if (!res.ok) return []; // standings are optional enrichment — don't fail the feed
+  const res = await fetchWithRetry(
+    url,
+    { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } },
+    { label: "ics" }
+  );
+  // Fail rather than degrade. Standings are only enrichment, but dropping them rewrites the
+  // "Opponent form" line of every event, which bumps SEQUENCE across the whole feed — and again
+  // the next day when the fetch works. Skipping one day's refresh is the cheaper failure.
+  if (!res.ok) throw new Error(`Standings fetch failed for ${slug}: ${res.status} ${res.statusText}`);
   return res.json();
 }
 
@@ -208,7 +244,7 @@ function readPreviousFeed(path) {
   }
 }
 
-function buildCalendar(slug, games, strengths, previousText, now) {
+export function buildCalendar(slug, games, strengths, previousText, now) {
   const label = seasonLabel(slug);
   const lines = [
     "BEGIN:VCALENDAR",
@@ -240,7 +276,7 @@ function buildCalendar(slug, games, strengths, previousText, now) {
   }
 
   lines.push("END:VCALENDAR");
-  const ics = lines.filter(Boolean).map(fold).join("\r\n") + "\r\n";
+  const ics = lines.filter(Boolean).map((l) => fold(l)).join("\r\n") + "\r\n";
   return {
     ics,
     revised: events.filter((e) => e.reason === "content"),
@@ -259,13 +295,10 @@ async function main() {
   for (const { slug } of SEASON_OPTIONS) {
     const [games, strengths] = await Promise.all([fetchGames(slug), fetchStrengths(slug)]);
     const target = join(PUBLIC_DIR, `fixtures-${slug}.ics`);
-    const { ics, revised, fresh, migrated } = buildCalendar(
-      slug,
-      games,
-      strengths,
-      readPreviousFeed(target),
-      now
-    );
+    const previous = readPreviousFeed(target);
+    const { ics, revised, fresh, migrated } = buildCalendar(slug, games, strengths, previous, now);
+    const refusal = emptyFeedRefusal(previous, countEvents(ics), process.env.ICS_ALLOW_EMPTY === "1");
+    if (refusal) throw new Error(`fixtures-${slug}.ics ${refusal}`);
     writeFileSync(target, ics);
     console.log(`[ics] fixtures-${slug}.ics — ${games.length} fixtures`);
     // Say which events got a SEQUENCE bump: this is the line that tells you a subscriber's
@@ -282,7 +315,13 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error("[ics] Fatal:", err.message);
-  process.exit(1);
-});
+const isMain =
+  import.meta.url ===
+  (process.argv[1] ? new URL(`file://${process.argv[1].replace(/\\/g, "/")}`).href : null);
+
+if (isMain) {
+  main().catch((err) => {
+    console.error("[ics] Fatal:", err.message);
+    process.exit(1);
+  });
+}

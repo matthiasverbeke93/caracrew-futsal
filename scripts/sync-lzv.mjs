@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { createClient } from "@supabase/supabase-js";
 import { DEFAULT_SEASON_SLUG } from "../src/seasons.js";
+import { fetchWithRetry } from "./http.mjs";
 
 const LZV_URL =
   process.env.LZV_TEAM_URL || "https://www.lzvcup.be/teams/overview/742";
@@ -243,14 +244,18 @@ async function main() {
   });
 
   console.log(`[lzv-sync] Fetching ${LZV_URL}`);
-  const res = await fetch(LZV_URL, {
-    headers: {
-      "User-Agent":
-        "caracrew-sync/1.0 (+https://github.com/matthiasverbeke93/caracrew-futsal)",
-      Accept: "text/html,application/xhtml+xml",
-      "Accept-Language": "nl-BE,nl;q=0.9,en;q=0.8",
+  const res = await fetchWithRetry(
+    LZV_URL,
+    {
+      headers: {
+        "User-Agent":
+          "caracrew-sync/1.0 (+https://github.com/matthiasverbeke93/caracrew-futsal)",
+        Accept: "text/html,application/xhtml+xml",
+        "Accept-Language": "nl-BE,nl;q=0.9,en;q=0.8",
+      },
     },
-  });
+    { label: "lzv-sync" }
+  );
   if (!res.ok) {
     throw new Error(`LZV fetch failed: ${res.status} ${res.statusText}`);
   }
@@ -260,18 +265,30 @@ async function main() {
   console.log(
     `[lzv-sync] Season ${SEASON_SLUG} · Parsed ${parsed.length} played Caracrew matches.`
   );
-  if (parsed.length === 0) {
-    console.warn(
-      "[lzv-sync] No matches parsed. The page layout may have changed."
-    );
-    return;
-  }
 
   const { data: games, error } = await supabase
     .from("games")
     .select("id, game_date, opponent, home_score, away_score")
     .eq("season_slug", SEASON_SLUG);
   if (error) throw error;
+
+  // Zero parsed matches is only normal before our first fixture. With fixtures already behind us
+  // it means the page layout changed and every result is going unseen — on a job that runs once a
+  // week, so it has to go red rather than print a plain warning nobody reads.
+  let blind = false;
+  if (parsed.length === 0) {
+    const today = localTodayIso();
+    const past = (games || []).filter((g) => g.game_date && g.game_date < today);
+    if (past.length === 0) {
+      console.log("[lzv-sync] No matches parsed and no fixture played yet — nothing to do.");
+      return;
+    }
+    annotate(
+      `No matches parsed from ${LZV_URL}, but ${past.length} fixture(s) are already past. ` +
+        "The page layout has probably changed — scores are not being picked up."
+    );
+    blind = true;
+  }
 
   const targets = (games || []).filter(
     (g) => g.home_score == null || g.away_score == null
@@ -283,6 +300,7 @@ async function main() {
   const { matched, reschedules, orphans, staleFixtures } = reconcileFixtures(parsed, games || []);
 
   let updated = 0;
+  let failed = 0;
   for (const { match: m, game } of matched) {
     // Already stored — nothing to write, and re-writing would churn a row an admin may have
     // corrected by hand.
@@ -293,6 +311,7 @@ async function main() {
       .eq("id", game.id);
     if (upErr) {
       console.error(`[lzv-sync] Update failed for ${game.id}:`, upErr.message);
+      failed += 1;
       continue;
     }
     updated += 1;
@@ -344,6 +363,8 @@ async function main() {
       `${reschedules.length} possible reschedule(s), ${orphans.length} unmatched result(s), ` +
       `${staleFixtures.length} stale fixture(s).`
   );
+  if (failed > 0) throw new Error(`${failed} score update(s) failed (see log above).`);
+  if (blind) process.exitCode = 1;
 }
 
 const isMain =

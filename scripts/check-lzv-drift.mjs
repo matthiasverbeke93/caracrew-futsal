@@ -22,6 +22,24 @@ import { parseIcs, toGameRows } from "../src/utils/lzvCalendar.js";
 import { diffFixtures, driftSql, formatDriftReport, hasDrift } from "../src/utils/calendarDrift.js";
 import { DEFAULT_SEASON_SLUG } from "../src/seasons.js";
 import { TEAM_NAME } from "../src/constants.js";
+import { fetchWithRetry } from "./http.mjs";
+
+/** Does this look like an iCalendar body at all? A maintenance page, a Cloudflare challenge or an
+ *  HTML error served with 200 parses to zero events, which used to read as "empty feed, all fine". */
+export function isCalendarBody(text) {
+  return /^\s*BEGIN:VCALENDAR/m.test(String(text ?? ""));
+}
+
+/** Today's date in Brussels as YYYY-MM-DD (the runner is on UTC). */
+export function brusselsToday(now = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Brussels" }).format(now);
+}
+
+/** Fixtures in `games` still to be played. An empty LZV feed is only "between seasons" when this is
+ *  empty too; with fixtures still ahead it means we have lost sight of the league calendar. */
+export function upcomingFixtures(dbRows, todayIso) {
+  return (dbRows || []).filter((r) => r.game_date && r.game_date >= todayIso);
+}
 
 function parseArgs(argv) {
   const out = {};
@@ -49,12 +67,16 @@ const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON
 
 async function loadFeed() {
   if (args.file) return readFile(args.file, "utf8");
-  const res = await fetch(FEED_URL, {
-    headers: {
-      "User-Agent": "caracrew-sync/1.0 (+https://github.com/matthiasverbeke93/caracrew-futsal)",
-      Accept: "text/calendar,*/*",
+  const res = await fetchWithRetry(
+    FEED_URL,
+    {
+      headers: {
+        "User-Agent": "caracrew-sync/1.0 (+https://github.com/matthiasverbeke93/caracrew-futsal)",
+        Accept: "text/calendar,*/*",
+      },
     },
-  });
+    { label: "drift" }
+  );
   if (!res.ok) throw new Error(`Feed fetch failed: ${res.status} ${res.statusText}`);
   return res.text();
 }
@@ -63,9 +85,11 @@ async function fetchGames(slug) {
   const url =
     `${SUPABASE_URL}/rest/v1/games?season_slug=eq.${encodeURIComponent(slug)}` +
     `&select=id,season_slug,opponent,game_date,game_time,location,title&order=game_date.asc`;
-  const res = await fetch(url, {
-    headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
-  });
+  const res = await fetchWithRetry(
+    url,
+    { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } },
+    { label: "drift" }
+  );
   if (!res.ok) throw new Error(`Games fetch failed: ${res.status} ${res.statusText}`);
   return res.json();
 }
@@ -87,12 +111,26 @@ async function main() {
   }
 
   const [ics, dbRows] = await Promise.all([loadFeed(), fetchGames(SEASON)]);
+  if (!isCalendarBody(ics)) {
+    const head = String(ics).slice(0, 120).replace(/\s+/g, " ");
+    throw new Error(`LZV did not serve a calendar (no BEGIN:VCALENDAR). Body starts: ${head}`);
+  }
   const events = parseIcs(ics);
 
   if (events.length === 0) {
     // An empty feed is LZV's normal state between seasons. Treating it as "every fixture was
-    // deleted" would cry wolf every summer, so stop here rather than report 22 removals.
-    console.log("[drift] LZV's feed is empty — nothing to compare. (Normal between seasons.)");
+    // deleted" would cry wolf every summer, so stop here rather than report 22 removals — but only
+    // when we have nothing left to play either. Mid-season, an empty feed is a blind check.
+    const ahead = upcomingFixtures(dbRows, brusselsToday());
+    if (ahead.length === 0) {
+      console.log("[drift] LZV's feed is empty — nothing to compare. (Normal between seasons.)");
+      return;
+    }
+    console.error(
+      `::warning::[drift] LZV's feed is empty but games still has ${ahead.length} upcoming fixture(s) ` +
+        `for ${SEASON} — cannot check them. Wrong team id, or LZV withdrew the calendar?`
+    );
+    process.exitCode = 1;
     return;
   }
 
@@ -151,7 +189,13 @@ async function main() {
   if (!args["no-fail"]) process.exitCode = 1;
 }
 
-main().catch((err) => {
-  console.error("[drift] Fatal:", err.message);
-  process.exit(1);
-});
+const isMain =
+  import.meta.url ===
+  (process.argv[1] ? new URL(`file://${process.argv[1].replace(/\\/g, "/")}`).href : null);
+
+if (isMain) {
+  main().catch((err) => {
+    console.error("[drift] Fatal:", err.message);
+    process.exit(1);
+  });
+}

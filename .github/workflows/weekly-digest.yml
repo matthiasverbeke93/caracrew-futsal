@@ -14,12 +14,21 @@ on:
 permissions:
   contents: read
 
+# A manual dispatch overlapping the Friday cron would mail the squad twice. Serialise; the
+# Resend idempotency key then drops the second run's repeats.
+concurrency:
+  group: weekly-digest
+  cancel-in-progress: false
+
 jobs:
   digest:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      # Kickoffs are stored as Brussels wall-clock time and the MotM window is computed from them
+      # with local-time Date parsing. On the UTC runner that shifted every window by 1–2 hours.
+      TZ: Europe/Brussels
     steps:
       - uses: actions/checkout@v6
 

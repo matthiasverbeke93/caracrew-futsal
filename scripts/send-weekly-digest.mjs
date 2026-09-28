@@ -30,6 +30,7 @@ import { isGameFull, nextUpcomingGamesByCalendar } from "../src/utils/game.js";
 import { isMotmVotingOpen, getMotmVotingEnd } from "../src/utils/motm.js";
 import { formatMatchCalendarDateTime } from "../src/utils/formatMatch.js";
 import { cleanOpponentName } from "../src/utils/opponent.js";
+import { isoWeek, maskEmail, redactEmails, sendResendEmail } from "./mail.mjs";
 
 function escapeHtml(s) {
   return String(s || "")
@@ -169,20 +170,6 @@ async function resolveRecipients(supabase, players, nowMs) {
       nowMs,
     }),
   };
-}
-
-async function sendOneEmail(resendKey, payload) {
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-  const body = await res.text();
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${body}`);
-  return body;
 }
 
 async function main() {
@@ -484,17 +471,12 @@ Reply not monitored — use WhatsApp or the app.
       (players || []).length
     } player row(s)`
   );
-  if (unlinked.length) {
-    console.log(`[digest] no account linked (${unlinked.length}): ${unlinked.join(", ")}`);
-  }
+  // Counts only: the repo is public, so are these logs. Names are in the admin panel.
+  if (unlinked.length) console.log(`[digest] no account linked: ${unlinked.length} player(s)`);
   if (unconfirmed.length) {
-    console.log(
-      `[digest] linked but email unconfirmed or banned (${unconfirmed.length}): ${unconfirmed.join(", ")}`
-    );
+    console.log(`[digest] linked but email unconfirmed or banned: ${unconfirmed.length} player(s)`);
   }
-  if (optedOut.length) {
-    console.log(`[digest] opted out via DIGEST_SKIP_EMAILS (${optedOut.length}): ${optedOut.join(", ")}`);
-  }
+  if (optedOut.length) console.log(`[digest] opted out via DIGEST_SKIP_EMAILS: ${optedOut.length}`);
 
   if (!recipients.length) {
     throw new Error(
@@ -510,27 +492,30 @@ Reply not monitored — use WhatsApp or the app.
 
   if (dryRun) {
     console.log("[digest] DRY RUN — nothing sent. Would mail:");
-    for (const r of recipients) console.log(`  - ${r.email}${r.name ? ` (${r.name})` : ""}`);
+    for (const r of recipients) console.log(`  - ${maskEmail(r.email)}`);
     return;
   }
 
   // One mail each rather than a shared `to:` array, so nobody sees the squad's
   // addresses. Spaced out for Resend's ~2 req/s limit; a bad address fails alone.
+  // The idempotency key is per season, ISO week and address: "Re-run jobs" after one bounce, or
+  // a manual dispatch overlapping the Friday cron, no longer mails the whole squad twice —
+  // Resend drops a repeated key for 24 h.
+  const week = isoWeek(new Date());
   const failures = [];
   for (const [i, r] of recipients.entries()) {
     if (i > 0) await sleep(600);
     try {
-      await sendOneEmail(resendKey, {
-        from: fromEmail,
-        to: [r.email],
-        subject: subjectLine,
-        html,
-        text: textBody,
-      });
-      console.log(`[digest] sent -> ${r.email}`);
+      const { duplicate } = await sendResendEmail(
+        resendKey,
+        { from: fromEmail, to: [r.email], subject: subjectLine, html, text: textBody },
+        `digest-${seasonSlug}-${week}-${r.email.toLowerCase()}`
+      );
+      console.log(`[digest] ${duplicate ? "already sent this week" : "sent"} -> ${maskEmail(r.email)}`);
     } catch (err) {
-      failures.push({ email: r.email, message: err?.message || String(err) });
-      console.error(`[digest] FAILED -> ${r.email}: ${err?.message || err}`);
+      const message = redactEmails(err?.message || String(err));
+      failures.push({ email: r.email, message });
+      console.error(`[digest] FAILED -> ${maskEmail(r.email)}: ${message}`);
     }
   }
 

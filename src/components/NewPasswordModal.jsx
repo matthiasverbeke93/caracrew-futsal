@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useModalFocus } from "../hooks/useModalFocus";
 
 const MIN_LENGTH = 6;
 
@@ -14,6 +15,9 @@ export default function NewPasswordModal({ onDismiss, updatePassword }) {
   const [message, setMessage] = useState(null);
   const [done, setDone] = useState(false);
   const passwordRef = useRef(null);
+
+  const dialogRef = useRef(null);
+  useModalFocus(dialogRef, true);
 
   useEffect(() => {
     setTimeout(() => passwordRef.current?.focus(), 0);
@@ -51,6 +55,8 @@ export default function NewPasswordModal({ onDismiss, updatePassword }) {
       <div
         className="auth-modal"
         role="dialog"
+        ref={dialogRef}
+        tabIndex={-1}
         aria-labelledby="new-password-title"
         aria-modal="true"
       >

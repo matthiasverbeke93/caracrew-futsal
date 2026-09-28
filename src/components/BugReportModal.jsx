@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
+import { useModalFocus } from "../hooks/useModalFocus";
 import { supabase } from "../lib/supabase";
 import {
   BUG_KINDS,
@@ -31,6 +32,9 @@ export default function BugReportModal({ onClose, user, currentPlayer, seasonSlu
 
   // App mounts this only while it is open, so every open is a fresh mount with a
   // clean form — no reset effect, and no cascading renders from one.
+  const dialogRef = useRef(null);
+  useModalFocus(dialogRef, true);
+
   useEffect(() => {
     function onKey(e) {
       if (e.key === "Escape") onClose();
@@ -84,6 +88,8 @@ export default function BugReportModal({ onClose, user, currentPlayer, seasonSlu
       <div
         className="auth-modal bug-modal"
         role="dialog"
+        ref={dialogRef}
+        tabIndex={-1}
         aria-labelledby="bug-modal-title"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}

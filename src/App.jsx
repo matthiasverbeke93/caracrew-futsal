@@ -296,13 +296,17 @@ export default function App() {
     return nextAttendanceGames.filter((g) => !promotedNextGameIds.has(g.id));
   }, [nextAttendanceGames, promotedNextGameIds]);
 
-  const attendanceHighlightIds = useMemo(() => {
-    const upcoming = nextUpcomingGamesByCalendar(games, 3);
-    if (promotedNextGameIds.size === 0) return new Set(upcoming.map((g) => g.id));
-    return new Set(upcoming.filter((g) => !promotedNextGameIds.has(g.id)).map((g) => g.id));
-  }, [games, promotedNextGameIds]);
+  const attendanceHighlightIds = useMemo(
+    () => new Set(sidebarNextAttendanceGames.map((g) => g.id)),
+    [sidebarNextAttendanceGames]
+  );
 
   const showNextGamesTiles = !!currentPlayer && nextAttendanceGames.length > 0;
+
+  const closeAuthModal = useCallback(() => {
+    setAuthModalOpen(false);
+    dismissRecovery();
+  }, [dismissRecovery]);
 
   useEffect(() => {
     if (adminPanelOpen && isAdmin) refreshPendingClaimsCount();
@@ -322,7 +326,7 @@ export default function App() {
           </div>
           <div className="dashboard-bar-right">
             <nav className="dashboard-nav" aria-label="Team links">
-              <button type="button" className="dashboard-nav-btn" onClick={openSeasonOverview}>
+              <button type="button" className="dashboard-nav-btn" onClick={() => openSeasonOverview()}>
                 Stats
               </button>
               <a
@@ -554,6 +558,7 @@ export default function App() {
                     allGamePlayers={allGamePlayers}
                     selectedGame={selectedGame}
                     gameStats={gameStats}
+                    gameGuests={gameGuests}
                     gameAttendance={gameAttendance}
                     selectedGameTotals={selectedGameTotals}
                     saveGuestStat={saveGuestStat}
@@ -564,6 +569,7 @@ export default function App() {
                     canEditStatsFor={canEditStatsFor}
                     canManageGame={canManageGame}
                     canVote={canVote}
+                    voterUserId={user?.id ?? null}
                   />
                 )}
               </section>
@@ -605,10 +611,7 @@ export default function App() {
 
       {authModalVisible && (
         <AuthModal
-          onClose={() => {
-            setAuthModalOpen(false);
-            dismissRecovery();
-          }}
+          onClose={closeAuthModal}
           signIn={signIn}
           signUp={signUp}
           requestPasswordReset={requestPasswordReset}

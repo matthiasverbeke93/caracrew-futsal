@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { formatAuthError } from "../utils/authErrors";
 import {
@@ -40,6 +40,13 @@ export function useAuthSession() {
 
   const refreshClaim = useCallback(() => setClaimsTick((n) => n + 1), []);
 
+  // supabase-js hands over a fresh `user` object on every auth event (TOKEN_REFRESHED
+  // hourly, SIGNED_IN on tab focus). Keying the lookups on the id stops those from
+  // refetching the player and flashing the account chip back to its skeleton.
+  const userId = user?.id ?? null;
+  // Whose player row `currentPlayer` holds, so a refresh for the same account keeps it.
+  const playerForUserRef = useRef(null);
+
   useEffect(() => {
     let mounted = true;
 
@@ -63,51 +70,64 @@ export function useAuthSession() {
   useEffect(() => {
     let cancelled = false;
     async function loadPlayer() {
-      if (!user) {
+      if (!userId) {
+        playerForUserRef.current = null;
         setCurrentPlayer(null);
         setMyClaim(null);
         setAuthLoading(false);
         return;
       }
-      setAuthLoading(true);
+      const sameUser = playerForUserRef.current === userId;
+      // Only a new account shows the loading state; a refresh swaps data in place.
+      if (!sameUser) setAuthLoading(true);
       const { data, error: fetchErr } = await supabase
         .from("players")
         .select("id, name, fixed, is_admin, auth_user_id")
-        .eq("auth_user_id", user.id)
+        .eq("auth_user_id", userId)
         .maybeSingle();
       if (cancelled) return;
-      if (fetchErr) console.error("loadPlayer failed:", fetchErr);
-      setCurrentPlayer(data || null);
+      if (fetchErr) {
+        console.error("loadPlayer failed:", fetchErr);
+        // A network blip must not unlink a player who was linked a moment ago.
+        if (!sameUser) setCurrentPlayer(null);
+      } else {
+        playerForUserRef.current = userId;
+        setCurrentPlayer(data || null);
+      }
       setAuthLoading(false);
     }
     loadPlayer();
     return () => {
       cancelled = true;
     };
-  }, [user, claimsTick]);
+  }, [userId, claimsTick]);
 
   useEffect(() => {
     let cancelled = false;
     async function loadClaim() {
-      if (!user) {
+      if (!userId) {
         setMyClaim(null);
         return;
       }
       const { data, error: claimErr } = await supabase
         .from("player_claims")
         .select("id, player_id, status, message, created_at, decided_at")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(1);
       if (cancelled) return;
-      if (claimErr) console.error("loadClaim failed:", claimErr);
+      if (claimErr) {
+        // Keep whatever claim was showing rather than blanking the banner.
+        console.error("loadClaim failed:", claimErr);
+        return;
+      }
       setMyClaim(data?.[0] || null);
     }
     loadClaim();
     return () => {
       cancelled = true;
     };
-  }, [user, claimsTick]);
+  }, [userId, claimsTick]);
 
   const signIn = useCallback(async (email, password) => {
     const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });

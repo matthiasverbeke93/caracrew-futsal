@@ -405,11 +405,29 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-28** — *Full-project review + fixes.* Four parallel reviews (frontend, utils, scripts/CI, Supabase);
+  everything not needing a decision was fixed. ✅ **`supabase/hardening_2026_09.sql` applied live 2026-09-28**:
+  admin_* RPCs no longer executable by anon/PUBLIC; TRUNCATE/TRIGGER/REFERENCES revoked from API roles; 7 FK
+  indexes; non-negative CHECKs on goals/assists/scores; write policies split per command with auth calls in
+  `(select …)` (same predicates — verified a linked player can write only their own rows); bug-report
+  `reporter_player_id` pinned to the caller; `admin_set_admin_flag` refuses to drop the last admin,
+  `admin_link_player` refuses to overwrite a link. It **supersedes** the policy/function definitions in
+  `fix_rls_lockdown.sql` / `bug_reports.sql` / `auth_claims.sql` (each has a banner: re-run hardening after).
+  `motm_votes.sql` / `guest_players.sql` lost their `using (true)` write policies; `clear_season_2627.sql`
+  now aborts once 2627 has results. Scripts: empty-feed guard, palmares sanity checks + non-zero exit, masked
+  emails in logs (public repo), Resend idempotency keys, fetch timeouts/retries, drift check requires a real
+  VCALENDAR, octet-based ICS folding. App: MOTM / score entry gate on kickoff not midnight, guest stats count
+  toward "Stats missing", debounced clamped stat inputs, stale-response guard on `loadAll`, refreshes keep the
+  selection, `.select()` on silent-204 writes, modal focus handling. **Decisions (user, 2026-09-28):**
+  RSVP cap / MOTM window / stats freeze stay **UI-only** (no server enforcement); public `voter_key` reads are
+  **fine** (no secret ballot); `?game=` deep links are **honoured on first load even for played games**
+  (reverses the e6b19b0 "prefer upcoming" default). Still open: turn on leaked-password protection (Auth
+  settings), confirm the host deploys `[skip ci]` feed commits, optionally SHA-pin actions.
 - **2026-09-28** — *League table shows the full standings row.* Columns are now P / W / D / L / GF / GA / GD /
   Pts / Pts/match (still ranked by pts/match). `sync-palmares.mjs` already parsed every standings column but
   saved only three; it now also writes `current_wins/draws/losses/gf/ga/points` (GD derived in
-  `buildLeagueTable`). ⚠ **Needs `supabase/opponent_strength_standings.sql` run in the SQL editor** — until
-  then the sync falls back to the old columns (warns, keeps working) and the new cells show "—". Our row comes
+  `buildLeagueTable`). ✅ `supabase/opponent_strength_standings.sql` **applied 2026-09-28** (via the Supabase
+  MCP) and the palmares sync re-run the same day — all 11 26-27 opponent rows carry the full row. Our row comes
   from `computeTeamRecord`, as before.
 - **2026-09-28** — *Stats-page league table was stuck at all zeros.* The opponent rows come from
   `opponent_strength`, written only by `sync-palmares.yml`, which ran on the 1st of each month. Its last run

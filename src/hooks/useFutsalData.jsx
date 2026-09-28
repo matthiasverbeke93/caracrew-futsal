@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { isSeasonVotingLocked } from "../seasons.js";
 import {
@@ -28,6 +28,12 @@ function isHiddenRosterName(name) {
   return HIDDEN_ROSTER_NAMES.has(String(name || "").toLowerCase().trim());
 }
 
+/** Goals/assists as a whole number ≥ 0 — the inputs can hand over "", "-3" or "1.5". */
+function toStatCount(value) {
+  const n = Math.floor(Number(value));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
 function makeGuestId() {
   return `guest-${crypto.randomUUID()}`;
 }
@@ -48,8 +54,18 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
   const [motmVotes, setMotmVotes] = useState([]);
   const [opponentStrengths, setOpponentStrengths] = useState([]);
 
-  const loadAll = useCallback(async () => {
-    setLoading(true);
+  // Only the latest load may apply: switching season quickly, or a failed write's
+  // reload racing a newer optimistic write, would otherwise let a stale response win.
+  const loadSeqRef = useRef(0);
+
+  /**
+   * `initial` is the first load for a season: it shows the skeleton and picks the
+   * default fixture. Any other call is a refresh — the panels stay mounted and the
+   * selection stays put while the data is swapped underneath.
+   */
+  const loadAll = useCallback(async ({ initial = false } = {}) => {
+    const seq = ++loadSeqRef.current;
+    if (initial) setLoading(true);
     try {
       const gamesRes = await supabase
         .from("games")
@@ -97,6 +113,8 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       if (motmRes.error) console.error(motmRes.error);
       if (strengthsRes.error) console.error(strengthsRes.error);
 
+      if (seq !== loadSeqRef.current) return;
+
       setGames(nextGames);
       setPlayers(playersRes.data || []);
       setAttendance(attendanceRes.data || []);
@@ -106,36 +124,37 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       setOpponentStrengths(strengthsRes.data || []);
 
       const firstUpcoming = nextGames.find((g) => !isPlayed(g));
-      const urlGameId = new URLSearchParams(window.location.search).get("game");
-      const gameFromUrl = urlGameId && nextGames.find((g) => g.id === urlGameId);
+      const fallbackId = firstUpcoming?.id || nextGames[0]?.id || null;
+      const exists = (id) => !!id && nextGames.some((g) => g.id === id);
 
       setSelectedGameId((prevSelected) => {
-        const fallbackId = firstUpcoming?.id || nextGames[0]?.id || null;
-
-        if (gameFromUrl) {
-          const urlGame = nextGames.find((g) => g.id === gameFromUrl.id);
-          if (urlGame && isPlayed(urlGame)) return fallbackId;
-          return gameFromUrl.id;
+        if (!initial) {
+          // A refresh (after a save, an admin change, a failed write) keeps whatever
+          // the user is looking at, played or not.
+          return exists(prevSelected) ? prevSelected : fallbackId;
         }
-
-        if (prevSelected && nextGames.some((game) => game.id === prevSelected)) {
-          const prevGame = nextGames.find((g) => g.id === prevSelected);
-          if (prevGame && !isPlayed(prevGame)) return prevSelected;
-          return fallbackId;
-        }
-
-        return fallbackId;
+        // First load: honour `?game=` — played or not — so a shared result link, an
+        // .ics "Match page" link or a reload lands on the game it names. With no (or an
+        // unknown / other-season) id, default to the next fixture.
+        const urlGameId = new URLSearchParams(window.location.search).get("game");
+        return exists(urlGameId) ? urlGameId : fallbackId;
       });
     } finally {
-      setLoading(false);
+      if (seq === loadSeqRef.current) setLoading(false);
     }
   }, [seasonSlug]);
 
   useEffect(() => {
     // Load when `seasonSlug` changes; initialises sidebar + selected game from URL.
     // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch updates many list states
-    loadAll();
+    loadAll({ initial: true });
+    return () => {
+      // Anything still in flight for the previous season is now stale.
+      loadSeqRef.current += 1;
+    };
   }, [loadAll]);
+
+  const refreshAll = useCallback(() => loadAll(), [loadAll]);
 
   useEffect(() => {
     if (!selectedGameId) return;
@@ -308,17 +327,25 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       const gameAttendanceRows = attendance.filter((row) => row.game_id === game.id);
       const gameGuestRows = guestPlayersVisible.filter((row) => row.game_id === game.id);
       const gameStatsRows = stats.filter((row) => row.game_id === game.id);
-      const actualGoals = gameStatsRows.reduce((sum, row) => sum + (row.goals || 0), 0);
-      const actualAssists = gameStatsRows.reduce((sum, row) => sum + (row.assists || 0), 0);
+      // Guest rows carry their own goals/assists, so they count toward the scoreline
+      // (as the stats-chase nudge already does) and each In guest is "recorded" by its
+      // own row. Leaving them out kept "Stats missing" on forever for any game with a guest.
+      const playingGuestRows = gameGuestRows.filter((row) => row.status === "playing");
+      const actualGoals =
+        gameStatsRows.reduce((sum, row) => sum + (row.goals || 0), 0) +
+        gameGuestRows.reduce((sum, row) => sum + (row.goals || 0), 0);
+      const actualAssists =
+        gameStatsRows.reduce((sum, row) => sum + (row.assists || 0), 0) +
+        gameGuestRows.reduce((sum, row) => sum + (row.assists || 0), 0);
       const playingCount =
         gameAttendanceRows.filter((row) => row.status === "playing").length +
-        gameGuestRows.filter((row) => row.status === "playing").length;
+        playingGuestRows.length;
       const played = isPlayed(game);
       const scoreTarget = game.home_score;
       const hasScoreTarget = scoreTarget !== null && scoreTarget !== undefined;
       const statsMissing =
         played &&
-        (gameStatsRows.length < playingCount ||
+        (gameStatsRows.length + playingGuestRows.length < playingCount ||
           !hasScoreTarget ||
           actualGoals < scoreTarget);
 
@@ -429,16 +456,20 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     }
 
     if (status === null || status === undefined) {
+      // Nothing to clear. Checked up front so an empty delete below can only mean
+      // the write was refused (RLS answers a blocked delete with 204 and zero rows).
+      if (currentStatus === null) return;
       const snapshot = attendance;
       setAttendance((prev) =>
         prev.filter((a) => !(a.game_id === gameId && a.player_id === playerId))
       );
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("attendance")
         .delete()
         .eq("game_id", gameId)
-        .eq("player_id", playerId);
-      if (error) {
+        .eq("player_id", playerId)
+        .select();
+      if (error || !data?.length) {
         console.error(error);
         setAttendance(snapshot);
         notify(`Couldn't clear attendance — ${SAVE_FAILED_HINT}`, "error");
@@ -488,16 +519,34 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     setGuestPlayers((prev) =>
       prev.map((g) => (g.id === playerId ? { ...g, status, updated_at } : g))
     );
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("guest_players")
       .update({ status, updated_at })
-      .eq("id", playerId);
-    if (error) {
+      .eq("id", playerId)
+      .select();
+    if (error || !data?.length) {
       console.error(error);
       setGuestPlayers(snapshot);
       notify(`Couldn't save guest attendance — ${SAVE_FAILED_HINT}`, "error");
       loadAll();
     }
+  }
+
+  /**
+   * Stat writes for one row run one after another, and only the newest may roll back.
+   * Without this, two quick edits could commit out of order (the DB keeps the older
+   * value) and a stale failure could restore its snapshot over a newer optimistic edit.
+   */
+  const statWriteQueueRef = useRef(new Map());
+  const statWriteSeqRef = useRef(new Map());
+  function queueStatWrite(key, write) {
+    const seq = (statWriteSeqRef.current.get(key) || 0) + 1;
+    statWriteSeqRef.current.set(key, seq);
+    const isLatest = () => statWriteSeqRef.current.get(key) === seq;
+    const prev = statWriteQueueRef.current.get(key) || Promise.resolve();
+    const next = prev.then(() => write(isLatest)).catch((err) => console.error(err));
+    statWriteQueueRef.current.set(key, next);
+    return next;
   }
 
   async function saveStat(playerId, field, value) {
@@ -509,8 +558,8 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     if (!isStatsEditable(selectedGame, { isAdmin })) return;
     if (!canEditAttendanceFor(playerId)) return;
     const existing = gameStats.find((s) => s.player_id === playerId);
-    const goals = field === "goals" ? Number(value || 0) : existing?.goals ?? 0;
-    const assists = field === "assists" ? Number(value || 0) : existing?.assists ?? 0;
+    const goals = field === "goals" ? toStatCount(value) : existing?.goals ?? 0;
+    const assists = field === "assists" ? toStatCount(value) : existing?.assists ?? 0;
     const played =
       field === "played"
         ? Boolean(value)
@@ -541,28 +590,30 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       }
       return [...prev, row];
     });
-    const { error } = await supabase.from("player_stats").upsert({
-      game_id: gameId,
-      player_id: playerId,
-      goals,
-      assists,
-      played,
-      kept_goal,
-      updated_at,
+    await queueStatWrite(`stat:${gameId}:${playerId}`, async (isLatest) => {
+      const { error } = await supabase.from("player_stats").upsert({
+        game_id: gameId,
+        player_id: playerId,
+        goals,
+        assists,
+        played,
+        kept_goal,
+        updated_at,
+      });
+      if (error && isLatest()) {
+        console.error(error);
+        setStats(snapshot);
+        notify(`Couldn't save stats — ${SAVE_FAILED_HINT}`, "error");
+        loadAll();
+      }
     });
-    if (error) {
-      console.error(error);
-      setStats(snapshot);
-      notify(`Couldn't save stats — ${SAVE_FAILED_HINT}`, "error");
-      loadAll();
-    }
   }
 
   async function saveGuestStat(playerId, field, value) {
     if (!isAdmin) return;
     const existing = selectedGameGuests.find((g) => g.id === playerId);
-    const goals = field === "goals" ? Number(value || 0) : existing?.goals || 0;
-    const assists = field === "assists" ? Number(value || 0) : existing?.assists || 0;
+    const goals = field === "goals" ? toStatCount(value) : existing?.goals || 0;
+    const assists = field === "assists" ? toStatCount(value) : existing?.assists || 0;
     const kept_goal =
       field === "kept_goal" ? Boolean(value) : Boolean(existing?.kept_goal);
     const updated_at = new Date().toISOString();
@@ -570,16 +621,19 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     setGuestPlayers((prev) =>
       prev.map((g) => (g.id === playerId ? { ...g, goals, assists, kept_goal, updated_at } : g))
     );
-    const { error } = await supabase
-      .from("guest_players")
-      .update({ goals, assists, kept_goal, updated_at })
-      .eq("id", playerId);
-    if (error) {
-      console.error(error);
-      setGuestPlayers(snapshot);
-      notify(`Couldn't save guest stats — ${SAVE_FAILED_HINT}`, "error");
-      loadAll();
-    }
+    await queueStatWrite(`guest:${playerId}`, async (isLatest) => {
+      const { data, error } = await supabase
+        .from("guest_players")
+        .update({ goals, assists, kept_goal, updated_at })
+        .eq("id", playerId)
+        .select();
+      if ((error || !data?.length) && isLatest()) {
+        console.error(error);
+        setGuestPlayers(snapshot);
+        notify(`Couldn't save guest stats — ${SAVE_FAILED_HINT}`, "error");
+        loadAll();
+      }
+    });
   }
 
   async function addGuestPlayer() {
@@ -592,9 +646,22 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     // push it past GAME_FULL_PLAYERS.
     if (isGameFull(gameStatusById[selectedGameId]?.playingCount)) return;
     const fullName = `${firstName} ${lastName}`.replace(/\s+/g, " ").trim();
-    const existingExternal = playersWithRole.find(
-      (entry) => entry.name.toLowerCase().trim() === fullName.toLowerCase()
-    );
+    const sameName = (entry) => entry.name.toLowerCase().trim() === fullName.toLowerCase();
+    // Only an active external player may be reused. Matching the whole roster used to
+    // upsert a fixed player's RSVP to In — silently overwriting their own answer.
+    const existingExternal = externalPlayerPool.find(sameName);
+    if (!existingExternal) {
+      const clash = playersWithRole.find(sameName);
+      if (clash) {
+        notify(
+          clash.archived
+            ? `${clash.name} is an archived player — restore them in the admin panel instead.`
+            : `${clash.name} is already on the roster — set their RSVP in the list instead.`,
+          "error"
+        );
+        return;
+      }
+    }
     const externalId = existingExternal?.id || makeGuestId();
 
     if (!existingExternal) {
@@ -691,8 +758,12 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     if (!isAdmin) return;
     const snapshot = guestPlayers;
     setGuestPlayers((prev) => prev.filter((g) => g.id !== playerId));
-    const { error } = await supabase.from("guest_players").delete().eq("id", playerId);
-    if (error) {
+    const { data, error } = await supabase
+      .from("guest_players")
+      .delete()
+      .eq("id", playerId)
+      .select();
+    if (error || !data?.length) {
       console.error(error);
       setGuestPlayers(snapshot);
       notify(`Couldn't remove guest — ${SAVE_FAILED_HINT}`, "error");
@@ -707,7 +778,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     loading,
     motmVotes,
     opponentStrengths,
-    reloadAll: loadAll,
+    reloadAll: refreshAll,
     players: playersWithRole,
     fixedPlayers,
     externalPlayerPool,

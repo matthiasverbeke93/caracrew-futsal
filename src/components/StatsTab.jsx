@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   STATS_FREEZE_DAYS,
   getStatsLockDaysLeft,
-  isPlayed,
   isStatsEditable,
   isStatsFrozen,
 } from "../utils/game";
-import { supabase } from "../lib/supabase";
+import { hasKickedOff, useNow } from "../hooks/useMatchClock";
 import { isSeasonVotingLocked } from "../seasons";
 import {
   MOTM_VOTING_DAYS,
@@ -17,10 +16,76 @@ import {
   isMotmVotingOpen,
 } from "../utils/motm";
 
+/** Pause after the last keystroke before a goals/assists edit is saved. */
+const STAT_COMMIT_DELAY_MS = 700;
+
+function toStatCount(raw) {
+  const n = Math.floor(Number(raw));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/**
+ * Goals/assists field that edits a local draft and saves once — on blur, Enter, or a
+ * short pause — instead of writing to Supabase on every keystroke (typing "12" used
+ * to send 1 then 12, and the two could land out of order). The value is clamped to a
+ * whole number >= 0 before it is saved.
+ */
+function StatCountInput({ value, disabled, title, onCommit, label }) {
+  const [draft, setDraft] = useState(null);
+  const draftRef = useRef(null);
+  const timerRef = useRef(null);
+  const committed = value || 0;
+  const committedRef = useRef(committed);
+  const onCommitRef = useRef(onCommit);
+  useEffect(() => {
+    onCommitRef.current = onCommit;
+    committedRef.current = committed;
+  });
+
+  // Reads only refs, so one stable function serves the timer, blur and unmount.
+  const commit = useCallback(() => {
+    clearTimeout(timerRef.current);
+    timerRef.current = null;
+    const raw = draftRef.current;
+    if (raw === null) return;
+    draftRef.current = null;
+    setDraft(null);
+    const next = toStatCount(raw);
+    if (next !== committedRef.current) onCommitRef.current(next);
+  }, []);
+
+  // Leaving the game (StatsTab is keyed by game id) must not drop a pending edit.
+  useEffect(() => () => commit(), [commit]);
+
+  return (
+    <input
+      type="number"
+      min="0"
+      step="1"
+      inputMode="numeric"
+      aria-label={label}
+      value={draft ?? String(committed)}
+      disabled={disabled}
+      title={title}
+      onChange={(e) => {
+        draftRef.current = e.target.value;
+        setDraft(e.target.value);
+        clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(commit, STAT_COMMIT_DELAY_MS);
+      }}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") commit();
+      }}
+    />
+  );
+}
+
 export default function StatsTab({
   allGamePlayers,
   selectedGame,
   gameStats,
+  gameGuests = [],
   gameAttendance,
   selectedGameTotals,
   saveGuestStat,
@@ -31,6 +96,7 @@ export default function StatsTab({
   canEditStatsFor,
   canManageGame,
   canVote,
+  voterUserId = null,
 }) {
   // The freeze binds players only — an admin can always correct a scoreline.
   const statsWindowOpen = isStatsEditable(selectedGame, { isAdmin: canManageGame });
@@ -38,59 +104,44 @@ export default function StatsTab({
   const lockedForFutureGame = !statsWindowOpen && !frozen;
   const daysUntilLock = getStatsLockDaysLeft(selectedGame);
   const [motmMessage, setMotmMessage] = useState(null);
-  const [now, setNow] = useState(() => Date.now());
+  const now = useNow();
 
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30_000);
-    return () => clearInterval(id);
-  }, []);
-
-  const currentGoals = gameStats.reduce((sum, row) => sum + (row.goals || 0), 0);
-  const currentAssists = gameStats.reduce((sum, row) => sum + (row.assists || 0), 0);
+  // Guest rows carry their own goals/assists — they count toward the scoreline too.
+  const sumOf = (field) =>
+    gameStats.reduce((sum, row) => sum + (row[field] || 0), 0) +
+    gameGuests.reduce((sum, row) => sum + (row[field] || 0), 0);
+  const currentGoals = sumOf("goals");
+  const currentAssists = sumOf("assists");
   const goalsTarget = selectedGameTotals.goals;
+  // There is no assists target (the final score only says how many goals we scored),
+  // so assists always show against "?".
   const assistsTarget = selectedGameTotals.assists;
-  const goalsOverTarget = goalsTarget !== null && goalsTarget !== undefined && currentGoals > goalsTarget;
-  const assistsOverTarget =
-    assistsTarget !== null && assistsTarget !== undefined && currentAssists > assistsTarget;
-  const goalsMissing = !goalsOverTarget && (goalsTarget === null || currentGoals < goalsTarget);
-  const assistsMissing =
-    !assistsOverTarget && (assistsTarget === null || currentAssists < assistsTarget);
+  const goalsOverTarget = goalsTarget != null && currentGoals > goalsTarget;
+  const goalsMissing = !goalsOverTarget && (goalsTarget == null || currentGoals < goalsTarget);
   const goalsBadgeClass = goalsOverTarget
     ? "badge-error"
     : goalsMissing
       ? "badge-warning"
       : "badge-ok";
-  const assistsBadgeClass = assistsOverTarget
-    ? "badge-error"
-    : assistsMissing
-      ? "badge-warning"
-      : "badge-ok";
+  const assistsBadgeClass = assistsTarget == null ? "badge-warning" : "badge-ok";
 
   const motmEnd = getMotmVotingEnd(selectedGame);
   const motmStart = getMotmVotingStart(selectedGame);
   const motmSeasonLocked = isSeasonVotingLocked(selectedGame?.season_slug);
   const votingOpen = isMotmVotingOpen(selectedGame, now);
-  const votingFinished = isPlayed(selectedGame) && motmEnd && now > motmEnd.getTime();
-  const votingPending =
-    isPlayed(selectedGame) && motmStart && motmEnd && now < motmStart.getTime();
+  // Clock-based, not `isPlayed()` (day-granular — false until midnight, so the panel
+  // stayed hidden for the hours after an evening kickoff, when people actually vote).
+  const kickedOff = hasKickedOff(selectedGame, now);
+  const votingFinished = !!motmEnd && now > motmEnd.getTime();
+  const votingPending = kickedOff && !!motmStart && now < motmStart.getTime();
 
   const motmVotesForGame = useMemo(
     () => motmVotes.filter((v) => v.game_id === selectedGame.id),
     [motmVotes, selectedGame.id]
   );
 
-  const [voterKey, setVoterKey] = useState(null);
-  useEffect(() => {
-    let cancelled = false;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!cancelled) setVoterKey(data?.session?.user?.id || null);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  const myNomineeId = voterKey
-    ? motmVotesForGame.find((v) => v.voter_key === voterKey)?.nominee_id
+  const myNomineeId = voterUserId
+    ? motmVotesForGame.find((v) => v.voter_key === voterUserId)?.nominee_id
     : null;
 
   const motmCounts = useMemo(() => {
@@ -112,7 +163,7 @@ export default function StatsTab({
     [allGamePlayers, gameAttendance]
   );
 
-  const showMotmBlock = isPlayed(selectedGame) && !!motmEnd;
+  const showMotmBlock = kickedOff && !!motmEnd;
 
   async function handleMotmVote(nomineeId) {
     setMotmMessage(null);
@@ -144,18 +195,11 @@ export default function StatsTab({
           {canManageGame ? " for players — admins keep editing after that." : "."}
         </div>
       )}
-      {(goalsOverTarget || assistsOverTarget) && (
+      {goalsOverTarget && (
         <div className="error-box">
-          {goalsOverTarget && (
-            <div>
-              Per-player goals ({currentGoals}) exceed the Caracrew final score ({goalsTarget}).
-            </div>
-          )}
-          {assistsOverTarget && (
-            <div>
-              Per-player assists ({currentAssists}) exceed the Caracrew final score ({assistsTarget}).
-            </div>
-          )}
+          <div>
+            Per-player goals ({currentGoals}) exceed the Caracrew final score ({goalsTarget}).
+          </div>
         </div>
       )}
       <div className="tally-box">
@@ -191,7 +235,7 @@ export default function StatsTab({
             </p>
           )}
           {votingOpen && (
-            <p className="motm-hint">One vote per device — tap again to change your pick.</p>
+            <p className="motm-hint">One vote per account — tap again to change your pick.</p>
           )}
           {votingFinished && motmLeaders.length > 0 && (
             <p className="motm-result">
@@ -331,30 +375,28 @@ export default function StatsTab({
                     />
                   </td>
                   <td>
-                    <input
-                      type="number"
-                      min="0"
-                      value={row?.goals || 0}
+                    <StatCountInput
+                      label={"Goals for " + player.name}
+                      value={row?.goals}
                       disabled={!rowEditable}
                       title={!rowEditable ? disabledTitle : undefined}
-                      onChange={(e) =>
+                      onCommit={(n) =>
                         isAdHoc
-                          ? saveGuestStat(player.id, "goals", e.target.value)
-                          : saveStat(player.id, "goals", e.target.value)
+                          ? saveGuestStat(player.id, "goals", n)
+                          : saveStat(player.id, "goals", n)
                       }
                     />
                   </td>
                   <td>
-                    <input
-                      type="number"
-                      min="0"
-                      value={row?.assists || 0}
+                    <StatCountInput
+                      label={"Assists for " + player.name}
+                      value={row?.assists}
                       disabled={!rowEditable}
                       title={!rowEditable ? disabledTitle : undefined}
-                      onChange={(e) =>
+                      onCommit={(n) =>
                         isAdHoc
-                          ? saveGuestStat(player.id, "assists", e.target.value)
-                          : saveStat(player.id, "assists", e.target.value)
+                          ? saveGuestStat(player.id, "assists", n)
+                          : saveStat(player.id, "assists", n)
                       }
                     />
                   </td>

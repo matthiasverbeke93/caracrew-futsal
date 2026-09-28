@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
+import { useModalFocus } from "../hooks/useModalFocus";
 import {
   ATTENDANCE_OPTIONS,
   GAME_FULL_PLAYERS,
@@ -20,6 +21,9 @@ import { MOTM_VOTING_DAYS } from "../utils/motm";
  */
 export default function GuideModal({ onClose }) {
   const [copied, setCopied] = useState(false);
+  const dialogRef = useRef(null);
+  useModalFocus(dialogRef, true);
+
   useEffect(() => {
     function onKey(e) {
       if (e.key === "Escape") onClose();
@@ -55,6 +59,8 @@ export default function GuideModal({ onClose }) {
       <div
         className="auth-modal guide-modal"
         role="dialog"
+        ref={dialogRef}
+        tabIndex={-1}
         aria-labelledby="guide-modal-title"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}

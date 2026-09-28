@@ -21,6 +21,7 @@ import { getHeadToHeadSummary } from "../utils/headToHead";
 import { focusInitialMenuItem, handleMenuArrowKeys } from "../utils/menuNav";
 import { cleanOpponentName } from "../utils/opponent";
 import VenueLink from "./VenueLink";
+import { hasKickedOff, useNow } from "../hooks/useMatchClock";
 
 /**
  * The per-fixture goalkeeper check.
@@ -152,6 +153,9 @@ export default function SelectedGamePanel({
   const difficulty = getDifficulty(selectedGame.opponent, opponentStrengths, seasonSlug);
   const h2h = getHeadToHeadSummary(allGames, selectedGame.opponent);
   const played = isPlayed(selectedGame);
+  // `played` flips at midnight; the score can be entered as soon as the match is on.
+  const now = useNow(60_000);
+  const scoreOpen = played || hasKickedOff(selectedGame, now);
 
   const missingFixed = (fixedPlayers || []).filter(
     (p) => !(gameAttendance || []).some((a) => a.player_id === p.id)
@@ -445,7 +449,7 @@ export default function SelectedGamePanel({
         </details>
       )}
 
-      {played && (
+      {scoreOpen && (
         <FinalScoreFields
           key={selectedGame.id}
           game={selectedGame}

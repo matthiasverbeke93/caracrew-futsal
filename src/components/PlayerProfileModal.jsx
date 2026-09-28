@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
+import { useModalFocus } from "../hooks/useModalFocus";
 import { attendanceLabel } from "../constants";
 import { isPlayed } from "../utils/game";
 import { countPlayerMotmWins, getMotmLeaderIds, getMotmVotingEnd } from "../utils/motm";
@@ -49,6 +50,9 @@ export default function PlayerProfileModal({
     const id = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(id);
   }, []);
+
+  const dialogRef = useRef(null);
+  useModalFocus(dialogRef, true);
 
   useEffect(() => {
     function onKey(e) {
@@ -162,7 +166,10 @@ export default function PlayerProfileModal({
       <div
         className="profile-modal"
         role="dialog"
+        ref={dialogRef}
+        tabIndex={-1}
         aria-labelledby="profile-modal-title"
+        aria-modal="true"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="profile-modal-header">

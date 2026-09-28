@@ -125,9 +125,10 @@ function MyRsvpChip({ game, currentPlayerId, played, myRow, motmVotes, voterUser
     );
   }
 
+  // No `played` gate: that flips at midnight, while the window (kickoff + 2h) opens on
+  // match night — exactly when the reminder matters.
   const voteMissing =
     voterUserId &&
-    played &&
     isMotmVotingOpen(game) &&
     !userHasMotmVoteForGame(game.id, motmVotes, voterUserId);
 

@@ -223,6 +223,7 @@ export default function AttendanceTab({
               if (e.key === "Enter") addGuestPlayer();
             }}
             placeholder="First name"
+            aria-label="Guest first name"
             disabled={!canManageGame || !attendanceOpen || gameFull}
           />
           <input
@@ -232,6 +233,7 @@ export default function AttendanceTab({
               if (e.key === "Enter") addGuestPlayer();
             }}
             placeholder="Last name"
+            aria-label="Guest last name"
             disabled={!canManageGame || !attendanceOpen || gameFull}
           />
           <button

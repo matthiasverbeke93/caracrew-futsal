@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRef, useCallback, useEffect, useMemo, useState } from "react";
+import { useModalFocus } from "../hooks/useModalFocus";
 import { supabase } from "../lib/supabase";
 import { formatShortDateTime } from "../utils/formatMatch";
 import { BUG_KINDS, BUG_SEVERITIES } from "../utils/bugReport";
@@ -96,6 +97,9 @@ export default function AdminPanel({ open, onClose, onChanged }) {
     if (open) load();
   }, [open, load]);
 
+  const dialogRef = useRef(null);
+  useModalFocus(dialogRef, open);
+
   useEffect(() => {
     if (!open) return undefined;
     function onKey(e) {
@@ -143,17 +147,28 @@ export default function AdminPanel({ open, onClose, onChanged }) {
     return `${base}-${n}`;
   }, [newName, playerIds]);
 
-  async function run(key, action) {
+  /**
+   * Runs one admin write and reports whether it worked, so callers only clear their
+   * form on success. `expectRows` is for plain table writes chained with `.select()`:
+   * RLS answers a refused update/delete with success and zero rows, not an error.
+   */
+  async function run(key, action, { expectRows = false } = {}) {
     setBusyKey(key);
     setError(null);
-    const { error: rpcErr } = await action();
+    const { data, error: rpcErr } = await action();
     setBusyKey(null);
     if (rpcErr) {
       setError(rpcErr.message);
-      return;
+      return false;
+    }
+    if (expectRows && !data?.length) {
+      setError("Nothing was changed — the row is gone or you no longer have access. Reloaded.");
+      await load();
+      return false;
     }
     await load();
     onChanged?.();
+    return true;
   }
 
   async function approveClaim(claim, promoteAdmin) {
@@ -248,14 +263,15 @@ export default function AdminPanel({ open, onClose, onChanged }) {
       cancelRename();
       return;
     }
-    await run(`rename-${player.id}`, () =>
+    const ok = await run(`rename-${player.id}`, () =>
       supabase.rpc("admin_update_player", {
         player_id_arg: player.id,
         name_arg: trimmed,
         fixed_arg: null,
       })
     );
-    cancelRename();
+    // On failure keep the field open with what was typed, next to the error.
+    if (ok) cancelRename();
   }
 
   async function createPlayer(e) {
@@ -263,13 +279,14 @@ export default function AdminPanel({ open, onClose, onChanged }) {
     const finalName = newName.trim();
     const finalId = (newId.trim() || suggestedId).trim();
     if (!finalName || !finalId) return;
-    await run("add-player", () =>
+    const ok = await run("add-player", () =>
       supabase.rpc("admin_add_player", {
         player_id_arg: finalId,
         name_arg: finalName,
         fixed_arg: newFixed,
       })
     );
+    if (!ok) return;
     setNewName("");
     setNewId("");
     setNewFixed(true);
@@ -277,18 +294,24 @@ export default function AdminPanel({ open, onClose, onChanged }) {
   }
 
   async function setBugResolved(report, resolved) {
-    await run(`bug-${report.id}`, () =>
-      supabase
-        .from("bug_reports")
-        .update({ resolved_at: resolved ? new Date().toISOString() : null })
-        .eq("id", report.id)
+    await run(
+      `bug-${report.id}`,
+      () =>
+        supabase
+          .from("bug_reports")
+          .update({ resolved_at: resolved ? new Date().toISOString() : null })
+          .eq("id", report.id)
+          .select(),
+      { expectRows: true }
     );
   }
 
   async function deleteBugReport(report) {
     if (!window.confirm("Delete this report for good?")) return;
-    await run(`bug-del-${report.id}`, () =>
-      supabase.from("bug_reports").delete().eq("id", report.id)
+    await run(
+      `bug-del-${report.id}`,
+      () => supabase.from("bug_reports").delete().eq("id", report.id).select(),
+      { expectRows: true }
     );
   }
 
@@ -506,6 +529,8 @@ export default function AdminPanel({ open, onClose, onChanged }) {
       <div
         className="auth-modal admin-panel"
         role="dialog"
+        ref={dialogRef}
+        tabIndex={-1}
         aria-labelledby="admin-panel-title"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}

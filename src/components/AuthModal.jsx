@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useModalFocus } from "../hooks/useModalFocus";
 
 const COPY = {
   sign_in: {
@@ -42,14 +43,28 @@ export default function AuthModal({
   const [info, setInfo] = useState(null);
   const emailRef = useRef(null);
 
+  const dialogRef = useRef(null);
+  useModalFocus(dialogRef, true);
+
+  // Focus once, on open. This used to share the Escape effect, which re-ran whenever
+  // `onClose` changed identity — i.e. on parent re-renders — and yanked focus back to
+  // the email field mid-password.
+  useEffect(() => {
+    const id = setTimeout(() => emailRef.current?.focus(), 0);
+    return () => clearTimeout(id);
+  }, []);
+
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
   useEffect(() => {
     function onKey(e) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onCloseRef.current();
     }
     window.addEventListener("keydown", onKey);
-    setTimeout(() => emailRef.current?.focus(), 0);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, []);
 
   function goTo(next) {
     setMode(next);
@@ -104,6 +119,8 @@ export default function AuthModal({
       <div
         className="auth-modal"
         role="dialog"
+        ref={dialogRef}
+        tabIndex={-1}
         aria-labelledby="auth-modal-title"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
+import { useModalFocus } from "../hooks/useModalFocus";
 import { supabase } from "../lib/supabase";
 
 export default function ClaimPlayerModal({ open, onClose, onSubmit }) {
@@ -38,6 +39,9 @@ export default function ClaimPlayerModal({ open, onClose, onSubmit }) {
     };
   }, [open]);
 
+  const dialogRef = useRef(null);
+  useModalFocus(dialogRef, open);
+
   useEffect(() => {
     if (!open) return undefined;
     function onKey(e) {
@@ -73,6 +77,8 @@ export default function ClaimPlayerModal({ open, onClose, onSubmit }) {
       <div
         className="auth-modal claim-modal"
         role="dialog"
+        ref={dialogRef}
+        tabIndex={-1}
         aria-labelledby="claim-modal-title"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}

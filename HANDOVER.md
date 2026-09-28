@@ -417,6 +417,7 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   three LZV pages (`src/utils/__fixtures__/lzv-step{1,2,3}.html`, token redacted) under jsdom (new dev dep);
   also checked once that the rolldown-minified build still runs standalone. Only the saved page with a
   prefilled score was available — the blank-score markup is assumed to use the same `score1`/`score2` names.
+  **Confirmed working live on lzvcup.be by the user the same day.**
 - **2026-09-28** — *Full-project review + fixes.* Four parallel reviews (frontend, utils, scripts/CI, Supabase);
   everything not needing a decision was fixed. ✅ **`supabase/hardening_2026_09.sql` applied live 2026-09-28**:
   admin_* RPCs no longer executable by anon/PUBLIC; TRUNCATE/TRIGGER/REFERENCES revoked from API roles; 7 FK

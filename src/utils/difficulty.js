@@ -11,31 +11,38 @@ function normalize(name) {
     .trim();
 }
 
-export function getOpponentStanding(opponent, seasonSlug) {
-  const standings = getLeagueStandingsForSeason(seasonSlug);
+const OUR_NORMALIZED = normalize(OUR_TEAM_NAME);
+
+/**
+ * Exact name first, then a substring match either way. An empty name matches
+ * nothing (every string "includes" ""), and our own row is never an opponent.
+ */
+function findTeamByName(opponent, rows) {
+  if (!opponent || !rows?.length) return null;
   const normalized = normalize(opponent);
-  return standings.find((team) => {
-    const teamName = normalize(team.name);
-    return teamName === normalized || teamName.includes(normalized) || normalized.includes(teamName);
-  });
+  if (!normalized || normalized === OUR_NORMALIZED) return null;
+  const candidates = rows.filter((row) => normalize(row.name) !== OUR_NORMALIZED);
+  return (
+    candidates.find((row) => normalize(row.name) === normalized) ||
+    candidates.find((row) => {
+      const n = normalize(row.name);
+      return n !== "" && (n.includes(normalized) || normalized.includes(n));
+    }) ||
+    null
+  );
+}
+
+export function getOpponentStanding(opponent, seasonSlug) {
+  return findTeamByName(opponent, getLeagueStandingsForSeason(seasonSlug)) || undefined;
 }
 
 export function getOurStanding(seasonSlug) {
   const standings = getLeagueStandingsForSeason(seasonSlug);
-  return standings.find((team) => normalize(team.name) === normalize(OUR_TEAM_NAME));
+  return standings.find((team) => normalize(team.name) === OUR_NORMALIZED);
 }
 
 function findStrengthRow(opponent, strengths) {
-  if (!opponent || !strengths?.length) return null;
-  const normalized = normalize(opponent);
-  return (
-    strengths.find((s) => normalize(s.name) === normalized) ||
-    strengths.find((s) => {
-      const n = normalize(s.name);
-      return n.includes(normalized) || normalized.includes(n);
-    }) ||
-    null
-  );
+  return findTeamByName(opponent, strengths);
 }
 
 /**

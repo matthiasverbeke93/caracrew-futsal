@@ -7,6 +7,7 @@ import {
   formatFixtureRowDateTime,
   formatFixtureShareText,
   formatMatchShortDate,
+  normalizeGameDateOnly,
 } from "./formatMatch.js";
 
 describe("formatMatchShortDate", () => {
@@ -245,5 +246,14 @@ describe("buildWhatsAppStatsChaseUrl", () => {
     const msg = messageOf(buildWhatsAppStatsChaseUrl(PLAYED, [], snapshot));
     expect(msg).not.toContain("Still to add:");
     expect(msg).toContain("*Stats* · 5 of 8 recorded");
+  });
+});
+
+describe("normalizeGameDateOnly with a Date", () => {
+  it("uses the local calendar day, not the UTC one", () => {
+    // Local midnight in Brussels is the previous day in UTC; the day must not shift back.
+    expect(normalizeGameDateOnly(new Date(2026, 8, 6))).toBe("2026-09-06");
+    expect(normalizeGameDateOnly(new Date(2026, 8, 6, 23, 30))).toBe("2026-09-06");
+    expect(normalizeGameDateOnly(new Date("nope"))).toBeNull();
   });
 });

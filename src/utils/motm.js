@@ -1,12 +1,48 @@
 import { isSeasonVotingLocked } from "../seasons.js";
 
+/** Kickoff times in `games` are Brussels wall-clock; resolve them there, not in the runtime's zone. */
+const GAME_TIME_ZONE = "Europe/Brussels";
+
+let zoneFormatter = null;
+
+/** Offset (ms) of GAME_TIME_ZONE from UTC at instant `ms`. */
+function zoneOffsetMs(ms) {
+  zoneFormatter ??= new Intl.DateTimeFormat("en-GB", {
+    timeZone: GAME_TIME_ZONE,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  const p = Object.fromEntries(zoneFormatter.formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
+  const asUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second);
+  return asUtc - Math.floor(ms / 1000) * 1000;
+}
+
+/**
+ * The instant a Brussels wall-clock time happens. Same answer as `new Date("…T21:00")` in a Brussels
+ * browser, but also right on a UTC CI runner (the weekly digest), which used to shift every window.
+ */
+function brusselsWallClockToDate(y, mo, d, h, mi, s) {
+  const guess = Date.UTC(y, mo - 1, d, h, mi, s);
+  let ms = guess - zoneOffsetMs(guess);
+  const corrected = guess - zoneOffsetMs(ms); // second pass settles a guess that crossed a DST change
+  if (corrected !== ms) ms = corrected;
+  return new Date(ms);
+}
+
 function parseGameStart(game) {
   const date = game.game_date;
   if (!date) return null;
-  let t = game.game_time ? String(game.game_time) : "21:00:00";
-  if (t.length === 5) t += ":00";
-  const d = new Date(`${date}T${t}`);
-  return Number.isNaN(d.getTime()) ? new Date(`${date}T21:00:00`) : d;
+  const dm = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(date));
+  if (!dm) return null;
+  const tm = /^(\d{2}):(\d{2})(?::(\d{2}))?/.exec(String(game.game_time || ""));
+  const [h, mi, s] = tm ? [+tm[1], +tm[2], +(tm[3] || 0)] : [21, 0, 0];
+  const start = brusselsWallClockToDate(+dm[1], +dm[2], +dm[3], h, mi, s);
+  return Number.isNaN(start.getTime()) ? null : start;
 }
 
 /** Estimated full-time (kickoff + 2h). */

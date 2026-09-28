@@ -3,8 +3,43 @@ import {
   MOTM_VOTING_DAYS,
   getMotmCandidates,
   getMotmLeaderIds,
+  getMotmVotingEnd,
+  getMotmVotingStart,
   isMotmVotingOpen,
 } from "./motm.js";
+
+// Explicit UTC instants, so these hold on a UTC CI runner (the weekly digest) as well as in Brussels.
+describe("kickoff is Brussels wall-clock, whatever the runtime's time zone", () => {
+  const iso = (d) => d.toISOString();
+
+  it("summer (CEST, UTC+2): 21:00 kickoff opens at 21:00Z", () => {
+    const game = { game_date: "2026-09-06", game_time: "21:00:00" };
+    expect(iso(getMotmVotingStart(game))).toBe("2026-09-06T21:00:00.000Z");
+    expect(iso(getMotmVotingEnd(game))).toBe("2026-09-11T21:00:00.000Z");
+  });
+
+  it("winter (CET, UTC+1): 21:00 kickoff opens at 22:00Z", () => {
+    const game = { game_date: "2026-12-06", game_time: "21:00" };
+    expect(iso(getMotmVotingStart(game))).toBe("2026-12-06T22:00:00.000Z");
+  });
+
+  it("the spring-forward day itself resolves to the post-change offset", () => {
+    const game = { game_date: "2027-03-28", game_time: "21:00" };
+    expect(iso(getMotmVotingStart(game))).toBe("2027-03-28T21:00:00.000Z");
+  });
+
+  it("a Sunday 14:00 kickoff is closed by the Friday 16:00 UTC digest run", () => {
+    const game = { id: "g", game_date: "2026-09-20", game_time: "14:00", season_slug: "2627" };
+    // Opens 16:00 Brussels (14:00Z) Sunday, closes Friday 14:00Z.
+    expect(isMotmVotingOpen(game, Date.parse("2026-09-25T13:59:00Z"))).toBe(true);
+    expect(isMotmVotingOpen(game, Date.parse("2026-09-25T16:00:00Z"))).toBe(false);
+  });
+
+  it("falls back to 21:00 without a kickoff time, and to null without a date", () => {
+    expect(iso(getMotmVotingStart({ game_date: "2026-09-06" }))).toBe("2026-09-06T21:00:00.000Z");
+    expect(getMotmVotingStart({ game_date: null })).toBeNull();
+  });
+});
 
 /** Local YYYY-MM-DD offset from today. */
 function isoOffset(days) {

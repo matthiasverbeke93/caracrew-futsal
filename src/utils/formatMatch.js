@@ -14,14 +14,19 @@ export function normalizeGameDateOnly(gameOrRawDate) {
       ? gameOrRawDate.game_date
       : gameOrRawDate;
   if (raw == null || raw === "") return null;
-  if (typeof raw === "object" && raw instanceof Date) {
-    return Number.isNaN(raw.getTime()) ? null : raw.toISOString().slice(0, 10);
-  }
+  if (typeof raw === "object" && raw instanceof Date) return localDayString(raw);
   const s = String(raw).trim();
   const isoDay = /^(\d{4}-\d{2}-\d{2})/.exec(s);
   if (isoDay) return isoDay[1];
-  const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+  return localDayString(new Date(s));
+}
+
+/** Local calendar day of a Date — `toISOString()` is UTC and would shift a Brussels midnight back a day. */
+function localDayString(d) {
+  if (Number.isNaN(d.getTime())) return null;
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
 /**

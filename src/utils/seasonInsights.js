@@ -26,7 +26,8 @@ function formatMonthLabel(ym) {
   if (!ym || ym.length < 7) return ym;
   const [y, m] = ym.split("-").map(Number);
   const d = new Date(Date.UTC(y, m - 1, 1));
-  return d.toLocaleString("en-GB", { month: "short", year: "numeric" });
+  // `d` is midnight UTC on the 1st; format it in UTC too, or a viewer west of UTC sees the previous month.
+  return d.toLocaleString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
 }
 
 /**

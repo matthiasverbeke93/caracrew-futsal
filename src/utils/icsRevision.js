@@ -30,9 +30,14 @@ function propertyName(line) {
   return (cut === -1 ? line : line.slice(0, cut)).toUpperCase();
 }
 
-/** The part of an event that decides whether it changed: content lines only. */
+/**
+ * The part of an event that decides whether it changed: content lines only, trimmed — the previous
+ * feed is read back trimmed, so an untrimmed new line (a trailing space in a venue) would otherwise
+ * never match and bump SEQUENCE on every run.
+ */
 export function eventBody(lines) {
   return lines
+    .map((line) => String(line ?? "").trim())
     .filter((line) => line && !NOT_CONTENT.has(propertyName(line)))
     .join("\n");
 }
@@ -53,12 +58,14 @@ export function parseIcsRevisions(text) {
   const revisions = new Map();
   const lines = unfoldIcs(String(text || "")).split(/\r?\n/);
   let current = null;
+  let nested = 0; // components inside the VEVENT (VALARM): their properties are not the event's
 
   for (const raw of lines) {
     const line = raw.trim();
     if (!line) continue;
     if (line === "BEGIN:VEVENT") {
       current = [];
+      nested = 0;
       continue;
     }
     if (line === "END:VEVENT") {
@@ -82,7 +89,10 @@ export function parseIcsRevisions(text) {
       current = null;
       continue;
     }
-    if (current && !line.startsWith("BEGIN:") && !line.startsWith("END:")) current.push(line);
+    if (!current) continue;
+    if (line.startsWith("BEGIN:")) nested++;
+    else if (line.startsWith("END:")) nested = Math.max(0, nested - 1);
+    else if (nested === 0) current.push(line);
   }
 
   return revisions;

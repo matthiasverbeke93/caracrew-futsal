@@ -125,9 +125,27 @@ describe("stats freeze window", () => {
   });
 
   it("getStatsLockDaysLeft counts down, null once frozen or in the future", () => {
-    expect(getStatsLockDaysLeft(g(isoOffset(-1)))).toBe(STATS_FREEZE_DAYS - 1);
+    expect(getStatsLockDaysLeft(g(isoOffset(0)))).toBe(STATS_FREEZE_DAYS + 1);
+    expect(getStatsLockDaysLeft(g(isoOffset(-1)))).toBe(STATS_FREEZE_DAYS);
+    // Last editable day: still editable, so the countdown must show (it locks tomorrow).
+    expect(isStatsEditable(g(isoOffset(-STATS_FREEZE_DAYS)))).toBe(true);
+    expect(getStatsLockDaysLeft(g(isoOffset(-STATS_FREEZE_DAYS)))).toBe(1);
+    expect(getStatsLockDaysLeft(g(isoOffset(-(STATS_FREEZE_DAYS + 1))))).toBeNull();
     expect(getStatsLockDaysLeft(g(isoOffset(1)))).toBeNull();
     expect(getStatsLockDaysLeft(g(isoOffset(-(STATS_FREEZE_DAYS + 2))))).toBeNull();
+  });
+});
+
+describe("stats freeze counts calendar days, not 24h blocks", () => {
+  it("is not shifted by a DST change between the game and now", () => {
+    // Europe/Brussels springs forward on 2027-03-28; three calendar days later is frozen.
+    const game = { game_date: "2027-03-27" };
+    const now = new Date(2027, 2, 30, 0, 30).getTime();
+    expect(isStatsFrozen(game, now)).toBe(true);
+    expect(getStatsLockDaysLeft(game, now)).toBeNull();
+    const lastDay = new Date(2027, 2, 29, 23, 30).getTime();
+    expect(isStatsFrozen(game, lastDay)).toBe(false);
+    expect(getStatsLockDaysLeft(game, lastDay)).toBe(1);
   });
 });
 

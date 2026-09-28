@@ -1,5 +1,6 @@
+/* global process */
 import { describe, expect, it } from "vitest";
-import { buildPlayersPerGameSeries } from "./seasonInsights.js";
+import { buildMonthlyTeamGaSeries, buildPlayersPerGameSeries } from "./seasonInsights.js";
 
 function isoOffset(days) {
   const d = new Date();
@@ -47,5 +48,19 @@ describe("buildPlayersPerGameSeries", () => {
   it("handles empty/missing input", () => {
     expect(buildPlayersPerGameSeries([], [], [])).toEqual([]);
     expect(buildPlayersPerGameSeries(null, null, null)).toEqual([]);
+  });
+});
+
+describe("buildMonthlyTeamGaSeries month labels", () => {
+  it("labels the month itself for a viewer west of UTC", () => {
+    const saved = process.env.TZ;
+    process.env.TZ = "America/New_York";
+    try {
+      const [row] = buildMonthlyTeamGaSeries([{ id: "g", game_date: "2025-10-12" }], []);
+      expect(row.label).toBe("Oct 2025");
+    } finally {
+      if (saved === undefined) delete process.env.TZ;
+      else process.env.TZ = saved;
+    }
   });
 });

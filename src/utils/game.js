@@ -44,11 +44,18 @@ export function upcomingGamesForAttendance(allGames, limit = 3) {
   return nextUpcomingGamesByCalendar(allGames, limit);
 }
 
+/**
+ * Whole calendar days from the game's date to "now" (local), so a DST change
+ * between the two can't shift the freeze by an hour.
+ */
 function daysSinceGame(game, nowMs = Date.now()) {
   if (!game?.game_date) return null;
-  const gameMs = new Date(`${game.game_date}T00:00:00`).getTime();
-  if (Number.isNaN(gameMs)) return null;
-  return Math.floor((nowMs - gameMs) / (24 * 60 * 60 * 1000));
+  const [y, m, d] = String(game.game_date).slice(0, 10).split("-").map(Number);
+  const gameDay = Date.UTC(y, m - 1, d);
+  if (Number.isNaN(gameDay)) return null;
+  const now = new Date(nowMs);
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((today - gameDay) / (24 * 60 * 60 * 1000));
 }
 
 export function isStatsFrozen(game, nowMs = Date.now()) {
@@ -108,14 +115,15 @@ export function isRsvpAllowedWhenFull(currentStatus, nextStatus) {
   return currentStatus === "playing" && nextStatus !== "playing";
 }
 
-/** Days remaining before stats freeze; null if not played yet or already frozen. */
+/**
+ * Days until stats freeze for players (the freeze starts the day after the last
+ * editable one, so the last editable day reads 1); null if not played yet or
+ * already frozen.
+ */
 export function getStatsLockDaysLeft(game, nowMs = Date.now()) {
-  if (!game?.game_date) return null;
-  if (game.game_date > localToday()) return null;
-  const gameMs = new Date(`${game.game_date}T00:00:00`).getTime();
-  if (Number.isNaN(gameMs)) return null;
-  const days = Math.floor((nowMs - gameMs) / (24 * 60 * 60 * 1000));
-  const left = STATS_FREEZE_DAYS - days;
+  const days = daysSinceGame(game, nowMs);
+  if (typeof days !== "number" || days < 0) return null;
+  const left = STATS_FREEZE_DAYS - days + 1;
   return left > 0 ? left : null;
 }
 

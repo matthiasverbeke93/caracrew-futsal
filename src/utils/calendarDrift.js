@@ -46,10 +46,11 @@ function changesBetween(db, feed) {
  * (`<season>-<date>-<hhmm>-<opponent>`) and therefore stops being a usable key the moment a fixture
  * moves — which is precisely the case we are trying to catch:
  *   1. exact id            — everything that did not change
- *   2. same date           — a venue/time/opponent change on the day it was always on
- *   3. same opponent + H/A — a fixture moved to another date entirely
- * Pass 3 is skipped when the pairing is ambiguous (a double round-robin has two legs per opponent,
- * so it only resolves when exactly one candidate is left unmatched on each side).
+ *   2. same opponent + H/A — a time/venue change, or a fixture moved to another date entirely
+ *   3. same date           — an opponent change on the day it was always on
+ * Opponent before date: when two fixtures swap dates, pairing by date would "rename" each row to
+ * the other opponent (and move the RSVPs with it) instead of moving both dates. Every pass skips a
+ * key that is ambiguous on either side, so pass 2 only resolves when exactly one candidate is left.
  *
  * Returns `{ changed, added, removed }`. `changed` carries both rows plus `idWouldChange`, which is
  * the flag that decides how it must be fixed: false → plain UPDATE; true → still an UPDATE, keeping
@@ -76,8 +77,8 @@ export function diffFixtures(feedRows, dbRows) {
   };
 
   take((row) => row.id);
-  take((row) => row.game_date);
   take(pairingKey);
+  take((row) => row.game_date);
 
   const changed = pairs
     .map(({ db, feed }) => ({ db, feed, changes: changesBetween(db, feed) }))

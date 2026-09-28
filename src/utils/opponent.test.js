@@ -23,4 +23,9 @@ describe("cleanOpponentName", () => {
     expect(cleanOpponentName("FC Foo")).toBe("FC Foo");
     expect(cleanOpponentName("  Padded FC  ")).toBe("Padded FC");
   });
+
+  it("keeps our own name intact instead of reducing it to \"K\"", () => {
+    expect(cleanOpponentName("K Caracrew SK")).toBe("K Caracrew SK");
+    expect(cleanOpponentName("Caracrew")).toBe("Caracrew");
+  });
 });

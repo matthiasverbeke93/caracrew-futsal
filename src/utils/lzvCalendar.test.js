@@ -52,6 +52,49 @@ describe("unescapeIcsText", () => {
     expect(unescapeIcsText("a\\nb")).toBe("a\nb");
     expect(unescapeIcsText("a\\;b")).toBe("a;b");
   });
+
+  it("keeps an escaped backslash before n as a backslash, not a newline", () => {
+    expect(unescapeIcsText("C:\\\\new")).toBe("C:\\new");
+    expect(unescapeIcsText("a\\\\\\nb")).toBe("a\\\nb");
+  });
+});
+
+describe("parseIcs — structure and parameters", () => {
+  it("ignores properties inside a nested VALARM", () => {
+    const text = feed(
+      [
+        "BEGIN:VEVENT",
+        "UID:x@lzvcup.be",
+        "SUMMARY:K Caracrew SK - VT 09",
+        "BEGIN:VALARM",
+        "ACTION:DISPLAY",
+        "SUMMARY:Reminder",
+        "DESCRIPTION:Reminder",
+        "END:VALARM",
+        "DTSTART;TZID=Europe/Brussels:20260910T210000",
+        "END:VEVENT",
+      ].join("\r\n")
+    );
+    const [ev] = parseIcs(text);
+    expect(ev.SUMMARY).toBe("K Caracrew SK - VT 09");
+    expect(ev.DESCRIPTION).toBeUndefined();
+    expect(ev.DTSTART.value).toBe("20260910T210000");
+  });
+
+  it("splits on the first colon outside quotes and strips quoted parameter values", () => {
+    const text = feed(
+      [
+        "BEGIN:VEVENT",
+        "UID:x@lzvcup.be",
+        'LOCATION;ALTREP="http://x.be/map":IHAM',
+        'DTSTART;TZID="Europe/Brussels":20260910T210000',
+        "END:VEVENT",
+      ].join("\r\n")
+    );
+    const [ev] = parseIcs(text);
+    expect(ev.LOCATION).toBe("IHAM");
+    expect(ev.DTSTART.params.TZID).toBe("Europe/Brussels");
+  });
 });
 
 describe("parseDtStart", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getDifficulty } from "./difficulty.js";
+import { getDifficulty, getOpponentStanding, getOurStanding } from "./difficulty.js";
 
 /** An opponent_strength row as sync-palmares writes it. */
 function strengthRow(overrides = {}) {
@@ -127,5 +127,37 @@ describe("getDifficulty — the real 26-27 pre-season table", () => {
       getDifficulty(n, withResults, SEASON)
     );
     expect(labelled).toHaveLength(Object.keys(LIVE_POSITIONS).length);
+  });
+});
+
+describe("static standings lookup (2526)", () => {
+  it("finds the opponent's own row, never ours", () => {
+    const row = getOpponentStanding("De Karpervissers", "2526");
+    expect(row?.name).toBe("De Karpervissers");
+    expect(row?.position).toBe(12);
+    expect(getDifficulty("De Karpervissers", [], "2526")?.teamName).toBe("De Karpervissers");
+  });
+
+  it("an empty or missing opponent matches nothing", () => {
+    expect(getOpponentStanding("", "2526")).toBeUndefined();
+    expect(getDifficulty("", [], "2526")).toBeNull();
+    expect(getDifficulty(null, [], "2526")).toBeNull();
+    expect(getDifficulty(undefined, [strengthRow({ current_played: 5 })], "2526")).toBeNull();
+  });
+
+  it("our own name is not an opponent", () => {
+    expect(getOpponentStanding("K Caracrew SK", "2526")).toBeUndefined();
+  });
+
+  it("getOurStanding finds our row by name", () => {
+    expect(getOurStanding("2526")).toMatchObject({ name: "K Caracrew SK", position: 10 });
+  });
+
+  it("prefers an exact live match over an earlier substring match", () => {
+    const rows = [
+      strengthRow({ name: "FC Tripel B", current_position: 1, current_played: 3 }),
+      strengthRow({ name: "FC Tripel", current_position: 9, current_played: 3 }),
+    ];
+    expect(getDifficulty("FC Tripel", rows, SEASON)?.position).toBe(9);
   });
 });

@@ -64,27 +64,48 @@ export function unfoldIcs(text) {
   return String(text || "").replace(/\r?\n[ \t]/g, "");
 }
 
-/** Undo RFC-5545 TEXT escaping. */
+/** Undo RFC-5545 TEXT escaping in one pass, so an escaped backslash before "n" stays a backslash. */
 export function unescapeIcsText(value) {
-  return String(value || "")
-    .replace(/\\n/gi, "\n")
-    .replace(/\\,/g, ",")
-    .replace(/\\;/g, ";")
-    .replace(/\\\\/g, "\\");
+  return String(value || "").replace(/\\([\\;,nN])/g, (_, c) => (c === "n" || c === "N" ? "\n" : c));
 }
 
-/** Split "DTSTART;TZID=Europe/Brussels:20260910T210000" into name, params, value. */
+/** Index of the first `ch` outside a double-quoted parameter value, or -1. */
+function indexOutsideQuotes(text, ch) {
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '"') quoted = !quoted;
+    else if (text[i] === ch && !quoted) return i;
+  }
+  return -1;
+}
+
+/** Split `text` on `ch`, ignoring any `ch` inside double quotes. */
+function splitOutsideQuotes(text, ch) {
+  const parts = [];
+  let rest = text;
+  for (let i = indexOutsideQuotes(rest, ch); i !== -1; i = indexOutsideQuotes(rest, ch)) {
+    parts.push(rest.slice(0, i));
+    rest = rest.slice(i + 1);
+  }
+  parts.push(rest);
+  return parts;
+}
+
+/**
+ * Split "DTSTART;TZID=Europe/Brussels:20260910T210000" into name, params, value.
+ * Parameter values may be quoted and contain ":" or ";" (`ALTREP="http://…"`); quotes are stripped.
+ */
 function parseLine(line) {
-  const colon = line.indexOf(":");
+  const colon = indexOutsideQuotes(line, ":");
   if (colon === -1) return null;
   const head = line.slice(0, colon);
   const value = line.slice(colon + 1);
-  const [name, ...paramParts] = head.split(";");
+  const [name, ...paramParts] = splitOutsideQuotes(head, ";");
   const params = {};
   for (const p of paramParts) {
     const eq = p.indexOf("=");
     if (eq === -1) continue;
-    params[p.slice(0, eq).toUpperCase()] = p.slice(eq + 1);
+    params[p.slice(0, eq).toUpperCase()] = p.slice(eq + 1).replace(/^"(.*)"$/, "$1");
   }
   return { name: name.toUpperCase(), params, value };
 }
@@ -157,12 +178,14 @@ export function parseIcs(text) {
   const lines = unfoldIcs(text).split(/\r?\n/);
   const events = [];
   let current = null;
+  let nested = 0; // depth of components inside the VEVENT (VALARM), whose properties are not the event's
 
   for (const raw of lines) {
     const line = raw.trim();
     if (!line) continue;
     if (line === "BEGIN:VEVENT") {
       current = {};
+      nested = 0;
       continue;
     }
     if (line === "END:VEVENT") {
@@ -171,6 +194,15 @@ export function parseIcs(text) {
       continue;
     }
     if (!current) continue;
+    if (line.startsWith("BEGIN:")) {
+      nested++;
+      continue;
+    }
+    if (line.startsWith("END:")) {
+      nested = Math.max(0, nested - 1);
+      continue;
+    }
+    if (nested > 0) continue;
     const parsed = parseLine(line);
     if (!parsed) continue;
     // Keep the structured form for DTSTART (params matter); plain text for the rest.

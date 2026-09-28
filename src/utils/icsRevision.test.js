@@ -157,3 +157,32 @@ describe("parseIcsRevisions", () => {
     expect(parseIcsRevisions(ics).get("a@b").sequence).toBe(0);
   });
 });
+
+describe("whitespace does not count as a change", () => {
+  it("treats a trailing space on a new line as unchanged against the (trimmed) previous feed", () => {
+    const first = reviseEvents([event()], "", T1);
+    const padded = event({
+      lines: ["DTSTART;TZID=Europe/Brussels:20260906T210000", "SUMMARY:VT 09 vs K. Caracrew SK", "LOCATION:Winketkaai Mechelen "],
+    });
+    const [again] = reviseEvents([padded], render(first), T2);
+    expect(again.reason).toBe("unchanged");
+    expect(again.sequence).toBe(first[0].sequence);
+  });
+
+  it("ignores VALARM properties when reading back a previous feed", () => {
+    const text = [
+      "BEGIN:VCALENDAR",
+      "BEGIN:VEVENT",
+      "UID:u1",
+      "SEQUENCE:2",
+      "DTSTAMP:20260904T120000Z",
+      "SUMMARY:Real",
+      "BEGIN:VALARM",
+      "SUMMARY:Reminder",
+      "END:VALARM",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    expect(parseIcsRevisions(text).get("u1").body).toBe(eventBody(["SUMMARY:Real"]));
+  });
+});

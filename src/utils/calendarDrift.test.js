@@ -57,6 +57,32 @@ describe("diffFixtures", () => {
     ]);
   });
 
+  it("moves both dates when two fixtures swap, instead of renaming each row to the other opponent", () => {
+    const alpha = row({ id: "2627-2026-10-01-2100-alpha", opponent: "Alpha", game_date: "2026-10-01", title: "K. Caracrew SK vs Alpha" });
+    const beta = row({ id: "2627-2026-10-15-2100-beta", opponent: "Beta", game_date: "2026-10-15", title: "K. Caracrew SK vs Beta" });
+    const feed = [
+      { ...beta, id: "2627-2026-10-01-2100-beta", game_date: "2026-10-01" },
+      { ...alpha, id: "2627-2026-10-08-2100-alpha", game_date: "2026-10-08" },
+    ];
+    const diff = diffFixtures(feed, [alpha, beta]);
+
+    expect(diff.added).toEqual([]);
+    expect(diff.removed).toEqual([]);
+    const byId = Object.fromEntries(diff.changed.map((c) => [c.db.id, c.changes.map((x) => x.field)]));
+    expect(byId).toEqual({ [alpha.id]: ["game_date"], [beta.id]: ["game_date"] });
+  });
+
+  it("still pairs an opponent change on the same date (the Bankzitters → De Wandelgang case)", () => {
+    const old = row({ id: "2627-2026-11-05-2100-bankzitters-united", opponent: "Bankzitters United", game_date: "2026-11-05", title: "K. Caracrew SK vs Bankzitters United" });
+    const renamed = { ...old, id: "2627-2026-11-05-2100-fc-de-wandelgang", opponent: "FC De Wandelgang", title: "K. Caracrew SK vs FC De Wandelgang" };
+    const diff = diffFixtures([renamed], [old]);
+
+    expect(diff.added).toEqual([]);
+    expect(diff.removed).toEqual([]);
+    expect(diff.changed[0].db.id).toBe(old.id);
+    expect(diff.changed[0].changes.map((c) => c.field)).toEqual(["opponent", "title"]);
+  });
+
   it("tells the two legs against one opponent apart by home/away, even if both moved", () => {
     const homeLeg = row();
     const awayLeg = row({

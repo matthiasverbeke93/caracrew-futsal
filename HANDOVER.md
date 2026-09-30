@@ -406,6 +406,16 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-30 (later)** — *Phone polish, round 2.* Match header date reads `Thu 8 Oct · 21:00`
+  (`formatMatchHeaderDateTime`, all sizes). Fixtures open on **Calendar** on phones (`GameSidebar` initial state
+  reads the 720px media query; desktop keeps List). The three dark "Soonest / Next up / Later" RSVP tiles were
+  replaced by **one light "Your next games" card** (`MyNextGamesTiles.jsx`, `.my-rsvp*` CSS): per fixture a date
+  block + opponent (tap opens the match), an answer badge ("No answer" in amber), and In / Out / If needed as one
+  segmented row; **tapping the chosen answer again clears it** (the separate Clear RSVP button is gone) and the
+  header counts what's still unanswered. The venue on these rows is plain text now (the row is a button, so no
+  nested map link). Phone top bar: signed in, the account chip shrinks to an initials avatar
+  (`.account-chip-avatar`) so the team name and season stop squeezing. Signed-in UI was checked with a throwaway
+  local preview page rendering the real components on sample data (not committed).
 - **2026-09-30** — *Phone layout: app-style shell.* The user found the site cumbersome on a phone and wanted it to
   feel like an app. Below **720px** (all in one block at the end of `index.css`): a compact sticky one-row top bar
   (brand, season, form, account; header nav hidden), and a fixed **bottom tab bar** (`MobileTabBar.jsx`:

@@ -61,6 +61,38 @@ export function formatFixtureRowDateTime(game) {
   return `${day ? `${day} ` : ""}${shortDate} · ${time}`;
 }
 
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * `Thu 8 Oct · 21:00` — the match header line. No year: a season never spans more than one
+ * autumn-to-spring run, and the season switcher already says which. Pure string work plus a
+ * noon Date for the weekday (the local-day-string rule); no kickoff yet reads `--:--`.
+ */
+export function formatMatchHeaderDateTime(game) {
+  const dateOnly = normalizeGameDateOnly(game);
+  const time = game?.game_time ? String(game.game_time).slice(0, 5) : "--:--";
+  if (!dateOnly) return time;
+  const [, mm, dd] = dateOnly.split("-");
+  const d = new Date(`${dateOnly}T12:00:00`);
+  const day = Number.isNaN(d.getTime()) ? "" : `${SHORT_DAYS[d.getDay()]} `;
+  return `${day}${Number(dd)} ${SHORT_MONTHS[Number(mm) - 1]} · ${time}`;
+}
+
+/** `{ day: "Thu", date: "8", month: "Oct", time: "21:00" }` — the stacked date block on RSVP rows. */
+export function fixtureDateBlock(game) {
+  const dateOnly = normalizeGameDateOnly(game);
+  const time = game?.game_time ? String(game.game_time).slice(0, 5) : "--:--";
+  if (!dateOnly) return { day: "", date: "?", month: "", time };
+  const [, mm, dd] = dateOnly.split("-");
+  const d = new Date(`${dateOnly}T12:00:00`);
+  return {
+    day: Number.isNaN(d.getTime()) ? "" : SHORT_DAYS[d.getDay()],
+    date: String(Number(dd)),
+    month: SHORT_MONTHS[Number(mm) - 1] ?? "",
+    time,
+  };
+}
+
 export function formatMatchDayTime(game) {
   const dateOnly = normalizeGameDateOnly(game);
   if (!dateOnly) return "";

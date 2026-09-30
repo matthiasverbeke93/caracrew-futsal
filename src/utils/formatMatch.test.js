@@ -4,8 +4,10 @@ import {
   buildWhatsAppMatchOpenUrl,
   buildWhatsAppNudgeUrl,
   buildWhatsAppStatsChaseUrl,
+  fixtureDateBlock,
   formatFixtureRowDateTime,
   formatFixtureShareText,
+  formatMatchHeaderDateTime,
   formatMatchShortDate,
   normalizeGameDateOnly,
 } from "./formatMatch.js";
@@ -31,6 +33,31 @@ describe("formatMatchShortDate", () => {
     expect(formatMatchShortDate({ game_date: null })).toBe("");
     expect(formatMatchShortDate({})).toBe("");
     expect(formatMatchShortDate("not a date")).toBe("");
+  });
+});
+
+describe("fixtureDateBlock", () => {
+  it("splits a fixture into weekday, day, month and kickoff", () => {
+    expect(fixtureDateBlock({ game_date: "2026-11-05", game_time: "21:00:00" })).toEqual({
+      day: "Thu",
+      date: "5",
+      month: "Nov",
+      time: "21:00",
+    });
+  });
+});
+
+describe("formatMatchHeaderDateTime", () => {
+  it("reads weekday, day, short month and trimmed kickoff", () => {
+    expect(formatMatchHeaderDateTime({ game_date: "2026-10-08", game_time: "21:00:00" })).toBe(
+      "Thu 8 Oct · 21:00"
+    );
+  });
+
+  it("keeps the day for an ISO datetime and marks a missing kickoff", () => {
+    expect(formatMatchHeaderDateTime({ game_date: "2027-03-01T00:00:00", game_time: null })).toBe(
+      "Mon 1 Mar · --:--"
+    );
   });
 });
 

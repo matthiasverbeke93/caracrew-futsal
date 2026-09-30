@@ -7,10 +7,7 @@ import {
   nextUpcomingGamesByCalendar,
 } from "../utils/game";
 import { cleanOpponentName } from "../utils/opponent";
-import { fixtureTileParts } from "../utils/formatMatch";
-import VenueLink from "./VenueLink";
-
-const TILE_EYEBROWS = ["Soonest", "Next up", "Later"];
+import { fixtureDateBlock } from "../utils/formatMatch";
 
 export default function MyNextGamesTiles({
   games,
@@ -37,96 +34,96 @@ export default function MyNextGamesTiles({
 
   if (!currentPlayer || upcoming.length === 0) return null;
 
+  const unanswered = upcoming.filter(
+    (g) => !statusByGameId.get(g.id) && isAttendanceEditable(g, games)
+  ).length;
+
   return (
-    <div
-      className="my-next-games-row"
-      role="region"
-      aria-label="Your next fixtures — quick RSVP"
-    >
-      {upcoming.map((game, index) => (
-        <NextGameTile
-          key={game.id}
-          game={game}
-          eyebrow={TILE_EYEBROWS[index] ?? `Match ${index + 1}`}
-          myStatus={statusByGameId.get(game.id) ?? null}
-          editable={isAttendanceEditable(game, games)}
-          gameFull={isGameFull(gameStatusById?.[game.id]?.playingCount)}
-          showOpenButton={selectedGameId !== game.id}
-          onJumpToGame={onJumpToGame}
-          onMarkAttendance={onMarkAttendance}
-        />
-      ))}
-    </div>
+    <section className="panel my-rsvp" aria-label="Your next fixtures — quick RSVP">
+      <header className="my-rsvp-head">
+        <h2>Your next games</h2>
+        <span className={`my-rsvp-summary${unanswered ? " is-pending" : ""}`}>
+          {unanswered ? `${unanswered} to answer` : "All answered"}
+        </span>
+      </header>
+      <ul className="my-rsvp-list">
+        {upcoming.map((game) => (
+          <NextGameRow
+            key={game.id}
+            game={game}
+            myStatus={statusByGameId.get(game.id) ?? null}
+            editable={isAttendanceEditable(game, games)}
+            gameFull={isGameFull(gameStatusById?.[game.id]?.playingCount)}
+            isOpen={selectedGameId === game.id}
+            onJumpToGame={onJumpToGame}
+            onMarkAttendance={onMarkAttendance}
+          />
+        ))}
+      </ul>
+    </section>
   );
 }
 
-function NextGameTile({
-  game,
-  eyebrow,
-  myStatus,
-  editable,
-  gameFull,
-  showOpenButton,
-  onJumpToGame,
-  onMarkAttendance,
-}) {
+/**
+ * One fixture: a date block + opponent that opens the match, the player's answer as a
+ * coloured badge, and In / Out / If needed as one segmented row underneath.
+ */
+function NextGameRow({ game, myStatus, editable, gameFull, isOpen, onJumpToGame, onMarkAttendance }) {
   const rawOpponent = game.opponent ? String(game.opponent).trim() : "";
   const cleaned = cleanOpponentName(game.opponent);
   const opponent = (cleaned && cleaned.trim()) || rawOpponent || "Opponent TBD";
-  const { when: whenText, venue } = fixtureTileParts(game);
-
-  const rsvpMod = myStatus ? `my-next-game-card--rsvp-${myStatus}` : "";
+  const { day, date, month, time } = fixtureDateBlock(game);
+  const closedByFull = gameFull && myStatus !== "playing";
 
   return (
-    <section
-      className={`panel my-next-game-card my-next-game-card--tile ${rsvpMod}`.trim()}
-      aria-label={`${eyebrow}: vs ${opponent}`}
-    >
-      <div className="my-next-game-top">
-        <div>
-          <div className="my-next-game-eyebrow">{eyebrow}</div>
-          <h2 className="my-next-game-title">
-            <span className="my-next-game-vs">vs</span> {opponent}
-          </h2>
-          <p className="my-next-game-when">
-            {whenText ? `${whenText} · ` : ""}
-            <VenueLink location={venue} />
-          </p>
-        </div>
-        {showOpenButton ? (
-          <button
-            type="button"
-            className="my-next-game-jump"
-            onClick={() => onJumpToGame?.(game.id)}
-            title="Open this match"
-          >
-            Open →
-          </button>
-        ) : null}
-      </div>
+    <li className={`my-rsvp-row${myStatus ? ` is-${myStatus}` : ""}${isOpen ? " is-open" : ""}`}>
+      <button
+        type="button"
+        className="my-rsvp-match"
+        onClick={() => onJumpToGame?.(game.id)}
+        aria-current={isOpen ? "true" : undefined}
+        title={isOpen ? "Showing below" : "Open this match"}
+      >
+        <span className="my-rsvp-date" aria-hidden>
+          <span>{day}</span>
+          <strong>{date}</strong>
+          <span>{month}</span>
+        </span>
+        <span className="my-rsvp-info">
+          <span className="my-rsvp-opponent">{opponent}</span>
+          <span className="my-rsvp-when">
+            {time}
+            {game.location ? ` · ${game.location}` : ""}
+          </span>
+        </span>
+        <span className={`my-rsvp-badge${myStatus ? ` is-${myStatus}` : " is-none"}`}>
+          {myStatus ? attendanceLabel(myStatus) : editable ? "No answer" : "Locked"}
+        </span>
+      </button>
 
-      <div className="my-next-game-actions" role="group" aria-label="Quick attendance">
+      <div className="my-rsvp-seg" role="group" aria-label={`Your answer for ${opponent}`}>
         {ATTENDANCE_OPTIONS.map((opt) => {
           // A full fixture only accepts an In player dropping out.
           const allowed = !gameFull || isRsvpAllowedWhenFull(myStatus, opt.value);
+          const active = myStatus === opt.value;
           return (
             <button
               key={opt.value}
               type="button"
-              className={`my-next-game-btn status-${opt.value} ${
-                myStatus === opt.value ? "active" : ""
-              }`}
-              onClick={() => onMarkAttendance(game.id, opt.value)}
-              disabled={!editable || !allowed}
+              className={`my-rsvp-opt status-${opt.value}${active ? " active" : ""}`}
+              // Tapping the chosen answer again clears it.
+              onClick={() => onMarkAttendance(game.id, active ? null : opt.value)}
+              disabled={!editable || (!allowed && !active)}
               title={
                 !editable
                   ? "RSVP not editable for this fixture"
-                  : !allowed
-                    ? `Match full — ${GAME_FULL_PLAYERS} players are already In`
-                    : undefined
+                  : active
+                    ? "Tap again to clear"
+                    : !allowed
+                      ? `Match full — ${GAME_FULL_PLAYERS} players are already In`
+                      : undefined
               }
-              aria-pressed={myStatus === opt.value}
-              aria-label={opt.label}
+              aria-pressed={active}
             >
               {opt.label}
             </button>
@@ -134,33 +131,9 @@ function NextGameTile({
         })}
       </div>
 
-      {/* Reserved footer keeps the RSVP buttons above it aligned tile-to-tile,
-          whether or not a tile has a Clear/Marked line (see .my-next-game-footer). */}
-      <div className="my-next-game-footer">
-        {editable && myStatus && (!gameFull || myStatus === "playing") ? (
-          <button
-            type="button"
-            className="my-next-game-clear"
-            onClick={() => onMarkAttendance(game.id, null)}
-          >
-            Clear RSVP
-          </button>
-        ) : null}
-
-        {myStatus ? (
-          <p className="my-next-game-status">
-            Marked <strong>{attendanceLabel(myStatus)}</strong>.
-          </p>
-        ) : null}
-
-        {/* Only the people it actually blocks need telling — and keeping it off the
-            "I'm In" tiles keeps the footer at two lines, so tiles stay aligned. */}
-        {gameFull && myStatus !== "playing" ? (
-          <p className="my-next-game-full">
-            Full — {GAME_FULL_PLAYERS} In, RSVP closed.
-          </p>
-        ) : null}
-      </div>
-    </section>
+      {closedByFull ? (
+        <p className="my-rsvp-note">Full — {GAME_FULL_PLAYERS} In, RSVP closed.</p>
+      ) : null}
+    </li>
   );
 }

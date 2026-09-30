@@ -15,6 +15,7 @@ import {
   buildWhatsAppNudgeUrl,
   buildWhatsAppStatsChaseUrl,
   formatFixtureShareText,
+  formatMatchHeaderDateTime,
 } from "../utils/formatMatch";
 import { goalkeeperNames } from "../utils/goalkeeper";
 import { getHeadToHeadSummary } from "../utils/headToHead";
@@ -399,7 +400,7 @@ export default function SelectedGamePanel({
         </div>
       </div>
       <p>
-        {selectedGame.game_date} · {selectedGame.game_time} ·{" "}
+        {formatMatchHeaderDateTime(selectedGame)} ·{" "}
         <VenueLink location={selectedGame.location} />
       </p>
 

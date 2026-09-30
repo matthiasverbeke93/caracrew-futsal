@@ -239,7 +239,11 @@ export default function GameSidebar({
     onFiltersChange([...cleaned, filterId]);
   }
 
-  const [showCalendar, setShowCalendar] = useState(false);
+  // Phones open on Calendar (a month-grouped list reads better there); desktop keeps List.
+  // Same breakpoint as the phone layout in index.css.
+  const [showCalendar, setShowCalendar] = useState(
+    () => window.matchMedia?.("(max-width: 720px)").matches ?? false
+  );
   const gamesByMonth = useMemo(() => {
     const groups = {};
 

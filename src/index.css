@@ -376,6 +376,20 @@ button {
   cursor: pointer;
 }
 
+.account-chip-avatar {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .account-chip-caret {
   font-size: 10px;
   line-height: 1;
@@ -1128,276 +1142,208 @@ button {
   }
 }
 
-/* ---------- My next game card (.panel wins later unless chained) ---------- */
-.panel.my-next-game-card {
+/* ---------- Your next games (quick RSVP, MyNextGamesTiles.jsx) ----------
+   One light card, one row per fixture: date block + opponent (opens the match),
+   the answer as a badge, and In / Out / If needed as a segmented row. */
+.panel.my-rsvp {
   margin-bottom: 0;
-  padding: 16px 18px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  color: #f8fafc;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 14px 16px 16px;
+}
+
+.my-rsvp-head {
   display: flex;
-  flex-direction: column;
-}
-
-/* Keep the RSVP controls aligned across tiles even when opponent names wrap. */
-.panel.my-next-game-card .my-next-game-actions {
-  margin-top: auto;
-}
-
-.panel.my-next-game-card.my-next-game-card--rsvp-playing {
-  box-shadow: inset 0 0 0 2px var(--signal-success);
-}
-
-.panel.my-next-game-card.my-next-game-card--rsvp-if_needed {
-  box-shadow: inset 0 0 0 2px var(--signal-warning);
-}
-
-.panel.my-next-game-card.my-next-game-card--rsvp-cant {
-  box-shadow: inset 0 0 0 2px var(--signal-danger);
-}
-
-.panel.my-next-game-card .my-next-game-eyebrow {
-  display: block;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #94a3b8;
-  background: transparent;
-  padding: 0;
-  margin: 0 0 10px;
-  border-radius: 0;
-}
-
-.panel.my-next-game-card .my-next-game-top {
-  display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   margin-bottom: 10px;
 }
 
-.panel.my-next-game-card h2.my-next-game-title {
-  margin: 4px 0 2px;
-  font-size: 22px;
-  line-height: 1.2;
-  color: #f8fafc;
-}
-
-.panel.my-next-game-card .my-next-game-vs {
-  color: #94a3b8;
-  font-weight: 500;
-  font-size: 15px;
-}
-
-.panel.my-next-game-card .my-next-game-when {
+.my-rsvp-head h2 {
   margin: 0;
-  color: #cbd5e1;
-  font-size: 13px;
-}
-
-.panel.my-next-game-card .my-next-game-jump {
-  font: inherit;
+  font-size: 15px;
   font-weight: 700;
+}
+
+.my-rsvp-summary {
   font-size: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 6px 12px;
+  font-weight: 700;
+  padding: 3px 10px;
   border-radius: 999px;
+  background: var(--tone-success-bg);
+  color: var(--tone-success-fg);
+}
+
+.my-rsvp-summary.is-pending {
+  background: var(--tone-warning-bg);
+  color: var(--tone-warning-fg);
+}
+
+.my-rsvp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.my-rsvp-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-elevated);
+}
+
+.my-rsvp-row.is-open {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.my-rsvp-match {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
+}
+
+.my-rsvp-date {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 44px;
+  padding: 4px 0;
+  border-radius: 10px;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+.my-rsvp-date strong {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.my-rsvp-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.my-rsvp-opponent {
+  font-weight: 700;
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  flex-shrink: 0;
 }
 
-.panel.my-next-game-card .my-next-game-jump:hover {
-  background: rgba(255, 255, 255, 0.18);
+.my-rsvp-when {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.panel.my-next-game-card .my-next-game-actions {
+.my-rsvp-badge {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.my-rsvp-badge.is-none {
+  background: var(--tone-warning-bg);
+  color: var(--tone-warning-fg);
+}
+
+.my-rsvp-badge.is-playing {
+  background: var(--tone-success-bg);
+  color: var(--tone-success-fg);
+}
+
+.my-rsvp-badge.is-if_needed {
+  background: var(--tone-caution-bg);
+  color: var(--tone-caution-fg);
+}
+
+.my-rsvp-badge.is-cant {
+  background: var(--tone-danger-bg);
+  color: var(--tone-danger-fg);
+}
+
+.my-rsvp-seg {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.panel.my-next-game-card .my-next-game-btn {
-  font: inherit;
-  font-weight: 700;
-  font-size: 13px;
-  padding: 10px 8px;
+  gap: 4px;
+  padding: 3px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.1);
-  color: #f1f5f9;
-  cursor: pointer;
-  line-height: 1.25;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
 }
 
-.panel.my-next-game-card .my-next-game-btn:hover {
-  background: rgba(255, 255, 255, 0.18);
+.my-rsvp-opt {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  min-height: 38px;
+  padding: 6px 4px;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.my-rsvp-opt:hover:not(:disabled) {
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+}
+
+.my-rsvp-opt.active.status-playing {
+  background: #15803d;
   color: #fff;
 }
 
-.panel.my-next-game-card .my-next-game-btn.status-playing.active {
-  background: #16a34a;
-  border-color: var(--signal-success);
-  color: white;
+.my-rsvp-opt.active.status-if_needed {
+  background: #d97706;
+  color: #fff;
 }
 
-.panel.my-next-game-card .my-next-game-btn.status-if_needed.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
-}
-
-.panel.my-next-game-card .my-next-game-btn.status-cant.active {
+.my-rsvp-opt.active.status-cant {
   background: #b91c1c;
-  border-color: var(--signal-danger);
-  color: white;
+  color: #fff;
 }
 
-.panel.my-next-game-card .my-next-game-status {
-  margin: 8px 0 0;
-  font-size: 13px;
-  color: #cbd5e1;
-}
-
-.panel.my-next-game-card.my-next-game-card--rsvp-playing .my-next-game-status strong {
-  color: #86efac;
-}
-
-.panel.my-next-game-card.my-next-game-card--rsvp-if_needed .my-next-game-status strong {
-  color: #fcd34d;
-}
-
-.panel.my-next-game-card.my-next-game-card--rsvp-cant .my-next-game-status strong {
-  color: #fca5a5;
-}
-
-.panel.my-next-game-card .my-next-game-clear {
-  margin-top: 6px;
-  width: 100%;
-  padding: 6px 8px;
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: 8px;
-  border: 1px dashed rgba(255, 255, 255, 0.35);
-  background: transparent;
-  color: #94a3b8;
-  cursor: pointer;
-}
-
-.panel.my-next-game-card .my-next-game-clear:hover {
-  color: #e2e8f0;
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
-.panel.my-next-game-card .my-next-game-btn:disabled {
+.my-rsvp-opt:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
-/* "Full — 8 In, RSVP closed." on a tile whose fixture already has enough players */
-.panel.my-next-game-card .my-next-game-full {
-  margin: 6px 0 0;
-  font-size: 11.5px;
-  font-weight: 600;
-  line-height: 1.35;
-  color: #fcd34d;
-}
-
-/* Row of up to three compact next-fixture tiles */
-.my-next-games-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  align-items: stretch;
-}
-
-.my-next-games-row:has(.my-next-game-card--tile:only-child) {
-  grid-template-columns: minmax(0, 400px);
-}
-
-.my-next-games-row:has(.my-next-game-card--tile:nth-child(2):last-child) {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.panel.my-next-game-card--tile {
-  padding: 12px 12px 14px;
-  border-radius: 18px;
-}
-
-.panel.my-next-game-card--tile .my-next-game-top {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
-.panel.my-next-game-card--tile .my-next-game-jump {
-  align-self: flex-start;
-  font-size: 11px;
-  padding: 5px 10px;
-}
-
-.panel.my-next-game-card--tile .my-next-game-eyebrow {
-  font-size: 10px;
-  margin-bottom: 12px;
-}
-
-.panel.my-next-game-card--tile h2.my-next-game-title {
+.my-rsvp-note {
   margin: 0;
-  font-size: 15px;
-  line-height: 1.25;
-  word-break: break-word;
-}
-
-.panel.my-next-game-card--tile .my-next-game-vs {
-  font-size: 11px;
-}
-
-.panel.my-next-game-card--tile .my-next-game-when {
-  font-size: 11px;
-  line-height: 1.35;
-}
-
-.panel.my-next-game-card--tile .my-next-game-actions {
-  grid-template-columns: 1fr;
-  gap: 5px;
-}
-
-.panel.my-next-game-card--tile .my-next-game-btn {
   font-size: 12px;
-  font-weight: 800;
-  padding: 8px 6px;
-  border-radius: 10px;
-}
-
-.panel.my-next-game-card--tile .my-next-game-status {
-  margin: 6px 0 0;
-  font-size: 11px;
-  line-height: 1.35;
-}
-
-/* Reserve room for the Clear RSVP + "Marked …" lines even when a tile has
-   neither, so the (bottom-anchored) RSVP buttons line up across all tiles
-   regardless of each tile's own RSVP state. */
-.panel.my-next-game-card--tile .my-next-game-footer {
-  min-height: 60px;
-}
-
-@media (max-width: 960px) {
-  .my-next-games-row,
-  .my-next-games-row:has(.my-next-game-card--tile:only-child),
-  .my-next-games-row:has(.my-next-game-card--tile:nth-child(2):last-child) {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 540px) {
-  .panel.my-next-game-card .my-next-game-actions {
-    grid-template-columns: 1fr;
-  }
+  color: var(--tone-danger-fg);
 }
 
 .pill,
@@ -4973,6 +4919,29 @@ input[type="number"] {
   .season-select-label,
   .form-chip-label {
     display: none;
+  }
+
+  .season-select-toggle {
+    white-space: nowrap;
+    padding: 5px 10px;
+  }
+
+  /* Signed in, the account chip shrinks to an initials avatar so the team name keeps its room. */
+  .account-chip-trigger {
+    padding: 3px 6px 3px 3px;
+    gap: 4px;
+  }
+
+  .account-chip-trigger .account-chip-meta {
+    display: none;
+  }
+
+  .account-chip-avatar {
+    display: inline-flex;
+  }
+
+  .panel.my-rsvp {
+    padding: 12px;
   }
 
   /* One column at a time. The season page (layout--full) always shows content. */

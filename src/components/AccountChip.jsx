@@ -67,6 +67,10 @@ export default function AccountChip({
         onClick={() => setMenuOpen((v) => !v)}
         title={user.email || ""}
       >
+        {/* Phone-only stand-in for the name + role (see .account-chip-avatar). */}
+        <span className="account-chip-avatar" aria-hidden="true">
+          {initials(label)}
+        </span>
         <span className="account-chip-meta">
           <span className="account-chip-name">{label}</span>
           <span className={`account-chip-role role-${role.toLowerCase()}`}>{role}</span>
@@ -116,4 +120,13 @@ export default function AccountChip({
       )}
     </div>
   );
+}
+
+/** "Matthias Verbeke" → "MV"; an email or single word → its first letter. */
+function initials(label) {
+  const words = String(label).split("@")[0].split(/[\s._-]+/).filter(Boolean);
+  if (words.length === 0) return "?";
+  const first = words[0][0];
+  const last = words.length > 1 ? words[words.length - 1][0] : "";
+  return (first + last).toUpperCase();
 }

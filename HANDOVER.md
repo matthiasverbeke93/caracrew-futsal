@@ -407,6 +407,8 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-30 (Clear RSVP size)** — The Attendance-tab *Clear RSVP* button on a player card is no longer
+  full-width: a small right-aligned pill (`.player-card button.attendance-clear-rsvp`, 11px, `justify-self: end`).
 - **2026-09-30 (UI review pass)** — Fixes from a phone / tablet / desktop screenshot review:
   - **App-style shell now runs up to 1000px** (was 720px): tablets get the bottom tab bar and one column at a
     time, because the two-column layout stacked the fixtures *below the whole attendance list* at 820px and

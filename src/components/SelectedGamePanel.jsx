@@ -153,6 +153,32 @@ export default function SelectedGamePanel({
   const opponentName = cleanOpponentName(selectedGame.opponent);
   const difficulty = getDifficulty(selectedGame.opponent, opponentStrengths, seasonSlug);
   const h2h = getHeadToHeadSummary(allGames, selectedGame.opponent);
+  const contextRows = [
+    difficulty?.lastSeason && {
+      label: "Last year's league standing",
+      value: `Pos ${difficulty.lastSeason.position}${
+        difficulty.lastSeason.reeks ? ` · ${difficulty.lastSeason.reeks}` : ""
+      }`,
+    },
+    h2h?.lastLine && {
+      label: "Last meeting",
+      value: h2h.lastLine.replace(/^Last meeting:\s*/, ""),
+    },
+    h2h?.seasonLine && {
+      label: "Season vs them",
+      value: h2h.seasonLine.replace(/^Season vs them:\s*/, ""),
+    },
+  ].filter(Boolean);
+  const contextList = (
+    <dl className="meta-list">
+      {contextRows.map((row) => (
+        <div key={row.label}>
+          <dt>{row.label}</dt>
+          <dd>{row.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
   const played = isPlayed(selectedGame);
   // `played` flips at midnight; the score can be entered as soon as the match is on.
   const now = useNow(60_000);
@@ -421,34 +447,14 @@ export default function SelectedGamePanel({
         )}
       </div>
 
-      {(difficulty?.lastSeason || h2h) && (
+      {/* Collapsing only pays off with several rows; a single fact is shown as-is. */}
+      {contextRows.length > 1 && (
         <details className="match-context">
           <summary className="match-context-summary">Match context</summary>
-          <dl className="meta-list">
-            {difficulty?.lastSeason && (
-              <div>
-                <dt>Last year's league standing</dt>
-                <dd>
-                  Pos {difficulty.lastSeason.position}
-                  {difficulty.lastSeason.reeks ? ` · ${difficulty.lastSeason.reeks}` : ""}
-                </dd>
-              </div>
-            )}
-            {h2h?.lastLine && (
-              <div>
-                <dt>Last meeting</dt>
-                <dd>{h2h.lastLine.replace(/^Last meeting:\s*/, "")}</dd>
-              </div>
-            )}
-            {h2h?.seasonLine && (
-              <div>
-                <dt>Season vs them</dt>
-                <dd>{h2h.seasonLine.replace(/^Season vs them:\s*/, "")}</dd>
-              </div>
-            )}
-          </dl>
+          {contextList}
         </details>
       )}
+      {contextRows.length === 1 && <div className="match-context">{contextList}</div>}
 
       {scoreOpen && (
         <FinalScoreFields

@@ -8,6 +8,7 @@ import { useToast } from "./hooks/useToast.jsx";
 import FormChip from "./components/FormChip";
 import GameSidebar from "./components/GameSidebar";
 import MobileTabBar from "./components/MobileTabBar";
+import HeaderMoreMenu from "./components/HeaderMoreMenu";
 import MyNextGamesTiles from "./components/MyNextGamesTiles";
 import NewPasswordModal from "./components/NewPasswordModal";
 import SeasonSwitcher from "./components/SeasonSwitcher";
@@ -358,22 +359,7 @@ export default function App() {
               >
                 LZV Cup ↗
               </a>
-              <button
-                type="button"
-                className="dashboard-nav-btn"
-                onClick={openGuide}
-                title="How the app works: RSVP, stats, Man of the Match"
-              >
-                How it works
-              </button>
-              <button
-                type="button"
-                className="dashboard-nav-btn dashboard-nav-btn-quiet"
-                onClick={() => setBugModalOpen(true)}
-                title="Report a bug or suggest something"
-              >
-                Report a bug
-              </button>
+              <HeaderMoreMenu onGuide={openGuide} onBug={() => setBugModalOpen(true)} />
             </nav>
             <AccountChip
               user={user}

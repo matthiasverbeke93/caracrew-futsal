@@ -55,7 +55,8 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   ink text, a single **deep-green** accent (`--accent #146c43`, white text sits on it — `--on-accent`), Inter
   body + Space Grotesk display (Google Fonts in `index.html`, system fallbacks), and a **light, minimalistic
   single-row header** (white, hairline bottom border, static/scrolls away — brand left, season+nav+account
-  right). `:root` holds the
+  right; nav = Stats, LZV Cup, More ▾). **≤1000px switches to the app-style shell** (sticky top bar, bottom
+  `MobileTabBar`, one column at a time) — keep `GameSidebar`'s `matchMedia` in sync with that breakpoint. `:root` holds the
   whole palette: base tokens (`--surface-*`, `--text-*`, `--accent` / `--accent-strong` / `--accent-muted`,
   `--font-body` / `--font-display`) **plus** the semantic colour system — `--tone-*` (success/danger/warning/
   caution/info bg+fg pairs), `--signal-*` (readiness rails, toast accents), `--diff-*` (difficulty ramp),
@@ -406,6 +407,22 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-30 (UI review pass)** — Fixes from a phone / tablet / desktop screenshot review:
+  - **App-style shell now runs up to 1000px** (was 720px): tablets get the bottom tab bar and one column at a
+    time, because the two-column layout stacked the fixtures *below the whole attendance list* at 820px and
+    the header wrapped (plus 8px sideways overflow). `GameSidebar`'s Calendar-by-default `matchMedia` moved to
+    1000px with it. 721–1000px caps the column at 760px and centres the More sheet.
+  - **Attendance = one compact row per player** at all widths (name left, In / Out / If needed right); only
+    ≤560px stacks the name above the three. The "Fixed" badge is gone (it was on every roster player); Guest
+    and GK stay. Names are plain link text — the grey pill was the generic `.player-card button` style leaking
+    onto `.player-link`. The pale selected colours were **not** a palette problem: `button:disabled
+    {opacity:.5}` faded the chosen answer for signed-out viewers; `.attendance-opt.active:disabled` now stays
+    at full opacity. "Add guest player" renders only for `canManageGame`.
+  - **Desktop header:** How it works + Report a bug moved into a `More ▾` dropdown (`HeaderMoreMenu.jsx`,
+    reuses the AccountChip menu classes + `menuNav`). Phones/tablets keep them in the More tab.
+  - Removed the sidebar **"RSVP soon / Next 3 matches"** box (schedule already badges Next 1/2/3; the
+    `nextAttendanceGames` prop stays for those badges). "Match context" got a chevron + hover. Stats intro cut
+    to one line; the GP / % definitions now sit under **Player totals**.
 - **2026-09-30 (squad bar)** — Each "Your next games" row now shows how full the fixture is, so a player can
   decide whether to commit: 8 pips (one per place, `GAME_FULL_PLAYERS`), `n/8 In` and a verdict — *Needs k more*
   (red, below `MIN_PLAYERS_WARNING`), *Enough · k spots left* (green) or *Full* — plus `+n if needed` and

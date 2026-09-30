@@ -1447,21 +1447,6 @@ button {
   max-height: calc(100vh - 124px);
 }
 
-.sidebar-rsvp-block {
-  margin-bottom: 20px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #e2e8f0;
-}
-
-.sidebar-section-eyebrow {
-  margin: 0 0 8px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #64748b;
-}
-
 .sidebar-schedule-card {
   display: flex;
   flex-direction: column;
@@ -2326,94 +2311,6 @@ button {
     justify-self: start;
     text-align: left;
   }
-}
-
-.sidebar-next-fixtures {
-  margin-bottom: 0;
-  padding: 0;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
-  overflow: hidden;
-}
-
-.sidebar-next-fixtures-title {
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--accent-strong);
-  margin: 0;
-  padding: 10px 12px;
-  background: linear-gradient(90deg, var(--accent-muted) 0%, #f8fafc 100%);
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.sidebar-next-fixtures-list {
-  margin: 0;
-  padding: 8px;
-  list-style: none;
-  display: grid;
-  gap: 6px;
-}
-
-.sidebar-next-fixtures-link {
-  width: 100%;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  text-align: left;
-  padding: 8px 10px;
-  border-radius: 12px;
-  border: 1px solid transparent;
-  background: #f8fafc;
-  cursor: pointer;
-  font: inherit;
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.sidebar-next-fixtures-link:hover {
-  border-color: rgba(245, 165, 36, 0.4);
-  background: #fff;
-  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
-}
-
-.sidebar-next-fixtures-step {
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  margin-top: 1px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: 12px;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(245, 165, 36, 0.4);
-}
-
-.sidebar-next-fixtures-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.sidebar-next-fixtures-opponent {
-  font-weight: 700;
-  font-size: 13px;
-  color: #0f172a;
-}
-
-.sidebar-next-fixtures-when {
-  font-size: 11px;
-  color: #64748b;
 }
 
 /* List / Calendar segmented toggle. Same idiom as `.filter-status-row`: a grey track, the
@@ -3292,10 +3189,12 @@ button {
   filter: brightness(0.96);
 }
 
+/* One compact row per player: name left, In / Out / If needed right.
+   The phone block (max-width: 720px) stacks the name above the three. */
 .player-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 6px;
   margin-top: 16px;
 }
 
@@ -3368,10 +3267,16 @@ button {
 
 .player-card {
   border: 1px solid #e2e8f0;
-  border-radius: 18px;
-  padding: 10px;
+  border-radius: 14px;
+  padding: 6px 6px 6px 14px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(3, minmax(84px, 112px));
+  align-items: center;
   gap: 6px;
+}
+
+.player-card .attendance-clear-rsvp {
+  grid-column: 1 / -1;
 }
 
 .player-card-header {
@@ -3408,6 +3313,26 @@ button {
 
 .player-card button.attendance-opt {
   border: 1px solid transparent;
+  text-align: center;
+  padding: 8px 6px;
+  font-weight: 600;
+}
+
+/* The name is a link, not a pill: undo the generic .player-card button look. */
+.player-card button.player-link {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: 14px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.player-card button.player-link:hover,
+.player-card button.player-link:focus-visible {
+  color: var(--accent-strong);
+  text-decoration: underline;
+  filter: none;
 }
 
 .player-card button.attendance-opt.active.attendance-opt--playing {
@@ -3436,6 +3361,12 @@ input:disabled {
   cursor: not-allowed;
 }
 
+/* A locked row still has to show its answer at full strength; fading the
+   selected fill to 50% dropped white-on-green below readable contrast. */
+.player-card button.attendance-opt.active:disabled {
+  opacity: 1;
+}
+
 .player-card button.attendance-clear-rsvp {
   margin-top: 8px;
   width: 100%;
@@ -3456,16 +3387,6 @@ input:disabled {
   margin-left: 8px;
   background: #e2e8f0;
   color: #334155;
-  border-radius: 999px;
-  padding: 3px 8px;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.fixed-badge {
-  margin-left: 8px;
-  background: var(--accent-muted);
-  color: var(--accent-strong);
   border-radius: 999px;
   padding: 3px 8px;
   font-size: 11px;
@@ -3592,6 +3513,30 @@ input[type="number"] {
   text-transform: uppercase;
   color: var(--text-muted);
   user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Chevron so the collapsed bar reads as something that opens. */
+.match-context-summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-right: 3px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 150ms ease;
+}
+
+.match-context[open] .match-context-summary::after {
+  transform: translateY(2px) rotate(-135deg);
+}
+
+.match-context-summary:hover {
+  color: var(--text-primary);
+  background: #eaeef3;
 }
 
 .match-context-summary::-webkit-details-marker {
@@ -4911,17 +4856,18 @@ input[type="number"] {
   padding-left: 18px;
 }
 
-/* ---------- Phone layout: app-style shell ----------
-   Below 720px the page behaves like a native app: a compact sticky top bar,
+/* ---------- Phone + tablet layout: app-style shell ----------
+   Up to 1000px the page behaves like a native app: a compact sticky top bar,
    one column at a time (Match or Fixtures, chosen from the bottom tab bar in
-   MobileTabBar.jsx), and the header nav moves into that tab bar. Desktop never
-   sees the tab bar. */
+   MobileTabBar.jsx), and the header nav moves into that tab bar. Tablets use it
+   too: the two-column desktop layout stacks badly there (the fixtures ended up
+   below the whole attendance list). Desktop never sees the tab bar. */
 .mobile-tabbar,
 .mobile-sheet-backdrop {
   display: none;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   /* clip, not hidden: hidden would turn body into a scroll box and unstick the top bar. */
   body {
     overflow-x: clip;
@@ -5049,31 +4995,6 @@ input[type="number"] {
 
   .count-grid span {
     font-size: 11px;
-  }
-
-  /* Attendance: name on top, In / Out / If needed as one segmented row. */
-  .player-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .player-card {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-    padding: 10px;
-    border-radius: 14px;
-  }
-
-  .player-card-header,
-  .player-card .attendance-clear-rsvp {
-    grid-column: 1 / -1;
-  }
-
-  .player-card button.attendance-opt {
-    text-align: center;
-    padding: 10px 4px;
-    min-height: 40px;
-    font-weight: 600;
   }
 
   /* Attendance / Game stats as a full-width two-way switch that stays in reach. */
@@ -5211,5 +5132,39 @@ input[type="number"] {
   /* Keep toasts clear of the tab bar. */
   .toast-stack {
     bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Tablet: keep the single column at a readable width instead of edge to edge. */
+@media (min-width: 721px) and (max-width: 1000px) {
+  .dashboard-layout,
+  .layout {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .mobile-sheet {
+    left: 50%;
+    right: auto;
+    width: min(420px, calc(100% - 16px));
+    transform: translateX(-50%);
+  }
+}
+
+/* Narrow phones: name on top, In / Out / If needed as one segmented row. */
+@media (max-width: 560px) {
+  .player-card {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 8px;
+  }
+
+  .player-card-header {
+    grid-column: 1 / -1;
+    padding: 2px 4px 0;
+  }
+
+  .player-card button.attendance-opt {
+    padding: 8px 4px;
+    min-height: 40px;
   }
 }

@@ -395,27 +395,12 @@ export default function SeasonOverviewPage({
           <h2>Season overview · {seasonLabelText}</h2>
           <p className="team-stats-sub">
             <span className="season-overview-intro-line">
-              Trends and totals for <em>{TEAM_NAME}</em>
-              {summary.playedGames > 0 ? (
-                <>
-                  {" "}
-                  · {summary.playedGames} played fixture{summary.playedGames === 1 ? "" : "s"}
-                </>
-              ) : null}
+              Trends and totals for <em>{TEAM_NAME}</em> ·{" "}
+              {staticData
+                ? `${denominator} games played`
+                : `${playedDenominator} of ${denominator} game${denominator === 1 ? "" : "s"} played`}
               .
-            </span>{" "}
-            {staticData ? (
-              <>
-                Main table can include an <strong>LZV snapshot</strong> for games played and goals (
-                {denominator} games played this season). % = GP ÷ games played.
-              </>
-            ) : (
-              <>
-                {playedDenominator} of {denominator} scheduled game
-                {denominator === 1 ? "" : "s"} played so far · GP = played games marked{" "}
-                <em>In</em> · % = GP ÷ games played so far.
-              </>
-            )}
+            </span>
           </p>
         </div>
         <button type="button" className="team-stats-back" onClick={onBack}>
@@ -696,6 +681,18 @@ export default function SeasonOverviewPage({
 
       <section className="insights-section" aria-labelledby="overview-totals-heading">
         <h3 id="overview-totals-heading">Player totals</h3>
+        <p className="insights-section-intro">
+          {staticData ? (
+            <>
+              Can include an <strong>LZV snapshot</strong> for games played and goals. GP = games
+              played · % = GP ÷ games played.
+            </>
+          ) : (
+            <>
+              GP = played games marked <em>In</em> · % = GP ÷ games played so far.
+            </>
+          )}
+        </p>
         <div className="team-stats-table-wrap">
           <table className="team-stats-table">
             <thead>

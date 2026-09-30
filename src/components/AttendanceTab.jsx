@@ -92,9 +92,7 @@ export default function AttendanceTab({
             <button type="button" className="player-link" onClick={() => onOpenPlayer(player.id)}>
               {player.name}
             </button>
-            <span className={player.type === "fixed" ? "fixed-badge" : "guest-badge"}>
-              {player.type === "fixed" ? "Fixed" : "Guest"}
-            </span>
+            {player.type !== "fixed" && <span className="guest-badge">Guest</span>}
             {player.isGoalkeeper && (
               <span className="keeper-badge" title="Goalkeeper">
                 GK
@@ -207,6 +205,7 @@ export default function AttendanceTab({
         <div className="player-grid">{allGamePlayers.map(renderPlayerCard)}</div>
       )}
 
+      {canManageGame && (
       <div className="guest-card">
         <div>
           <div className="section-label">Guests · admin only</div>
@@ -251,6 +250,7 @@ export default function AttendanceTab({
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }

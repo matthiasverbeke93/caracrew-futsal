@@ -2,7 +2,7 @@ import { FILTER_CONFLICTS, GAME_EXTRA_FILTERS, GAME_FILTERS } from "../constants
 import { getDifficulty } from "../utils/difficulty";
 import { playerStatusLabel, readinessClass } from "../utils/game";
 import { isMotmVotingOpen } from "../utils/motm";
-import { formatFixtureRowDateTime, formatMatchDayTime } from "../utils/formatMatch";
+import { formatFixtureRowDateTime } from "../utils/formatMatch";
 import { cleanOpponentName } from "../utils/opponent";
 import { useLayoutEffect, useMemo, useState } from "react";
 
@@ -239,10 +239,10 @@ export default function GameSidebar({
     onFiltersChange([...cleaned, filterId]);
   }
 
-  // Phones open on Calendar (a month-grouped list reads better there); desktop keeps List.
-  // Same breakpoint as the phone layout in index.css.
+  // Phones and tablets open on Calendar (a month-grouped list reads better there); desktop
+  // keeps List. Same breakpoint as the app-style shell in index.css.
   const [showCalendar, setShowCalendar] = useState(
-    () => window.matchMedia?.("(max-width: 720px)").matches ?? false
+    () => window.matchMedia?.("(max-width: 1000px)").matches ?? false
   );
   const gamesByMonth = useMemo(() => {
     const groups = {};
@@ -325,38 +325,6 @@ export default function GameSidebar({
 
   return (
     <aside className="sidebar" aria-label="Season fixtures and filters">
-      {nextAttendanceGames?.length > 0 && (
-        <div className="sidebar-rsvp-block">
-          <p className="sidebar-section-eyebrow">RSVP soon</p>
-          <section className="sidebar-next-fixtures" aria-label="Next fixtures to RSVP">
-            <div className="sidebar-next-fixtures-title">
-              Next {nextAttendanceGames.length} match{nextAttendanceGames.length === 1 ? "" : "es"}
-            </div>
-            <ol className="sidebar-next-fixtures-list">
-              {nextAttendanceGames.map((g, i) => (
-                <li key={g.id}>
-                  <button
-                    type="button"
-                    className="sidebar-next-fixtures-link"
-                    onClick={() => onSelectGame(g.id)}
-                  >
-                    <span className="sidebar-next-fixtures-step" aria-hidden>
-                      {i + 1}
-                    </span>
-                    <span className="sidebar-next-fixtures-meta">
-                      <span className="sidebar-next-fixtures-opponent">{cleanOpponentName(g.opponent)}</span>
-                      <span className="sidebar-next-fixtures-when">
-                        {formatMatchDayTime(g)} · {g.location || "Venue TBD"}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ol>
-          </section>
-        </div>
-      )}
-
       <div className="sidebar-schedule-card">
         <div className="sidebar-toolbar">
           <h2 id="fixtures-heading" className="sidebar-title">

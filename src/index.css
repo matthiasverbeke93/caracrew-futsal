@@ -1272,6 +1272,12 @@ button {
   border-radius: 999px;
 }
 
+.my-rsvp-badge.is-full {
+  background: var(--surface-panel);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
 .my-rsvp-badge.is-none {
   background: var(--tone-warning-bg);
   color: var(--tone-warning-fg);
@@ -1290,6 +1296,57 @@ button {
 .my-rsvp-badge.is-cant {
   background: var(--tone-danger-bg);
   color: var(--tone-danger-fg);
+}
+
+.my-rsvp-squad {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.my-rsvp-squad strong {
+  color: var(--text-primary);
+}
+
+.my-rsvp-pips {
+  flex: 0 0 auto;
+  display: inline-flex;
+  gap: 3px;
+}
+
+.my-rsvp-pips span {
+  width: 7px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--border-subtle);
+}
+
+.my-rsvp-squad.is-short .my-rsvp-pips .on {
+  background: var(--signal-danger);
+}
+
+.my-rsvp-squad.is-ok .my-rsvp-pips .on {
+  background: var(--signal-success);
+}
+
+.my-rsvp-squad.is-full .my-rsvp-pips .on {
+  background: var(--text-muted);
+}
+
+.my-rsvp-squad.is-short .my-rsvp-squad-text {
+  color: var(--tone-danger-fg);
+}
+
+.my-rsvp-squad-text {
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.my-rsvp-nogk {
+  color: var(--tone-danger-fg);
+  font-weight: 600;
 }
 
 .my-rsvp-seg {
@@ -1338,12 +1395,6 @@ button {
 .my-rsvp-opt:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-}
-
-.my-rsvp-note {
-  margin: 0;
-  font-size: 12px;
-  color: var(--tone-danger-fg);
 }
 
 .pill,

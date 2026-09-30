@@ -406,6 +406,12 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-30 (squad bar)** — Each "Your next games" row now shows how full the fixture is, so a player can
+  decide whether to commit: 8 pips (one per place, `GAME_FULL_PLAYERS`), `n/8 In` and a verdict — *Needs k more*
+  (red, below `MIN_PLAYERS_WARNING`), *Enough · k spots left* (green) or *Full* — plus `+n if needed` and
+  *No keeper* when a keeper is flagged but none is In. In count = `gameStatusById[id].playingCount` (roster +
+  guests); If-needed is counted from roster `attendance`. A full game you can't answer shows a grey *Full* badge
+  and no longer counts toward "n to answer".
 - **2026-09-30 (later)** — *Phone polish, round 2.* Match header date reads `Thu 8 Oct · 21:00`
   (`formatMatchHeaderDateTime`, all sizes). Fixtures open on **Calendar** on phones (`GameSidebar` initial state
   reads the 720px media query; desktop keeps List). The three dark "Soonest / Next up / Later" RSVP tiles were

@@ -1,5 +1,10 @@
 import { useMemo } from "react";
-import { ATTENDANCE_OPTIONS, GAME_FULL_PLAYERS, attendanceLabel } from "../constants";
+import {
+  ATTENDANCE_OPTIONS,
+  GAME_FULL_PLAYERS,
+  MIN_PLAYERS_WARNING,
+  attendanceLabel,
+} from "../constants";
 import {
   isAttendanceEditable,
   isGameFull,
@@ -32,10 +37,23 @@ export default function MyNextGamesTiles({
     return m;
   }, [attendance, currentPlayer]);
 
+  // Roster "If needed" answers per game (guests are only ever In or out, so this is complete enough
+  // for the "should I commit?" read the squad bar gives).
+  const ifNeededByGameId = useMemo(() => {
+    const m = new Map();
+    for (const row of attendance) {
+      if (row.status === "if_needed") m.set(row.game_id, (m.get(row.game_id) ?? 0) + 1);
+    }
+    return m;
+  }, [attendance]);
+
   if (!currentPlayer || upcoming.length === 0) return null;
 
   const unanswered = upcoming.filter(
-    (g) => !statusByGameId.get(g.id) && isAttendanceEditable(g, games)
+    (g) =>
+      !statusByGameId.get(g.id) &&
+      isAttendanceEditable(g, games) &&
+      !isGameFull(gameStatusById?.[g.id]?.playingCount)
   ).length;
 
   return (
@@ -54,6 +72,8 @@ export default function MyNextGamesTiles({
             myStatus={statusByGameId.get(game.id) ?? null}
             editable={isAttendanceEditable(game, games)}
             gameFull={isGameFull(gameStatusById?.[game.id]?.playingCount)}
+            squad={gameStatusById?.[game.id]}
+            ifNeededCount={ifNeededByGameId.get(game.id) ?? 0}
             isOpen={selectedGameId === game.id}
             onJumpToGame={onJumpToGame}
             onMarkAttendance={onMarkAttendance}
@@ -68,7 +88,17 @@ export default function MyNextGamesTiles({
  * One fixture: a date block + opponent that opens the match, the player's answer as a
  * coloured badge, and In / Out / If needed as one segmented row underneath.
  */
-function NextGameRow({ game, myStatus, editable, gameFull, isOpen, onJumpToGame, onMarkAttendance }) {
+function NextGameRow({
+  game,
+  myStatus,
+  editable,
+  gameFull,
+  squad,
+  ifNeededCount,
+  isOpen,
+  onJumpToGame,
+  onMarkAttendance,
+}) {
   const rawOpponent = game.opponent ? String(game.opponent).trim() : "";
   const cleaned = cleanOpponentName(game.opponent);
   const opponent = (cleaned && cleaned.trim()) || rawOpponent || "Opponent TBD";
@@ -96,10 +126,20 @@ function NextGameRow({ game, myStatus, editable, gameFull, isOpen, onJumpToGame,
             {game.location ? ` · ${game.location}` : ""}
           </span>
         </span>
-        <span className={`my-rsvp-badge${myStatus ? ` is-${myStatus}` : " is-none"}`}>
-          {myStatus ? attendanceLabel(myStatus) : editable ? "No answer" : "Locked"}
+        <span className={`my-rsvp-badge ${myStatus ? `is-${myStatus}` : closedByFull ? "is-full" : "is-none"}`}>
+          {myStatus
+            ? attendanceLabel(myStatus)
+            : !editable
+              ? "Locked"
+              : closedByFull
+                ? "Full"
+                : "No answer"}
         </span>
       </button>
+
+      {squad ? (
+        <SquadBar squad={squad} ifNeededCount={ifNeededCount} closed={closedByFull} />
+      ) : null}
 
       <div className="my-rsvp-seg" role="group" aria-label={`Your answer for ${opponent}`}>
         {ATTENDANCE_OPTIONS.map((opt) => {
@@ -130,10 +170,43 @@ function NextGameRow({ game, myStatus, editable, gameFull, isOpen, onJumpToGame,
           );
         })}
       </div>
-
-      {closedByFull ? (
-        <p className="my-rsvp-note">Full — {GAME_FULL_PLAYERS} In, RSVP closed.</p>
-      ) : null}
     </li>
+  );
+}
+
+/**
+ * How full the fixture is, so a player can judge whether they're needed: one pip per
+ * squad place, a verdict (short / enough / full), the If-needed pool and a missing keeper.
+ */
+function SquadBar({ squad, ifNeededCount, closed }) {
+  const inCount = squad.playingCount ?? 0;
+  const short = Math.max(0, MIN_PLAYERS_WARNING - inCount);
+  const tone = inCount >= GAME_FULL_PLAYERS ? "full" : short > 0 ? "short" : "ok";
+  const verdict =
+    tone === "full"
+      ? closed
+        ? "Full, RSVP closed"
+        : "Full"
+      : tone === "short"
+        ? `Needs ${short} more`
+        : `Enough · ${GAME_FULL_PLAYERS - inCount} spot${GAME_FULL_PLAYERS - inCount === 1 ? "" : "s"} left`;
+  const keeperMissing = !squad.keeperUnknown && !squad.keeperIn;
+
+  return (
+    <div className={`my-rsvp-squad is-${tone}`}>
+      <span className="my-rsvp-pips" aria-hidden>
+        {Array.from({ length: GAME_FULL_PLAYERS }, (_, i) => (
+          <span key={i} className={i < inCount ? "on" : ""} />
+        ))}
+      </span>
+      <span className="my-rsvp-squad-text">
+        <strong>
+          {inCount}/{GAME_FULL_PLAYERS} In
+        </strong>{" "}
+        · {verdict}
+        {ifNeededCount > 0 ? ` · +${ifNeededCount} if needed` : ""}
+        {keeperMissing ? <span className="my-rsvp-nogk"> · No keeper</span> : null}
+      </span>
+    </div>
   );
 }

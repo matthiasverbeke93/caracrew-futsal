@@ -10,6 +10,7 @@ import GameSidebar from "./components/GameSidebar";
 import MobileTabBar from "./components/MobileTabBar";
 import HeaderMoreMenu from "./components/HeaderMoreMenu";
 import MyNextGamesTiles from "./components/MyNextGamesTiles";
+import StatsDueCard from "./components/StatsDueCard";
 import NewPasswordModal from "./components/NewPasswordModal";
 import SeasonSwitcher from "./components/SeasonSwitcher";
 import SelectedGamePanel from "./components/SelectedGamePanel";
@@ -227,6 +228,7 @@ export default function App() {
     selectedGame,
     tab,
     setTab,
+    openGameStats,
     gameFilters,
     setGameFilters,
     gameStatusById,
@@ -499,6 +501,20 @@ export default function App() {
                 onOpenPlayer={openPlayer}
               />
             </Suspense>
+          )}
+
+          {!loading && !seasonOverviewOpen && currentPlayer && (
+            <StatsDueCard
+              games={games}
+              attendance={attendance}
+              stats={stats}
+              currentPlayer={currentPlayer}
+              hideForGameId={tab === "stats" ? selectedGameId : null}
+              onOpen={(id) => {
+                openGameStats(id);
+                if (mobileView !== "match") showMobileView("match");
+              }}
+            />
           )}
 
           {!loading && !seasonOverviewOpen && showNextGamesTiles && (

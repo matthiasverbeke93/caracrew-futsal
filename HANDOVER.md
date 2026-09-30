@@ -407,6 +407,18 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-30 (stats entry findability)** — Getting to a just-played game's stats is now led, not guessed:
+  - **Auto tab per game** (`useFutsalData`): each newly selected game picks its tab once — kicked off and
+    (still today, or `statsMissing`) → **Game stats**, otherwise Attendance. Saves never move you off a tab.
+  - **`?tab=stats`** is honoured on first load and then stripped from the URL; the stats-chase WhatsApp link
+    carries it (`buildCurrentPageGameShareUrl(id, season, { tab })`).
+  - **"Add your stats vs …" card** (`StatsDueCard.jsx`, `.stats-due`) above "Your next games": for the signed-in
+    player, the latest game past full time, inside the player stats window, where they were In and have no
+    `player_stats` row. "Add stats" → `openGameStats(id)` (select + Game stats). Hidden while that game's stats
+    tab is open. Tick *Played* clears it for a goalless night.
+  - Phone bottom-bar **"Stats" renamed "Season"** (it opens the season page, not the game's stats).
+  - Checked on the dev server (phone + desktop): stats-missing game opens on Game stats, `?tab=stats` works and
+    is stripped, bar reads Match / Fixtures / Season / More. The card needs a signed-in player — not eyeballed.
 - **2026-09-30 (Clear RSVP size)** — The Attendance-tab *Clear RSVP* button on a player card is no longer
   full-width: a small right-aligned pill (`.player-card button.attendance-clear-rsvp`, 11px, `justify-self: end`).
   *Match context* (`SelectedGamePanel`) only collapses into a `<details>` when it has 2+ rows; a single row

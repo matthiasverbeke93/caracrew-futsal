@@ -8,6 +8,7 @@ import {
   isRsvpAllowedWhenFull,
   isStatsEditable,
 } from "../utils/game";
+import { hasKickedOff } from "./useMatchClock";
 import { useToast } from "./useToast.jsx";
 
 /** Shown when an optimistic write fails and we roll the UI back. */
@@ -47,6 +48,12 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
   const [guestPlayers, setGuestPlayers] = useState([]);
   const [selectedGameId, setSelectedGameId] = useState(null);
   const [tab, setTab] = useState("attendance");
+  // `?tab=stats` (the stats-chase WhatsApp link) opens the linked game on Game stats.
+  const [urlAskedForStats] = useState(
+    () => new URLSearchParams(window.location.search).get("tab") === "stats"
+  );
+  const requestedStatsRef = useRef(urlAskedForStats);
+  const autoTabGameRef = useRef(null);
   const [newGuestFirstName, setNewGuestFirstName] = useState("");
   const [newGuestLastName, setNewGuestLastName] = useState("");
   const [gameFilters, setGameFilters] = useState([]);
@@ -163,6 +170,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     const teamStats = url.searchParams.get("team_stats");
     const insights = url.searchParams.get("insights");
     url.searchParams.set("season", seasonSlug);
+    url.searchParams.delete("tab");
     if (teamStats || insights === "1") {
       url.searchParams.delete("game");
       if (player) url.searchParams.set("player", player);
@@ -433,6 +441,33 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional sync when derived lists change
     setSelectedGameId(next?.id ?? null);
   }, [loading, sortedFilteredGames, selectedGameId]);
+
+  /**
+   * Pick the tab once per newly selected game: a game that has kicked off and still misses
+   * stats opens on Game stats (that is what anyone opening it wants to do), anything else on
+   * Attendance. Later saves never move the user off the tab they are on.
+   */
+  useEffect(() => {
+    if (loading || !selectedGame) return;
+    if (autoTabGameRef.current === selectedGame.id) return;
+    autoTabGameRef.current = selectedGame.id;
+    const requested = requestedStatsRef.current;
+    requestedStatsRef.current = false;
+    const status = gameStatusById[selectedGame.id];
+    const statsDue =
+      hasKickedOff(selectedGame, Date.now()) && (!status?.played || status?.statsMissing);
+    setTab(requested || statsDue ? "stats" : "attendance");
+  }, [loading, selectedGame, gameStatusById]);
+
+  /** Select a game and land on its Game stats tab, whatever the default would be. */
+  const openGameStats = useCallback((gameId) => {
+    if (autoTabGameRef.current === gameId) {
+      setTab("stats");
+      return;
+    }
+    requestedStatsRef.current = true;
+    setSelectedGameId(gameId);
+  }, []);
 
   function canEditAttendanceFor(playerId) {
     return isAdmin || (currentPlayerId && playerId === currentPlayerId);
@@ -788,6 +823,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     selectedGame,
     tab,
     setTab,
+    openGameStats,
     gameFilters,
     setGameFilters,
     gameStatusById,

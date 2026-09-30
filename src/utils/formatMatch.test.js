@@ -248,6 +248,7 @@ describe("buildWhatsAppStatsChaseUrl", () => {
     expect(msg).toContain("Still to add: Jan, Piet and Bram.");
     expect(msg).toContain("Add yours here:");
     expect(msg).toContain("game=42");
+    expect(msg).toContain("tab=stats");
     expect(msg.trimEnd().endsWith("_— Attendance Bot 3000_")).toBe(true);
   });
 

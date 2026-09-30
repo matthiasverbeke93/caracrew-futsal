@@ -95,7 +95,7 @@ export default function MobileTabBar({ active, onMatch, onFixtures, onStats, onG
       <nav className="mobile-tabbar" aria-label="App sections">
         {tab("match", "Match", onMatch)}
         {tab("fixtures", "Fixtures", onFixtures)}
-        {tab("stats", "Stats", onStats)}
+        {tab("stats", "Season", onStats)}
         <button
           type="button"
           className={`mobile-tab${moreOpen ? " active" : ""}`}

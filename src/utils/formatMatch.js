@@ -168,15 +168,18 @@ function resolveSeasonForShare(seasonSlug, searchParams) {
  * Deep-link to a fixture. Always sets `season` so `?game=` resolves after load (same slug as DB row).
  * Strips URL hash so shared links stay clean.
  */
-export function buildCurrentPageGameShareUrl(gameId, seasonSlug) {
+export function buildCurrentPageGameShareUrl(gameId, seasonSlug, { tab = null } = {}) {
   if (typeof window === "undefined") {
     const season = resolveSeasonForShare(seasonSlug, null);
-    return `?game=${encodeURIComponent(gameId)}&season=${encodeURIComponent(season)}`;
+    const tabPart = tab ? `&tab=${encodeURIComponent(tab)}` : "";
+    return `?game=${encodeURIComponent(gameId)}&season=${encodeURIComponent(season)}${tabPart}`;
   }
   const url = new URL(window.location.href);
   url.hash = "";
   url.searchParams.set("game", gameId);
   url.searchParams.set("season", resolveSeasonForShare(seasonSlug, url.searchParams));
+  if (tab) url.searchParams.set("tab", tab);
+  else url.searchParams.delete("tab");
   return url.toString();
 }
 
@@ -260,7 +263,8 @@ export function buildWhatsAppMatchOpenUrl(game) {
  * — an admin can still enter them, so the ask changes rather than disappearing.
  */
 export function buildWhatsAppStatsChaseUrl(game, missingNames, statsSnapshot = {}) {
-  const shareUrl = buildCurrentPageGameShareUrl(game.id, game.season_slug);
+  // Straight onto the Game stats tab — the link is only ever an ask to fill it in.
+  const shareUrl = buildCurrentPageGameShareUrl(game.id, game.season_slug, { tab: "stats" });
   const {
     played = 0,
     recorded = 0,

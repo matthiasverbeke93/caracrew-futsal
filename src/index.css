@@ -4913,3 +4913,283 @@ input[type="number"] {
 .lzv-bookmarklet-steps {
   padding-left: 18px;
 }
+
+/* ---------- Phone layout: app-style shell ----------
+   Below 720px the page behaves like a native app: a compact sticky top bar,
+   one column at a time (Match or Fixtures, chosen from the bottom tab bar in
+   MobileTabBar.jsx), and the header nav moves into that tab bar. Desktop never
+   sees the tab bar. */
+.mobile-tabbar,
+.mobile-sheet-backdrop {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  /* clip, not hidden: hidden would turn body into a scroll box and unstick the top bar. */
+  body {
+    overflow-x: clip;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app.dashboard {
+    padding: 0 0 calc(72px + env(safe-area-inset-bottom));
+  }
+
+  /* Top bar: one row, sticky, brand + season + account only. */
+  .dashboard-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    margin: 0;
+    padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
+    background: rgba(255, 255, 255, 0.92);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    backdrop-filter: saturate(180%) blur(14px);
+  }
+
+  .dashboard-bar {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .dashboard-brand {
+    gap: 8px;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .dashboard-header h1 {
+    font-size: 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dashboard-bar-right {
+    flex-wrap: nowrap;
+    flex: 0 0 auto;
+  }
+
+  .dashboard-nav,
+  .season-select-label,
+  .form-chip-label {
+    display: none;
+  }
+
+  /* One column at a time. The season page (layout--full) always shows content. */
+  .layout,
+  .dashboard-layout {
+    display: block;
+    padding: 12px 10px 0;
+  }
+
+  .dashboard-layout[data-mobile-view="match"] .sidebar,
+  .dashboard-layout:not(.layout--full)[data-mobile-view="fixtures"] .content {
+    display: none;
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding: 12px;
+  }
+
+  .sidebar,
+  .panel {
+    border-radius: 16px;
+    margin-bottom: 0;
+  }
+
+  .panel {
+    padding: 14px;
+  }
+
+  .selected-game-panel h2 {
+    font-size: 22px;
+  }
+
+  .count-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .count-grid div {
+    padding: 8px 4px;
+  }
+
+  .count-grid strong {
+    font-size: 22px;
+  }
+
+  .count-grid span {
+    font-size: 11px;
+  }
+
+  /* Attendance: name on top, In / Out / If needed as one segmented row. */
+  .player-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .player-card {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .player-card-header,
+  .player-card .attendance-clear-rsvp {
+    grid-column: 1 / -1;
+  }
+
+  .player-card button.attendance-opt {
+    text-align: center;
+    padding: 10px 4px;
+    min-height: 40px;
+    font-weight: 600;
+  }
+
+  /* Attendance / Game stats as a full-width two-way switch that stays in reach. */
+  .match-detail-panel .tabs {
+    position: sticky;
+    top: calc(52px + env(safe-area-inset-top));
+    z-index: 5;
+    margin: 0 -14px 12px;
+    padding: 8px 10px 0;
+    flex-wrap: nowrap;
+    border-radius: 16px 16px 0 0;
+    background: var(--surface-panel);
+  }
+
+  .match-detail-panel .tabs button {
+    flex: 1 1 0;
+    padding: 10px 8px;
+    min-height: 42px;
+  }
+
+  /* Bottom tab bar */
+  .mobile-tabbar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    padding: 4px 6px env(safe-area-inset-bottom);
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    backdrop-filter: saturate(180%) blur(14px);
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .mobile-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 56px;
+    padding: 6px 0;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 12px;
+  }
+
+  .mobile-tab svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .mobile-tab.active {
+    color: var(--accent);
+  }
+
+  .mobile-tab:active {
+    background: var(--surface-elevated);
+  }
+
+  /* "More" bottom sheet, sitting just above the tab bar. */
+  .mobile-sheet-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    background: rgba(15, 23, 42, 0.35);
+  }
+
+  .mobile-sheet {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    padding: 8px 8px 10px;
+    background: var(--surface-panel);
+    border-radius: 18px;
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.25);
+  }
+
+  .mobile-sheet-handle {
+    width: 36px;
+    height: 4px;
+    margin: 2px auto 8px;
+    border-radius: 999px;
+    background: var(--border-subtle);
+  }
+
+  .mobile-sheet-item {
+    display: block;
+    padding: 14px 12px;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .mobile-sheet-item:active {
+    background: var(--surface-elevated);
+  }
+
+  /* The Stats tab in the tab bar is the way back; the page's own button is redundant. */
+  .team-stats-back {
+    display: none;
+  }
+
+  .game-card {
+    padding: 11px 12px;
+    margin-bottom: 8px;
+    border-radius: 14px;
+  }
+
+  .game-card:active {
+    transform: scale(0.99);
+  }
+
+  /* Keep toasts clear of the tab bar. */
+  .toast-stack {
+    bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+}

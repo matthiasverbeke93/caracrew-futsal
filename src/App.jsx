@@ -7,6 +7,7 @@ import ClaimPlayerModal from "./components/ClaimPlayerModal";
 import { useToast } from "./hooks/useToast.jsx";
 import FormChip from "./components/FormChip";
 import GameSidebar from "./components/GameSidebar";
+import MobileTabBar from "./components/MobileTabBar";
 import MyNextGamesTiles from "./components/MyNextGamesTiles";
 import NewPasswordModal from "./components/NewPasswordModal";
 import SeasonSwitcher from "./components/SeasonSwitcher";
@@ -65,6 +66,9 @@ export default function App() {
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const [bugModalOpen, setBugModalOpen] = useState(false);
+  // Phones show one column at a time (see .dashboard-layout[data-mobile-view] in CSS);
+  // desktop ignores this and keeps sidebar + content side by side.
+  const [mobileView, setMobileView] = useState("match");
   const [guideOpen, setGuideOpen] = useState(
     () => new URLSearchParams(window.location.search).get("guide") === "1"
   );
@@ -308,6 +312,23 @@ export default function App() {
     dismissRecovery();
   }, [dismissRecovery]);
 
+  const showMobileView = useCallback(
+    (view) => {
+      if (seasonOverviewOpen) closeSeasonOverview();
+      setMobileView(view);
+      window.scrollTo({ top: 0 });
+    },
+    [seasonOverviewOpen, closeSeasonOverview]
+  );
+
+  const selectGameFromList = useCallback(
+    (id) => {
+      setSelectedGameId(id);
+      if (mobileView !== "match") showMobileView("match");
+    },
+    [setSelectedGameId, mobileView, showMobileView]
+  );
+
   useEffect(() => {
     if (adminPanelOpen && isAdmin) refreshPendingClaimsCount();
   }, [adminPanelOpen, isAdmin, refreshPendingClaimsCount]);
@@ -437,6 +458,7 @@ export default function App() {
 
       <main
         className={`layout dashboard-layout${seasonOverviewOpen ? " layout--full" : ""}`}
+        data-mobile-view={mobileView}
       >
         {!seasonOverviewOpen && (
         <GameSidebar
@@ -448,7 +470,7 @@ export default function App() {
           gameFilters={gameFilters}
           onFiltersChange={setGameFilters}
           selectedGameId={selectedGameId}
-          onSelectGame={setSelectedGameId}
+          onSelectGame={selectGameFromList}
           loading={loading}
           opponentStrengths={opponentStrengths}
           seasonSlug={seasonSlug}
@@ -593,6 +615,18 @@ export default function App() {
           )}
         </section>
       </main>
+
+      <MobileTabBar
+        active={seasonOverviewOpen ? "stats" : mobileView}
+        onMatch={() => showMobileView("match")}
+        onFixtures={() => showMobileView("fixtures")}
+        onStats={() => {
+          openSeasonOverview();
+          window.scrollTo({ top: 0 });
+        }}
+        onGuide={openGuide}
+        onBug={() => setBugModalOpen(true)}
+      />
 
       {profilePlayerId && (
         <Suspense fallback={null}>

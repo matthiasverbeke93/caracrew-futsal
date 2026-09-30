@@ -25,8 +25,9 @@ npm test                  # vitest run — unit tests for src/utils/*.test.js
 Verification = `lint` + `build` + `test`, plus a manual eyeball in `npm run dev`. Tests use **Vitest 4** (pairs
 with Vite 8 here; the ARM64 rollup issue that pins the sibling Ambiorix project to Vitest 0.34 does **not** apply
 on this machine) and cover the pure `utils/` logic in a `node` environment.
-**No browser-automation tool is installed in this workspace**, so Claude sessions can't screenshot the running app —
-UI changes are verified by build/lint and reasoning; ask the user to eyeball visual work.
+**Screenshots:** this repo has no Playwright, but `node scripts/screenshot-mobile.mjs <outDir>` (with `npm run dev`
+running) borrows `playwright-core` from the V&V testing harness and shoots the app on an iPhone viewport, plus the
+Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scrollWidth` (>390 = sideways overflow).
 
 ## Architecture / where things live (`src/`)
 - **`App.jsx`** — the shell: header, season switcher, sidebar + content layout, all the URL/query-param routing
@@ -405,6 +406,17 @@ UI changes are verified by build/lint and reasoning; ask the user to eyeball vis
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-09-30** — *Phone layout: app-style shell.* The user found the site cumbersome on a phone and wanted it to
+  feel like an app. Below **720px** (all in one block at the end of `index.css`): a compact sticky one-row top bar
+  (brand, season, form, account; header nav hidden), and a fixed **bottom tab bar** (`MobileTabBar.jsx`:
+  Match / Fixtures / Stats / More, where More is a bottom sheet with How it works, LZV Cup, Report a bug). Phones
+  show **one column at a time**: `App.jsx` holds `mobileView` (`match`|`fixtures`) on `main[data-mobile-view]`;
+  picking a fixture switches back to Match (`selectGameFromList`). The season page (`layout--full`) always shows.
+  Attendance In/Out/If needed is one segmented row per player instead of three stacked buttons, and the
+  Attendance/Game stats switch sticks under the top bar. Page height went from ~8,300px to ~2,900px and a
+  sideways overflow is gone. `body { overflow-x: clip }` on purpose: `hidden` unsticks the top bar. Also:
+  `viewport-fit=cover` + safe-area padding, home-screen meta tags, manifest `start_url`/light colours. Desktop
+  unchanged (checked by screenshot). Not touched: the match date shows as `2026-10-08 · 21:00:00` on all sizes.
 - **2026-09-28** — *LZV result-form bookmarklet (Admin → LZV tab).* After each game the admin retypes stats
   into lzvcup.be's 3-step wizard (`/myteam/result/add/<team>/<result>/<step>`, behind the LZV login). The new
   bookmark fills it from our data: step 1 score **only when LZV's box is empty** (warns when a set score

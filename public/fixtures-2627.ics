@@ -181,6 +181,23 @@ CATEGORIES:K. Caracrew SK,Futsal
 STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
+UID:2627-2026-12-12-1800-hakuna-matata@caracrew.org
+DTSTAMP:20261001T143205Z
+SEQUENCE:0
+LAST-MODIFIED:20261001T143205Z
+DTSTART;TZID=Europe/Brussels:20261212T180000
+DTEND;TZID=Europe/Brussels:20261212T190000
+SUMMARY:Hakuna Matata vs K. Caracrew SK
+LOCATION:Kouter Leest
+DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Hakuna Matata\nVenue: Ko
+ uter Leest\n\nMatch page: https://caracrew.org/?game=2627-2026-12-12-1800-
+ hakuna-matata&season=2627
+URL:https://caracrew.org/?game=2627-2026-12-12-1800-hakuna-matata&season=26
+ 27
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
 UID:2627-2026-12-17-2100-04united@caracrew.org
 DTSTAMP:20260928T100109Z
 SEQUENCE:2
@@ -353,6 +370,23 @@ DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Wille ma ni kunne\nVenue
  ma-ni-kunne&season=2627
 URL:https://caracrew.org/?game=2627-2027-04-14-2200-wille-ma-ni-kunne&seaso
  n=2627
+CATEGORIES:K. Caracrew SK,Futsal
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:2627-2027-04-22-2100-hakuna-matata@caracrew.org
+DTSTAMP:20261001T143205Z
+SEQUENCE:0
+LAST-MODIFIED:20261001T143205Z
+DTSTART;TZID=Europe/Brussels:20270422T210000
+DTEND;TZID=Europe/Brussels:20270422T220000
+SUMMARY:K. Caracrew SK vs Hakuna Matata
+LOCATION:Winketkaai Mechelen
+DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Hakuna Matata\nVenue: Wi
+ nketkaai Mechelen\n\nMatch page: https://caracrew.org/?game=2627-2027-04-2
+ 2-2100-hakuna-matata&season=2627
+URL:https://caracrew.org/?game=2627-2027-04-22-2100-hakuna-matata&season=26
+ 27
 CATEGORIES:K. Caracrew SK,Futsal
 STATUS:CONFIRMED
 END:VEVENT

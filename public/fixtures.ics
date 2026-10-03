@@ -41,15 +41,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-09-24-2100-vv-schemerboyz@caracrew.org
-DTSTAMP:20260928T100109Z
-SEQUENCE:3
-LAST-MODIFIED:20260928T100109Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:4
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20260924T210000
 DTEND;TZID=Europe/Brussels:20260924T220000
 SUMMARY:K. Caracrew SK vs VV Schemerboyz
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs VV Schemerboyz\nVenue: W
- inketkaai Mechelen\nOpponent form: Medium — position 6\, 1.50 pts/match\
+ inketkaai Mechelen\nOpponent form: Medium — position 7\, 1.50 pts/match\
  nResult: 3–8 (L\, K. Caracrew SK first)\n\nMatch page: https://caracrew.
  org/?game=2627-2026-09-24-2100-vv-schemerboyz&season=2627
 URL:https://caracrew.org/?game=2627-2026-09-24-2100-vv-schemerboyz&season=2
@@ -77,15 +77,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-10-22-2100-jan-breydel@caracrew.org
-DTSTAMP:20260928T100109Z
-SEQUENCE:2
-LAST-MODIFIED:20260928T100109Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:3
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20261022T210000
 DTEND;TZID=Europe/Brussels:20261022T220000
 SUMMARY:K. Caracrew SK vs Jan Breydel
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Jan Breydel\nVenue: Wink
- etkaai Mechelen\nOpponent form: Very easy — position 12\, 0.00 pts/match
+ etkaai Mechelen\nOpponent form: Very easy — position 13\, 0.00 pts/match
  \n\nMatch page: https://caracrew.org/?game=2627-2026-10-22-2100-jan-breyde
  l&season=2627
 URL:https://caracrew.org/?game=2627-2026-10-22-2100-jan-breydel&season=2627
@@ -111,15 +111,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-11-08-1800-vv-schemerboyz@caracrew.org
-DTSTAMP:20260928T100109Z
-SEQUENCE:2
-LAST-MODIFIED:20260928T100109Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:3
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20261108T180000
 DTEND;TZID=Europe/Brussels:20261108T190000
 SUMMARY:VV Schemerboyz vs K. Caracrew SK
 LOCATION:IHAM Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at VV Schemerboyz\nVenue: I
- HAM Mechelen\nOpponent form: Medium — position 6\, 1.50 pts/match\n\nMat
+ HAM Mechelen\nOpponent form: Medium — position 7\, 1.50 pts/match\n\nMat
  ch page: https://caracrew.org/?game=2627-2026-11-08-1800-vv-schemerboyz&se
  ason=2627
 URL:https://caracrew.org/?game=2627-2026-11-08-1800-vv-schemerboyz&season=2
@@ -129,15 +129,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-11-19-2100-wille-ma-ni-kunne@caracrew.org
-DTSTAMP:20260928T100109Z
-SEQUENCE:2
-LAST-MODIFIED:20260928T100109Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:3
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20261119T210000
 DTEND;TZID=Europe/Brussels:20261119T220000
 SUMMARY:K. Caracrew SK vs Wille ma ni kunne
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Wille ma ni kunne\nVenue
- : Winketkaai Mechelen\nOpponent form: Very easy — position 10\, 0.00 pts
+ : Winketkaai Mechelen\nOpponent form: Very easy — position 11\, 0.00 pts
  /match\n\nMatch page: https://caracrew.org/?game=2627-2026-11-19-2100-will
  e-ma-ni-kunne&season=2627
 URL:https://caracrew.org/?game=2627-2026-11-19-2100-wille-ma-ni-kunne&seaso
@@ -147,15 +147,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-11-23-2100-jan-breydel@caracrew.org
-DTSTAMP:20260928T100109Z
-SEQUENCE:2
-LAST-MODIFIED:20260928T100109Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:3
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20261123T210000
 DTEND;TZID=Europe/Brussels:20261123T220000
 SUMMARY:Jan Breydel vs K. Caracrew SK
 LOCATION:Heiveld St-Katelijne-Waver
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Jan Breydel\nVenue: Heiv
- eld St-Katelijne-Waver\nOpponent form: Very easy — position 12\, 0.00 pt
+ eld St-Katelijne-Waver\nOpponent form: Very easy — position 13\, 0.00 pt
  s/match\n\nMatch page: https://caracrew.org/?game=2627-2026-11-23-2100-jan
  -breydel&season=2627
 URL:https://caracrew.org/?game=2627-2026-11-23-2100-jan-breydel&season=2627
@@ -164,17 +164,17 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-12-03-2100-de-karpervissers@caracrew.org
-DTSTAMP:20260928T100109Z
-SEQUENCE:2
-LAST-MODIFIED:20260928T100109Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:3
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20261203T210000
 DTEND;TZID=Europe/Brussels:20261203T220000
 SUMMARY:K. Caracrew SK vs De Karpervissers
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs De Karpervissers\nVenue:
-  Winketkaai Mechelen\nOpponent form: Medium — position 7\, 1.50 pts/matc
- h\n\nMatch page: https://caracrew.org/?game=2627-2026-12-03-2100-de-karper
- vissers&season=2627
+  Winketkaai Mechelen\nOpponent form: Easy — position 8\, 1.50 pts/match\
+ n\nMatch page: https://caracrew.org/?game=2627-2026-12-03-2100-de-karpervi
+ ssers&season=2627
 URL:https://caracrew.org/?game=2627-2026-12-03-2100-de-karpervissers&season
  =2627
 CATEGORIES:K. Caracrew SK,Futsal
@@ -182,16 +182,17 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-12-12-1800-hakuna-matata@caracrew.org
-DTSTAMP:20261001T143205Z
-SEQUENCE:0
-LAST-MODIFIED:20261001T143205Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:1
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20261212T180000
 DTEND;TZID=Europe/Brussels:20261212T190000
 SUMMARY:Hakuna Matata vs K. Caracrew SK
 LOCATION:Kouter Leest
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Hakuna Matata\nVenue: Ko
- uter Leest\n\nMatch page: https://caracrew.org/?game=2627-2026-12-12-1800-
- hakuna-matata&season=2627
+ uter Leest\nOpponent form: Medium — position 6\, 3.00 pts/match\n\nMatch
+  page: https://caracrew.org/?game=2627-2026-12-12-1800-hakuna-matata&seaso
+ n=2627
 URL:https://caracrew.org/?game=2627-2026-12-12-1800-hakuna-matata&season=26
  27
 CATEGORIES:K. Caracrew SK,Futsal
@@ -199,15 +200,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-12-17-2100-04united@caracrew.org
-DTSTAMP:20260928T100109Z
-SEQUENCE:2
-LAST-MODIFIED:20260928T100109Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:3
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20261217T210000
 DTEND;TZID=Europe/Brussels:20261217T220000
 SUMMARY:K. Caracrew SK vs 04United
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs 04United\nVenue: Winketk
- aai Mechelen\nOpponent form: Hard — position 5\, 2.00 pts/match\n\nMatch
+ aai Mechelen\nOpponent form: Hard — position 5\, 1.50 pts/match\n\nMatch
   page: https://caracrew.org/?game=2627-2026-12-17-2100-04united&season=262
  7
 URL:https://caracrew.org/?game=2627-2026-12-17-2100-04united&season=2627
@@ -251,15 +252,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-01-28-2100-bankzitters-united@caracrew.org
-DTSTAMP:20260928T100109Z
-SEQUENCE:2
-LAST-MODIFIED:20260928T100109Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:3
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20270128T210000
 DTEND;TZID=Europe/Brussels:20270128T220000
 SUMMARY:K. Caracrew SK vs FC De Wandelgang
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs FC De Wandelgang\nVenue:
-  Winketkaai Mechelen\nOpponent form: Very easy — position 11\, 0.00 pts/
+  Winketkaai Mechelen\nOpponent form: Very easy — position 12\, 0.00 pts/
  match\n\nMatch page: https://caracrew.org/?game=2627-2027-01-28-2100-bankz
  itters-united&season=2627
 URL:https://caracrew.org/?game=2627-2027-01-28-2100-bankzitters-united&seas
@@ -269,17 +270,17 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-02-13-1900-de-karpervissers@caracrew.org
-DTSTAMP:20260928T100109Z
-SEQUENCE:2
-LAST-MODIFIED:20260928T100109Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:3
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20270213T190000
 DTEND;TZID=Europe/Brussels:20270213T200000
 SUMMARY:De Karpervissers vs K. Caracrew SK
 LOCATION:Kouter Leest
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at De Karpervissers\nVenue:
-  Kouter Leest\nOpponent form: Medium — position 7\, 1.50 pts/match\n\nMa
- tch page: https://caracrew.org/?game=2627-2027-02-13-1900-de-karpervissers
- &season=2627
+  Kouter Leest\nOpponent form: Easy — position 8\, 1.50 pts/match\n\nMatc
+ h page: https://caracrew.org/?game=2627-2027-02-13-1900-de-karpervissers&s
+ eason=2627
 URL:https://caracrew.org/?game=2627-2027-02-13-1900-de-karpervissers&season
  =2627
 CATEGORIES:K. Caracrew SK,Futsal
@@ -303,15 +304,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-02-27-2030-fc-de-wandelgang@caracrew.org
-DTSTAMP:20260928T100109Z
-SEQUENCE:2
-LAST-MODIFIED:20260928T100109Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:3
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20270227T203000
 DTEND;TZID=Europe/Brussels:20270227T213000
 SUMMARY:FC De Wandelgang vs K. Caracrew SK
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at FC De Wandelgang\nVenue:
-  Winketkaai Mechelen\nOpponent form: Very easy — position 11\, 0.00 pts/
+  Winketkaai Mechelen\nOpponent form: Very easy — position 12\, 0.00 pts/
  match\n\nMatch page: https://caracrew.org/?game=2627-2027-02-27-2030-fc-de
  -wandelgang&season=2627
 URL:https://caracrew.org/?game=2627-2027-02-27-2030-fc-de-wandelgang&season
@@ -321,15 +322,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-03-11-2100-knallende-knapen@caracrew.org
-DTSTAMP:20260928T100109Z
-SEQUENCE:2
-LAST-MODIFIED:20260928T100109Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:3
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20270311T210000
 DTEND;TZID=Europe/Brussels:20270311T220000
 SUMMARY:K. Caracrew SK vs Knallende Knapen
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Knallende Knapen\nVenue:
-  Winketkaai Mechelen\nOpponent form: Easy — position 8\, 0.00 pts/match\
+  Winketkaai Mechelen\nOpponent form: Easy — position 9\, 0.00 pts/match\
  n\nMatch page: https://caracrew.org/?game=2627-2027-03-11-2100-knallende-k
  napen&season=2627
 URL:https://caracrew.org/?game=2627-2027-03-11-2100-knallende-knapen&season
@@ -339,15 +340,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-03-27-1930-knallende-knapen@caracrew.org
-DTSTAMP:20260928T100109Z
-SEQUENCE:2
-LAST-MODIFIED:20260928T100109Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:3
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20270327T193000
 DTEND;TZID=Europe/Brussels:20270327T203000
 SUMMARY:Knallende Knapen vs K. Caracrew SK
 LOCATION:SportCube Eppegem
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Knallende Knapen\nVenue:
-  SportCube Eppegem\nOpponent form: Easy — position 8\, 0.00 pts/match\n\
+  SportCube Eppegem\nOpponent form: Easy — position 9\, 0.00 pts/match\n\
  nMatch page: https://caracrew.org/?game=2627-2027-03-27-1930-knallende-kna
  pen&season=2627
 URL:https://caracrew.org/?game=2627-2027-03-27-1930-knallende-knapen&season
@@ -357,15 +358,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-04-14-2200-wille-ma-ni-kunne@caracrew.org
-DTSTAMP:20260928T100109Z
-SEQUENCE:2
-LAST-MODIFIED:20260928T100109Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:3
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20270414T220000
 DTEND;TZID=Europe/Brussels:20270414T230000
 SUMMARY:Wille ma ni kunne vs K. Caracrew SK
 LOCATION:SportCube Eppegem
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Wille ma ni kunne\nVenue
- : SportCube Eppegem\nOpponent form: Very easy — position 10\, 0.00 pts/m
+ : SportCube Eppegem\nOpponent form: Very easy — position 11\, 0.00 pts/m
  atch\n\nMatch page: https://caracrew.org/?game=2627-2027-04-14-2200-wille-
  ma-ni-kunne&season=2627
 URL:https://caracrew.org/?game=2627-2027-04-14-2200-wille-ma-ni-kunne&seaso
@@ -375,16 +376,17 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-04-22-2100-hakuna-matata@caracrew.org
-DTSTAMP:20261001T143205Z
-SEQUENCE:0
-LAST-MODIFIED:20261001T143205Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:1
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20270422T210000
 DTEND;TZID=Europe/Brussels:20270422T220000
 SUMMARY:K. Caracrew SK vs Hakuna Matata
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Hakuna Matata\nVenue: Wi
- nketkaai Mechelen\n\nMatch page: https://caracrew.org/?game=2627-2027-04-2
- 2-2100-hakuna-matata&season=2627
+ nketkaai Mechelen\nOpponent form: Medium — position 6\, 3.00 pts/match\n
+ \nMatch page: https://caracrew.org/?game=2627-2027-04-22-2100-hakuna-matat
+ a&season=2627
 URL:https://caracrew.org/?game=2627-2027-04-22-2100-hakuna-matata&season=26
  27
 CATEGORIES:K. Caracrew SK,Futsal
@@ -426,15 +428,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-05-09-2000-04united@caracrew.org
-DTSTAMP:20260928T100109Z
-SEQUENCE:2
-LAST-MODIFIED:20260928T100109Z
+DTSTAMP:20261003T103246Z
+SEQUENCE:3
+LAST-MODIFIED:20261003T103246Z
 DTSTART;TZID=Europe/Brussels:20270509T200000
 DTEND;TZID=Europe/Brussels:20270509T210000
 SUMMARY:04United vs K. Caracrew SK
 LOCATION:IHAM Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at 04United\nVenue: IHAM Me
- chelen\nOpponent form: Hard — position 5\, 2.00 pts/match\n\nMatch page:
+ chelen\nOpponent form: Hard — position 5\, 1.50 pts/match\n\nMatch page:
   https://caracrew.org/?game=2627-2027-05-09-2000-04united&season=2627
 URL:https://caracrew.org/?game=2627-2027-05-09-2000-04united&season=2627
 CATEGORIES:K. Caracrew SK,Futsal

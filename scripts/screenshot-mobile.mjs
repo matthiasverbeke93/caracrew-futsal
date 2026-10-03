@@ -16,7 +16,7 @@ import { mkdirSync } from "fs";
 
 const from =
   process.env.PLAYWRIGHT_FROM ||
-  "C:/Users/verbe/OneDrive - Ambiorix Labs/codeprojects/V&V testing/Arta_VnV_Playwright/package.json";
+  "C:/Users/verbe/codeprojects/V&V testing/Arta_VnV_Playwright/package.json";
 const { chromium, devices } = createRequire(from)("playwright-core");
 
 const out = process.argv[2] || "phone-shots";

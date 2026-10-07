@@ -407,6 +407,16 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-10-07 (kickoff-gated windows + final-score validation)** — From a code review:
+  - **Match day turns on kickoff, not midnight.** `hasKickedOff` moved from `hooks/useMatchClock.js` (still
+    re-exported there) into `utils/game.js`. `isStatsEditable` now needs kickoff to have passed (it used to
+    open stats on match day morning, admins included). `isAttendanceEditableByCalendar` closes RSVP at
+    kickoff (it used to stay open until midnight). Both take `nowMs`. `isPlayed` is unchanged, so a game
+    that kicked off today still takes one of the 3 RSVP window slots until midnight, but it is locked.
+  - **`saveFinalScore` validates** via `parseFinalScore`: whole numbers ≥0 only (a toast for anything
+    else). A half-typed score (one side empty) is not saved, since each field saves on blur. Nothing is
+    written before kickoff or when the score is unchanged.
+  - Tests pinned to fixed times (pass on local, UTC and New York time). Lint, 373 tests and build pass.
 - **2026-10-07 (league table by points)** — `buildLeagueTable` now ranks by **points** (then goal difference,
   goals for, name; teams with no points synced go last) instead of pts/match. *Pts* moved to the first stat
   column, right after Team. Tests updated; lint + 366 tests green.

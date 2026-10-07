@@ -1,5 +1,6 @@
 import { GAME_FULL_PLAYERS } from "../constants.js";
 import { isSeasonAttendanceLocked } from "../seasons.js";
+import { getMotmVotingStart } from "./motm.js";
 
 /**
  * Days after a match in which players can still enter their own goals/assists.
@@ -8,11 +9,25 @@ import { isSeasonAttendanceLocked } from "../seasons.js";
  */
 export const STATS_FREEZE_DAYS = 2;
 
-function localToday() {
-  const d = new Date();
+function localToday(nowMs = Date.now()) {
+  const d = new Date(nowMs);
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+
+/**
+ * Has the match kicked off? Clock-based, unlike `isPlayed()` which is day-granular
+ * (`game_date < today`) and so stays false until midnight after an evening kickoff.
+ * Derived from the MOTM window (which opens at kickoff + 2h) so both read the same
+ * kickoff time, including its 21:00 default when `game_time` is missing.
+ */
+export function hasKickedOff(game, nowMs = Date.now()) {
+  const votingStart = game ? getMotmVotingStart(game) : null;
+  if (!votingStart) return false;
+  return nowMs >= votingStart.getTime() - TWO_HOURS_MS;
 }
 
 export function isPlayed(game) {
@@ -72,14 +87,19 @@ export function isStatsFrozen(game, nowMs = Date.now()) {
  */
 export function isStatsEditable(game, { nowMs = Date.now(), isAdmin = false } = {}) {
   if (!game?.game_date) return false;
-  if (game.game_date > localToday()) return false;
+  // Kickoff, not the calendar day: on match day the game has not been played yet
+  // until it starts, so there is nothing to record before then.
+  if (!hasKickedOff(game, nowMs)) return false;
   return isAdmin || !isStatsFrozen(game, nowMs);
 }
 
-/** Upcoming or today by calendar — ignores preview-season locks (see {@link isAttendanceEditable}). */
-export function isAttendanceEditableByCalendar(game) {
+/**
+ * Upcoming, or today and not yet kicked off — ignores preview-season locks (see
+ * {@link isAttendanceEditable}). RSVP closes at kickoff, not at midnight.
+ */
+export function isAttendanceEditableByCalendar(game, nowMs = Date.now()) {
   if (!game?.game_date) return false;
-  return game.game_date >= localToday();
+  return game.game_date >= localToday(nowMs) && !hasKickedOff(game, nowMs);
 }
 
 /** Only the next fixtures are open for RSVP; later future games stay visible but locked. */
@@ -149,4 +169,33 @@ export function playerStatusLabel(count, responses = null) {
   if (count === 6) return "Just enough players";
   if (isGameFull(count)) return "Full — RSVP closed";
   return "Enough players";
+}
+
+/** A score field must be a whole number of goals, 0 or more. */
+function parseGoals(raw) {
+  const text = String(raw).trim();
+  if (!/^\d+$/.test(text)) return NaN;
+  return Number(text);
+}
+
+/**
+ * Read the two final-score inputs. Each field saves on blur, so a half-typed score
+ * (one side filled) is normal mid-entry and must not be stored — it would record a
+ * result with no opponent goals.
+ *
+ * - `{ kind: "clear" }` — both empty: remove the score.
+ * - `{ kind: "incomplete" }` — exactly one side filled: wait for the other.
+ * - `{ kind: "invalid" }` — negative, decimal or non-numeric.
+ * - `{ kind: "score", home, away }` — both valid.
+ */
+export function parseFinalScore(homeInput, awayInput) {
+  const isEmpty = (v) => v == null || String(v).trim() === "";
+  const homeEmpty = isEmpty(homeInput);
+  const awayEmpty = isEmpty(awayInput);
+  if (homeEmpty && awayEmpty) return { kind: "clear" };
+  const home = homeEmpty ? null : parseGoals(homeInput);
+  const away = awayEmpty ? null : parseGoals(awayInput);
+  if (Number.isNaN(home) || Number.isNaN(away)) return { kind: "invalid" };
+  if (homeEmpty || awayEmpty) return { kind: "incomplete" };
+  return { kind: "score", home, away };
 }

@@ -12,6 +12,7 @@ import {
   isStatsEditable,
   isStatsFrozen,
   nextUpcomingGamesByCalendar,
+  parseFinalScore,
   STATS_FREEZE_DAYS,
 } from "./game.js";
 import { GAME_FULL_PLAYERS } from "../constants.js";
@@ -38,7 +39,6 @@ describe("isPlayed", () => {
 
 describe("isAttendanceEditableByCalendar", () => {
   it("allows today and future, rejects past and undated", () => {
-    expect(isAttendanceEditableByCalendar(g(isoOffset(0)))).toBe(true);
     expect(isAttendanceEditableByCalendar(g(isoOffset(3)))).toBe(true);
     expect(isAttendanceEditableByCalendar(g(isoOffset(-1)))).toBe(false);
     expect(isAttendanceEditableByCalendar({})).toBe(false);
@@ -84,6 +84,55 @@ describe("isAttendanceInUpcomingWindow", () => {
   });
 });
 
+// Match day: a 21:00 Brussels kickoff. Times are chosen to sit on the same side of
+// kickoff whether the runner is on Brussels time or UTC.
+describe("match day turns on kickoff, not the calendar day", () => {
+  const matchDay = { id: "md", game_date: "2026-10-14", game_time: "21:00:00" };
+  const morning = new Date(2026, 9, 14, 12, 0).getTime();
+  const lateEvening = new Date(2026, 9, 14, 22, 30).getTime();
+
+  it("keeps RSVP open until kickoff, then closes it", () => {
+    expect(isAttendanceEditableByCalendar(matchDay, morning)).toBe(true);
+    expect(isAttendanceEditableByCalendar(matchDay, lateEvening)).toBe(false);
+  });
+
+  it("opens stats only once the match has kicked off — admins included", () => {
+    expect(isStatsEditable(matchDay, { nowMs: morning })).toBe(false);
+    expect(isStatsEditable(matchDay, { nowMs: morning, isAdmin: true })).toBe(false);
+    expect(isStatsEditable(matchDay, { nowMs: lateEvening })).toBe(true);
+  });
+
+  it("falls back to a 21:00 kickoff when game_time is missing", () => {
+    const noTime = { id: "nt", game_date: "2026-10-14" };
+    expect(isStatsEditable(noTime, { nowMs: morning })).toBe(false);
+    expect(isAttendanceEditableByCalendar(noTime, morning)).toBe(true);
+  });
+});
+
+describe("parseFinalScore", () => {
+  it("accepts two whole numbers, including 0", () => {
+    expect(parseFinalScore("5", "2")).toEqual({ kind: "score", home: 5, away: 2 });
+    expect(parseFinalScore("0", " 0 ")).toEqual({ kind: "score", home: 0, away: 0 });
+  });
+
+  it("clears when both sides are empty", () => {
+    expect(parseFinalScore("", "")).toEqual({ kind: "clear" });
+    expect(parseFinalScore(undefined, " ")).toEqual({ kind: "clear" });
+  });
+
+  it("waits while only one side is filled", () => {
+    expect(parseFinalScore("5", "")).toEqual({ kind: "incomplete" });
+    expect(parseFinalScore("", "3")).toEqual({ kind: "incomplete" });
+  });
+
+  it("rejects negative, decimal and non-numeric goals", () => {
+    expect(parseFinalScore("-1", "2").kind).toBe("invalid");
+    expect(parseFinalScore("2.5", "2").kind).toBe("invalid");
+    expect(parseFinalScore("1e1", "2").kind).toBe("invalid");
+    expect(parseFinalScore("abc", "").kind).toBe("invalid");
+  });
+});
+
 describe("isAttendanceEditable", () => {
   const games = [
     { id: "a", game_date: isoOffset(1) },
@@ -112,7 +161,6 @@ describe("stats freeze window", () => {
 
   it("isStatsEditable: played and not yet frozen", () => {
     expect(isStatsEditable(g(isoOffset(-(STATS_FREEZE_DAYS - 1))))).toBe(true);
-    expect(isStatsEditable(g(isoOffset(0)))).toBe(true); // played today
     expect(isStatsEditable(g(isoOffset(1)))).toBe(false); // future game
     expect(isStatsEditable(g(isoOffset(-(STATS_FREEZE_DAYS + 5))))).toBe(false); // frozen
   });

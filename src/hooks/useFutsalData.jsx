@@ -7,8 +7,9 @@ import {
   isPlayed,
   isRsvpAllowedWhenFull,
   isStatsEditable,
+  hasKickedOff,
+  parseFinalScore,
 } from "../utils/game";
-import { hasKickedOff } from "./useMatchClock";
 import { useToast } from "./useToast.jsx";
 
 /** Shown when an optimistic write fails and we roll the UI back. */
@@ -734,8 +735,20 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     const gid = selectedGameId;
     if (!gid) return;
     if (!isAdmin) return;
-    const hs = homeScore === "" || homeScore === undefined ? null : Number(homeScore);
-    const as = awayScore === "" || awayScore === undefined ? null : Number(awayScore);
+    const game = games.find((g) => g.id === gid);
+    // No result to record before the match starts (the score fields are hidden
+    // until kickoff; this closes the gap between the UI and the write).
+    if (!hasKickedOff(game)) return;
+    const parsed = parseFinalScore(homeScore, awayScore);
+    if (parsed.kind === "incomplete") return; // the other side is still being typed
+    if (parsed.kind === "invalid") {
+      notify("Scores must be whole numbers, 0 or more.", "error");
+      return;
+    }
+    const hs = parsed.kind === "score" ? parsed.home : null;
+    const as = parsed.kind === "score" ? parsed.away : null;
+    // Each field saves on blur, so tabbing between them re-sends an unchanged score.
+    if ((game.home_score ?? null) === hs && (game.away_score ?? null) === as) return;
     const snapshot = games;
     setGames((prev) =>
       prev.map((g) => (g.id === gid ? { ...g, home_score: hs, away_score: as } : g))

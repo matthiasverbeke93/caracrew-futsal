@@ -98,6 +98,7 @@ function FinalScoreFields({ game, canManageGame, saveFinalScore }) {
         <input
           type="number"
           min="0"
+          step="1"
           inputMode="numeric"
           aria-label="Caracrew goals"
           value={homeScoreInput}
@@ -113,6 +114,7 @@ function FinalScoreFields({ game, canManageGame, saveFinalScore }) {
         <input
           type="number"
           min="0"
+          step="1"
           inputMode="numeric"
           aria-label="Opponent goals"
           value={awayScoreInput}

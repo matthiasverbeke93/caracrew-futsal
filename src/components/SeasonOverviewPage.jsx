@@ -484,7 +484,7 @@ export default function SeasonOverviewPage({
         <section className="insights-section" aria-labelledby="overview-table-heading">
           <h3 id="overview-table-heading">League table</h3>
           <p className="insights-section-intro">
-            Ranked by points per match. Opponent figures are the latest{" "}
+            Ranked by points. Opponent figures are the latest{" "}
             <strong>LZV standings snapshot</strong>; the <em>{TEAM_NAME}</em> row is computed from
             our own results{record.played === 0 ? " (none played yet)" : ""}.
           </p>
@@ -494,6 +494,7 @@ export default function SeasonOverviewPage({
                 <tr>
                   <th className="league-rank-col">#</th>
                   <th>Team</th>
+                  <th className="league-num-col" title="Points">Pts</th>
                   <th className="league-num-col" title="Played">P</th>
                   <th className="league-num-col" title="Won">W</th>
                   <th className="league-num-col" title="Drawn">D</th>
@@ -501,7 +502,6 @@ export default function SeasonOverviewPage({
                   <th className="league-num-col" title="Goals for">GF</th>
                   <th className="league-num-col" title="Goals against">GA</th>
                   <th className="league-num-col" title="Goal difference">GD</th>
-                  <th className="league-num-col" title="Points">Pts</th>
                   <th className="league-ppm-col">Pts/match</th>
                 </tr>
               </thead>
@@ -516,6 +516,7 @@ export default function SeasonOverviewPage({
                       {cleanOpponentName(row.team)}
                       {row.isUs && <span className="league-us-badge">us</span>}
                     </td>
+                    <td className="league-num-col league-pts-col">{cellValue(row.points)}</td>
                     <td className="league-num-col">{cellValue(row.played)}</td>
                     <td className="league-num-col">{cellValue(row.wins)}</td>
                     <td className="league-num-col">{cellValue(row.draws)}</td>
@@ -525,7 +526,6 @@ export default function SeasonOverviewPage({
                     <td className="league-num-col">
                       {row.gd != null && row.gd > 0 ? `+${row.gd}` : cellValue(row.gd)}
                     </td>
-                    <td className="league-num-col league-pts-col">{cellValue(row.points)}</td>
                     <td className="league-ppm-col">
                       {row.ptnPerMatch != null ? row.ptnPerMatch.toFixed(2) : "—"}
                     </td>

@@ -61,20 +61,20 @@ describe("computeTeamRecord", () => {
 
 describe("buildLeagueTable", () => {
   const opponents = [
-    { name: "Alpha", team_id: "1", current_ptn_per_match: 2.5, current_position: 1 },
-    { name: "Bravo", team_id: "2", current_ptn_per_match: 1.0, current_position: 2 },
+    { name: "Alpha", team_id: "1", current_ptn_per_match: 0.5, current_points: 4, current_position: 1 },
+    { name: "Bravo", team_id: "2", current_ptn_per_match: 2.0, current_points: 2, current_position: 2 },
     { name: "Charlie", team_id: "3", current_ptn_per_match: null, current_position: null },
   ];
 
-  it("inserts our team by computed pts/match and ranks all together", () => {
+  it("inserts our team and ranks all together by points", () => {
     const record = computeTeamRecord([
       g("a", "2025-09-10", 5, 2), // W → 3 pts in 1 game → 3.0 ppm
     ]);
     const table = buildLeagueTable(opponents, record, "Caracrew");
     expect(table).toHaveLength(4);
-    // 3.0 (us) > 2.5 (Alpha) > 1.0 (Bravo) > null (Charlie)
-    expect(table.map((r) => r.team)).toEqual(["Caracrew", "Alpha", "Bravo", "Charlie"]);
-    expect(table[0]).toMatchObject({ rank: 1, isUs: true, ptnPerMatch: 3 });
+    // 4 (Alpha) > 3 (us) > 2 (Bravo, best pts/match) > null (Charlie)
+    expect(table.map((r) => r.team)).toEqual(["Alpha", "Caracrew", "Bravo", "Charlie"]);
+    expect(table[1]).toMatchObject({ rank: 2, isUs: true, points: 3, ptnPerMatch: 3 });
     expect(table[3]).toMatchObject({ rank: 4, team: "Charlie", ptnPerMatch: null });
   });
 
@@ -102,15 +102,15 @@ describe("buildLeagueTable", () => {
       played: 1, wins: 1, draws: 0, losses: 0, gf: 5, ga: 2, gd: 3, points: 3,
     });
     // Rows synced before the standings columns existed show nulls, not zeros.
-    const legacy = buildLeagueTable(opponents, record, "Caracrew").find((r) => r.team === "Alpha");
+    const legacy = buildLeagueTable(opponents, record, "Caracrew").find((r) => r.team === "Charlie");
     expect(legacy).toMatchObject({ played: null, wins: null, gd: null, points: null });
   });
 
-  it("sends our team below all scored teams with no played games (null pts/match)", () => {
+  it("ranks our team on 0 points with no played games (null pts/match)", () => {
     const table = buildLeagueTable(opponents, computeTeamRecord([]), "Caracrew");
     const us = table.find((r) => r.isUs);
     expect(us.ptnPerMatch).toBeNull();
-    // Below Alpha (2.5) and Bravo (1.0); among the null rows, "Caracrew" < "Charlie" by name.
+    // Below Alpha (4) and Bravo (2); above Charlie, who has no points synced.
     expect(table.map((r) => r.team)).toEqual(["Alpha", "Bravo", "Caracrew", "Charlie"]);
     expect(us.rank).toBe(3);
   });

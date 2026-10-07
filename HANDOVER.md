@@ -407,6 +407,9 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-10-07 (league table by points)** — `buildLeagueTable` now ranks by **points** (then goal difference,
+  goals for, name; teams with no points synced go last) instead of pts/match. *Pts* moved to the first stat
+  column, right after Team. Tests updated; lint + 366 tests green.
 - **2026-09-30 (stats entry findability)** — Getting to a just-played game's stats is now led, not guessed:
   - **Auto tab per game** (`useFutsalData`): each newly selected game picks its tab once — kicked off and
     (still today, or `statsMissing`) → **Game stats**, otherwise Attendance. Saves never move you off a tab.

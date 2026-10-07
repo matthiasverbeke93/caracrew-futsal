@@ -64,10 +64,10 @@ export function computeTeamRecord(games) {
 }
 
 /**
- * Projected league table: the LZV opponent snapshot (points/match per team) with
- * Caracrew inserted at our own computed points/match, ranked together. Opponent
- * figures are the latest palmares snapshot; our row is computed from our results —
- * label it as such in the UI. Teams without a points/match value sort to the bottom.
+ * Projected league table: the LZV opponent snapshot with Caracrew inserted from our
+ * own results, ranked together by points (then goal difference, goals for, name).
+ * Opponent figures are the latest palmares snapshot; our row is computed from our
+ * results — label it as such in the UI. Teams without points sort to the bottom.
  */
 export function buildLeagueTable(opponentStrengths, record, teamName) {
   const num = (v) => (v != null ? Number(v) : null);
@@ -110,11 +110,14 @@ export function buildLeagueTable(opponentStrengths, record, teamName) {
   };
 
   const all = [...rows, us];
+  const desc = (x, y) => (y ?? -Infinity) - (x ?? -Infinity) || 0;
   all.sort((a, b) => {
-    const pa = a.ptnPerMatch == null ? -1 : a.ptnPerMatch;
-    const pb = b.ptnPerMatch == null ? -1 : b.ptnPerMatch;
-    if (pb !== pa) return pb - pa;
-    return a.team.localeCompare(b.team);
+    return (
+      desc(a.points, b.points) ||
+      desc(a.gd, b.gd) ||
+      desc(a.gf, b.gf) ||
+      a.team.localeCompare(b.team)
+    );
   });
 
   return all.map((r, i) => ({ ...r, rank: i + 1 }));

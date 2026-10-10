@@ -129,15 +129,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-11-19-2100-wille-ma-ni-kunne@caracrew.org
-DTSTAMP:20261003T103246Z
-SEQUENCE:3
-LAST-MODIFIED:20261003T103246Z
+DTSTAMP:20261010T111936Z
+SEQUENCE:4
+LAST-MODIFIED:20261010T111936Z
 DTSTART;TZID=Europe/Brussels:20261119T210000
 DTEND;TZID=Europe/Brussels:20261119T220000
 SUMMARY:K. Caracrew SK vs Wille ma ni kunne
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Wille ma ni kunne\nVenue
- : Winketkaai Mechelen\nOpponent form: Very easy — position 11\, 0.00 pts
+ : Winketkaai Mechelen\nOpponent form: Very easy — position 10\, 0.00 pts
  /match\n\nMatch page: https://caracrew.org/?game=2627-2026-11-19-2100-will
  e-ma-ni-kunne&season=2627
 URL:https://caracrew.org/?game=2627-2026-11-19-2100-wille-ma-ni-kunne&seaso
@@ -358,15 +358,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-04-14-2200-wille-ma-ni-kunne@caracrew.org
-DTSTAMP:20261003T103246Z
-SEQUENCE:3
-LAST-MODIFIED:20261003T103246Z
+DTSTAMP:20261010T111936Z
+SEQUENCE:4
+LAST-MODIFIED:20261010T111936Z
 DTSTART;TZID=Europe/Brussels:20270414T220000
 DTEND;TZID=Europe/Brussels:20270414T230000
 SUMMARY:Wille ma ni kunne vs K. Caracrew SK
 LOCATION:SportCube Eppegem
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Wille ma ni kunne\nVenue
- : SportCube Eppegem\nOpponent form: Very easy — position 11\, 0.00 pts/m
+ : SportCube Eppegem\nOpponent form: Very easy — position 10\, 0.00 pts/m
  atch\n\nMatch page: https://caracrew.org/?game=2627-2027-04-14-2200-wille-
  ma-ni-kunne&season=2627
 URL:https://caracrew.org/?game=2627-2027-04-14-2200-wille-ma-ni-kunne&seaso

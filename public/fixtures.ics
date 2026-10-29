@@ -41,15 +41,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-09-24-2100-vv-schemerboyz@caracrew.org
-DTSTAMP:20261028T113129Z
-SEQUENCE:10
-LAST-MODIFIED:20261028T113129Z
+DTSTAMP:20261029T114055Z
+SEQUENCE:11
+LAST-MODIFIED:20261029T114055Z
 DTSTART;TZID=Europe/Brussels:20260924T210000
 DTEND;TZID=Europe/Brussels:20260924T220000
 SUMMARY:K. Caracrew SK vs VV Schemerboyz
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs VV Schemerboyz\nVenue: W
- inketkaai Mechelen\nOpponent form: Easy — position 9\, 1.50 pts/match\nR
+ inketkaai Mechelen\nOpponent form: Easy — position 8\, 1.50 pts/match\nR
  esult: 3–8 (L\, K. Caracrew SK first)\n\nMatch page: https://caracrew.or
  g/?game=2627-2026-09-24-2100-vv-schemerboyz&season=2627
 URL:https://caracrew.org/?game=2627-2026-09-24-2100-vv-schemerboyz&season=2
@@ -59,15 +59,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-10-08-2100-oranje-duivels@caracrew.org
-DTSTAMP:20261020T102035Z
-SEQUENCE:5
-LAST-MODIFIED:20261020T102035Z
+DTSTAMP:20261029T114055Z
+SEQUENCE:6
+LAST-MODIFIED:20261029T114055Z
 DTSTART;TZID=Europe/Brussels:20261008T210000
 DTEND;TZID=Europe/Brussels:20261008T220000
 SUMMARY:K. Caracrew SK vs Oranje Duivels
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Oranje Duivels\nVenue: W
- inketkaai Mechelen\nOpponent form: Very hard — position 3\, 2.40 pts/mat
+ inketkaai Mechelen\nOpponent form: Very hard — position 3\, 2.50 pts/mat
  ch\nResult: 3–8 (L\, K. Caracrew SK first)\n\nMatch page: https://caracr
  ew.org/?game=2627-2026-10-08-2100-oranje-duivels&season=2627
 URL:https://caracrew.org/?game=2627-2026-10-08-2100-oranje-duivels&season=2
@@ -111,15 +111,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-11-08-1800-vv-schemerboyz@caracrew.org
-DTSTAMP:20261028T113129Z
-SEQUENCE:9
-LAST-MODIFIED:20261028T113129Z
+DTSTAMP:20261029T114055Z
+SEQUENCE:10
+LAST-MODIFIED:20261029T114055Z
 DTSTART;TZID=Europe/Brussels:20261108T180000
 DTEND;TZID=Europe/Brussels:20261108T190000
 SUMMARY:VV Schemerboyz vs K. Caracrew SK
 LOCATION:IHAM Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at VV Schemerboyz\nVenue: I
- HAM Mechelen\nOpponent form: Easy — position 9\, 1.50 pts/match\n\nMatch
+ HAM Mechelen\nOpponent form: Easy — position 8\, 1.50 pts/match\n\nMatch
   page: https://caracrew.org/?game=2627-2026-11-08-1800-vv-schemerboyz&seas
  on=2627
 URL:https://caracrew.org/?game=2627-2026-11-08-1800-vv-schemerboyz&season=2
@@ -217,15 +217,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-01-05-1900-oranje-duivels@caracrew.org
-DTSTAMP:20261020T102035Z
-SEQUENCE:4
-LAST-MODIFIED:20261020T102035Z
+DTSTAMP:20261029T114055Z
+SEQUENCE:5
+LAST-MODIFIED:20261029T114055Z
 DTSTART;TZID=Europe/Brussels:20270105T190000
 DTEND;TZID=Europe/Brussels:20270105T200000
 SUMMARY:Oranje Duivels vs K. Caracrew SK
 LOCATION:Kouter Leest
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Oranje Duivels\nVenue: K
- outer Leest\nOpponent form: Very hard — position 3\, 2.40 pts/match\n\nM
+ outer Leest\nOpponent form: Very hard — position 3\, 2.50 pts/match\n\nM
  atch page: https://caracrew.org/?game=2627-2027-01-05-1900-oranje-duivels&
  season=2627
 URL:https://caracrew.org/?game=2627-2027-01-05-1900-oranje-duivels&season=2
@@ -322,15 +322,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-03-11-2100-knallende-knapen@caracrew.org
-DTSTAMP:20261028T113129Z
-SEQUENCE:9
-LAST-MODIFIED:20261028T113129Z
+DTSTAMP:20261029T114055Z
+SEQUENCE:10
+LAST-MODIFIED:20261029T114055Z
 DTSTART;TZID=Europe/Brussels:20270311T210000
 DTEND;TZID=Europe/Brussels:20270311T220000
 SUMMARY:K. Caracrew SK vs Knallende Knapen
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Knallende Knapen\nVenue:
-  Winketkaai Mechelen\nOpponent form: Easy — position 8\, 1.20 pts/match\
+  Winketkaai Mechelen\nOpponent form: Easy — position 9\, 1.00 pts/match\
  n\nMatch page: https://caracrew.org/?game=2627-2027-03-11-2100-knallende-k
  napen&season=2627
 URL:https://caracrew.org/?game=2627-2027-03-11-2100-knallende-knapen&season
@@ -340,15 +340,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-03-27-1930-knallende-knapen@caracrew.org
-DTSTAMP:20261028T113129Z
-SEQUENCE:9
-LAST-MODIFIED:20261028T113129Z
+DTSTAMP:20261029T114055Z
+SEQUENCE:10
+LAST-MODIFIED:20261029T114055Z
 DTSTART;TZID=Europe/Brussels:20270327T193000
 DTEND;TZID=Europe/Brussels:20270327T203000
 SUMMARY:Knallende Knapen vs K. Caracrew SK
 LOCATION:SportCube Eppegem
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Knallende Knapen\nVenue:
-  SportCube Eppegem\nOpponent form: Easy — position 8\, 1.20 pts/match\n\
+  SportCube Eppegem\nOpponent form: Easy — position 9\, 1.00 pts/match\n\
  nMatch page: https://caracrew.org/?game=2627-2027-03-27-1930-knallende-kna
  pen&season=2627
 URL:https://caracrew.org/?game=2627-2027-03-27-1930-knallende-knapen&season

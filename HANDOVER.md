@@ -409,6 +409,33 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-11-06 (b)** — *Teammates fill in each other's goals; on-time scores count own saves only; old guest table dropped.*
+  - **Why:** a usage review of 26-27 found goals regularly short of the score (ZVC Tigers: 2 of 4) and the
+    stragglers' stats entered by an admin after the 2-day lock. The owner chose to let teammates fill gaps,
+    and pointed out that filling a row in for someone was earning *them* on-time credit.
+  - **Who may edit a stats row** (`utils/statsAccess.js`, enforced by `supabase/stats_teammates.sql`, **applied
+    to the live DB 2026-11-06**): admin or the player = everything; **a signed-in player who was In may edit
+    goals/assists/keeper of anyone else who was In for that fixture**. *Played* stays owner/admin only — in the
+    UI and via the `player_stats_guard_played` trigger. Delete stays owner/admin. RSVPs are unchanged
+    (own or admin). The chase now says "Add yours (or a teammate's) here".
+  - **On-time scores use `self_updated_at`** (`supabase/self_updated_at.sql`, **applied 2026-11-06**), on both
+    `attendance` and `player_stats`: stamped by trigger **only when the signed-in user is the row's player**;
+    admin/teammate writes keep the old value (null on a new row); a client cannot forge it (verified by
+    impersonating a player in a rolled-back transaction). Console/service writes (no `auth.uid()`) pass
+    through untouched so it can be fixed by hand. `playerCompliance.js` reads it via `ownSaveAt` (falls back
+    to `updated_at` only if the column is absent). A row nobody but others wrote earns nothing — not even the
+    0/0 grace. **History caveat:** authorship was never recorded, so existing rows were backfilled with
+    `updated_at` (past scores unchanged), except players with no account (Bart, Brandon, Maarten), set null.
+  - **`guest_players` removed from the app, digest and LZV helper.** Guests have been plain non-fixed
+    `players` rows (+ `attendance`) for a while; the table is empty in every season. Table and migrations left
+    in place (dropping is a separate, irreversible call). `counts.roster` is now fixed players only and
+    `counts.guestBreakdown` the non-fixed ones — before, guests counted as roster, so the RSVP nudge's roster
+    tally could exceed the roster size. The season "players per game" chart splits by the `fixed` flag.
+  - **Guests are never named in the stats chase** (owner, 2026-11-06) — `playersOwingStats` gets fixed players.
+  - Gotcha hit: Python text-mode writes on this box emit CRLF, which broke `send-weekly-digest.mjs` under
+    vitest (the known shebang issue). Write files in binary with `
+`.
+  - Verified: lint clean, 385 tests pass, build clean. Not eyeballed in a browser.
 - **2026-11-06** — *Stats chase skipped In players whose row says "did not play".*
   - Reported on ZVC Tigers (2026-11-05): Cédric was In but missing from `Chase stats`. His `player_stats`
     row existed with `played = false`, 0/0 — the Played box unticked — and the chase counted *any* row as done.

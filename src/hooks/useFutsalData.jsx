@@ -472,7 +472,11 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     const snapshot = attendance;
     setAttendance((prev) => {
       const idx = prev.findIndex((a) => a.game_id === gameId && a.player_id === playerId);
-      const row = { game_id: gameId, player_id: playerId, status, updated_at };
+      // Mirror the DB stamp (supabase/self_updated_at.sql) so the on-time scores are
+      // right before the next reload: only the player's own save moves it.
+      const self_updated_at =
+        playerId === currentPlayerId ? updated_at : (prev[idx]?.self_updated_at ?? null);
+      const row = { game_id: gameId, player_id: playerId, status, updated_at, self_updated_at };
       if (idx >= 0) {
         const next = [...prev];
         next[idx] = row;
@@ -546,6 +550,9 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
         played,
         kept_goal,
         updated_at,
+        // Same as the DB stamp: only the player's own save moves it.
+        self_updated_at:
+          playerId === currentPlayerId ? updated_at : (prev[idx]?.self_updated_at ?? null),
       };
       if (idx >= 0) {
         const next = [...prev];

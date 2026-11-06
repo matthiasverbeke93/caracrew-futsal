@@ -8,6 +8,17 @@ export const STATS_ON_TIME_DAYS_AFTER = 3;
 /** If a player has 0 goals and 0 assists, stats count as on time once this many days after kickoff (no need to chase empty rows). */
 export const STATS_ZERO_GA_GRACE_DAYS_AFTER = 7;
 
+/**
+ * When the player last saved this row **themselves** — the only save that earns on-time credit.
+ * `self_updated_at` is stamped by the DB (supabase/self_updated_at.sql) and does not move when an
+ * admin or teammate fills the row in; null means nobody but others ever wrote it. Rows loaded
+ * before that migration have no such column, so they fall back to `updated_at`.
+ */
+export function ownSaveAt(row) {
+  if (!row) return null;
+  return "self_updated_at" in row ? row.self_updated_at : row.updated_at;
+}
+
 /** @returns {number | null} epoch ms at kickoff (local interpretation of date + time) */
 export function getGameKickoffMs(game) {
   if (!game?.game_date) return null;
@@ -26,6 +37,7 @@ export function getGameKickoffMs(game) {
  * Per-player compliance for the season: RSVP on-time %, stats on-time %, overall stars (0–5).
  *
  * Only fixtures where `player_stats.played` is true (Stats tab checkbox) count toward both percentages.
+ * Only the player's own saves count (`ownSaveAt`): a row an admin or teammate filled in earns nothing.
  * RSVP on time: share of those games where attendance was last saved ≥7 full days before kickoff.
  * Stats on time: share of those games where stats were entered on time — either the row was saved
  * between kickoff and kickoff+3d, or they have 0 goals and 0 assists and kickoff was at least
@@ -50,7 +62,8 @@ export function computePersonalComplianceScores(games, attendance, stats, player
 
     rsvpDenom += 1;
     const att = attendance.find((a) => a.game_id === g.id && a.player_id === playerId);
-    if (att?.updated_at && rsvpSavedAtLeastDaysBeforeKickoff(kick, att.updated_at, RSVP_ON_TIME_DAYS_BEFORE)) {
+    const ownRsvpAt = ownSaveAt(att);
+    if (ownRsvpAt && rsvpSavedAtLeastDaysBeforeKickoff(kick, ownRsvpAt, RSVP_ON_TIME_DAYS_BEFORE)) {
       rsvpInTime += 1;
     }
 
@@ -95,6 +108,9 @@ function statsSavedWithinDaysAfterKickoff(kickMs, updatedAtIso, days) {
 
 /** Stats “on time” for compliance: in-window save after kickoff, or empty G/A once grace period after kickoff has passed. */
 function isStatsRowCompliantOnTime(kickMs, st, asOfMs) {
+  const ownAt = ownSaveAt(st);
+  // Never saved by the player themself → no credit, not even the empty-row grace.
+  if (!ownAt) return false;
   const goals = Number(st?.goals) || 0;
   const assists = Number(st?.assists) || 0;
   const noInvolvement = goals === 0 && assists === 0;
@@ -103,7 +119,7 @@ function isStatsRowCompliantOnTime(kickMs, st, asOfMs) {
     return true;
   }
 
-  return !!(st?.updated_at && statsSavedWithinDaysAfterKickoff(kickMs, st.updated_at, STATS_ON_TIME_DAYS_AFTER));
+  return statsSavedWithinDaysAfterKickoff(kickMs, ownAt, STATS_ON_TIME_DAYS_AFTER);
 }
 
 /** Visual 0–5 star rating (filled ★ + empty ☆). */

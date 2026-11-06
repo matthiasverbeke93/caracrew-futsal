@@ -68,7 +68,8 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
 - **`scripts/*.mjs`** — Node sync jobs run by GitHub Actions.
 
 ## Data & external jobs
-- **Supabase tables:** `games`, `players`, `attendance`, `player_stats`, `guest_players`, `motm_votes`,
+- **Supabase tables:** `games`, `players`, `attendance`, `player_stats`, `guest_players` (legacy, empty,
+  unused by the app since 2026-11-06 — guests are non-fixed `players` rows), `motm_votes`,
   `opponent_strength`, `player_claims`. Every `games` / `opponent_strength` row carries a `season_slug`.
   Migrations live in `supabase/*.sql` and are idempotent/safe to re-run.
 - **GitHub Actions:** `sync-lzv.yml` (weekly final scores from lzvcup.be), `sync-palmares.yml` (daily opponent
@@ -85,7 +86,8 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
 - **Seasons:** multi-season via `season_slug` (`2526` = 25-26, `2627` = 26-27). `SeasonSwitcher` is a single
   season **dropdown** (next to the team name) listing all seasons newest-first; it defaults to
   `DEFAULT_SEASON_SLUG` (26-27). No current/historical split.
-- **Roles:** anyone reads; a signed-in *linked* player edits their own attendance/stats; any signed-in user votes
+- **Roles:** anyone reads; a signed-in *linked* player edits their own attendance/stats, and goals/assists/
+  keeper of teammates who were In with them (not *Played*; `utils/statsAccess.js`); any signed-in user votes
   MOTM once/game; **admin** sets scores, manages guests/roster, and overrides anyone.
 - **Editing windows:** attendance is editable only for the **next 3 upcoming fixtures**; stats lock **2 days**
   after a game (`STATS_FREEZE_DAYS`, cut from 5 on 2026-08-31) **for players — admins are exempt**

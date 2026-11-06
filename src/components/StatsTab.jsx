@@ -91,7 +91,7 @@ export default function StatsTab({
   motmVotes,
   submitMotmVote,
   onOpenPlayer,
-  canEditStatsFor,
+  statsScopeFor,
   canManageGame,
   canVote,
   voterUserId = null,
@@ -307,10 +307,14 @@ export default function StatsTab({
           <tbody>
             {allGamePlayers.map((player) => {
               const row = gameStats.find((s) => s.player_id === player.id);
-              const rowEditable = statsWindowOpen && canEditStatsFor(player.id);
+              const scope = statsWindowOpen ? statsScopeFor(player.id) : "none";
+              // Goals/assists/keeper: owner, admin, or a teammate who was In too.
+              const rowEditable = scope !== "none";
+              // "Played" stays the player's own (or an admin's) call.
+              const playedEditable = scope === "full";
               const disabledTitle = !statsWindowOpen
                 ? undefined
-                : `Only ${player.name} or an admin can edit this`;
+                : `Only players who were In for this match can edit this`;
 
               return (
                 <tr key={player.id}>
@@ -329,10 +333,12 @@ export default function StatsTab({
                     <input
                       type="checkbox"
                       checked={!!row && row.played !== false}
-                      disabled={!rowEditable}
+                      disabled={!playedEditable}
                       title={
-                        !rowEditable
-                          ? disabledTitle
+                        !playedEditable
+                          ? rowEditable
+                            ? `Only ${player.name} or an admin can change this`
+                            : disabledTitle
                           : "Counts this game toward your RSVP / stats compliance scores"
                       }
                       onChange={(e) => saveStat(player.id, "played", e.target.checked)}

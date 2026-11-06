@@ -28,6 +28,7 @@ import { useFutsalData } from "./hooks/useFutsalData";
 import { usePendingClaimsCount } from "./hooks/usePendingClaimsCount";
 import { nextUpcomingGamesByCalendar } from "./utils/game";
 import { getGoalkeeperSummary } from "./utils/goalkeeper";
+import { statsEditScope } from "./utils/statsAccess";
 import {
   DEFAULT_SEASON_SLUG,
   isSeasonSlug,
@@ -253,7 +254,19 @@ export default function App() {
     (playerId) => isSignedIn && (isAdmin || playerId === currentPlayer?.id),
     [isSignedIn, isAdmin, currentPlayer]
   );
-  const canEditStatsFor = canEditAttendanceFor;
+  // "full" | "teammate" | "none" — teammates who were In may fill in each other's
+  // goals/assists/keeper, not "Played" (utils/statsAccess.js).
+  const statsScopeFor = useCallback(
+    (playerId) =>
+      isSignedIn
+        ? statsEditScope(playerId, {
+            isAdmin,
+            currentPlayerId: currentPlayer?.id ?? null,
+            gameAttendance,
+          })
+        : "none",
+    [isSignedIn, isAdmin, currentPlayer, gameAttendance]
+  );
   const canManageGame = isSignedIn && isAdmin;
   const canVote = isSignedIn;
 
@@ -573,7 +586,7 @@ export default function App() {
                     motmVotes={motmVotes}
                     submitMotmVote={submitMotmVote}
                     onOpenPlayer={openPlayer}
-                    canEditStatsFor={canEditStatsFor}
+                    statsScopeFor={statsScopeFor}
                     canManageGame={canManageGame}
                     canVote={canVote}
                     voterUserId={user?.id ?? null}

@@ -12,6 +12,7 @@ import {
 } from "../utils/game";
 import { useToast } from "./useToast.jsx";
 import { hasRecordedStats } from "../utils/statsChase";
+import { canWriteStatField, statsEditScope } from "../utils/statsAccess";
 
 /** Shown when an optimistic write fails and we roll the UI back. */
 const SAVE_FAILED_HINT = "check your connection and try again.";
@@ -517,7 +518,9 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     // already disables the inputs outside it, so this only closes the gap between
     // the UI and the write. Admins are exempt from the freeze, not from "played".
     if (!isStatsEditable(selectedGame, { isAdmin })) return;
-    if (!canEditAttendanceFor(playerId)) return;
+    // Owner/admin, or a teammate who was In too (not for "Played") — utils/statsAccess.js.
+    const scope = statsEditScope(playerId, { isAdmin, currentPlayerId, gameAttendance });
+    if (!canWriteStatField(scope, field)) return;
     const existing = gameStats.find((s) => s.player_id === playerId);
     const goals = field === "goals" ? toStatCount(value) : existing?.goals ?? 0;
     const assists = field === "assists" ? toStatCount(value) : existing?.assists ?? 0;

@@ -289,7 +289,7 @@ export function buildWhatsAppStatsChaseUrl(game, missingNames, statsSnapshot = {
       ? "Stats are locked now — send them to me and I'll add them."
       : `Stats lock ${freezeDays} days after the match.`,
     "",
-    "Add yours here:",
+    "Add yours (or a teammate's) here:",
     shareUrl,
     "",
     BOT_SIGNATURE

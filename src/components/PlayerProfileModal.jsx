@@ -5,28 +5,18 @@ import { isPlayed } from "../utils/game";
 import { countPlayerMotmWins, getMotmLeaderIds, getMotmVotingEnd } from "../utils/motm";
 import { cleanOpponentName } from "../utils/opponent";
 
-function resolveName(playerId, players, guestPlayers) {
-  const p = players.find((x) => x.id === playerId);
-  if (p?.name) return p.name;
-  const g = guestPlayers.find((x) => x.id === playerId);
-  if (g?.name) return g.name;
-  return "Player";
+function resolveName(playerId, players) {
+  return players.find((x) => x.id === playerId)?.name || "Player";
 }
 
-function participationForGame(gameId, playerId, attendance, guestPlayers) {
+function participationForGame(gameId, playerId, attendance) {
   const att = attendance.find((a) => a.game_id === gameId && a.player_id === playerId);
-  if (att) return { kind: "attendance", status: att.status };
-  const guest = guestPlayers.find((g) => g.game_id === gameId && g.id === playerId);
-  if (guest) return { kind: "guest_row", status: guest.status, goals: guest.goals, assists: guest.assists };
-  return null;
+  return att ? { status: att.status } : null;
 }
 
-function statForGame(gameId, playerId, stats, guestPlayers) {
+function statForGame(gameId, playerId, stats) {
   const row = stats.find((s) => s.game_id === gameId && s.player_id === playerId);
-  if (row) return { goals: row.goals || 0, assists: row.assists || 0 };
-  const guest = guestPlayers.find((g) => g.game_id === gameId && g.id === playerId);
-  if (guest) return { goals: guest.goals || 0, assists: guest.assists || 0 };
-  return { goals: 0, assists: 0 };
+  return { goals: row?.goals || 0, assists: row?.assists || 0 };
 }
 
 export default function PlayerProfileModal({
@@ -35,13 +25,12 @@ export default function PlayerProfileModal({
   games,
   attendance,
   stats,
-  guestPlayers,
   players,
   motmVotes,
 }) {
   const name = useMemo(
-    () => resolveName(playerId, players, guestPlayers),
-    [guestPlayers, playerId, players]
+    () => resolveName(playerId, players),
+    [playerId, players]
   );
 
   const [now, setNow] = useState(() => Date.now());
@@ -74,11 +63,11 @@ export default function PlayerProfileModal({
 
     const sorted = [...games].sort((a, b) => (a.game_date || "").localeCompare(b.game_date || ""));
     for (const game of sorted) {
-      const part = participationForGame(game.id, playerId, attendance, guestPlayers);
+      const part = participationForGame(game.id, playerId, attendance);
       if (!part) continue;
       denom += 1;
       if (part.status === "playing") playing += 1;
-      const st = statForGame(game.id, playerId, stats, guestPlayers);
+      const st = statForGame(game.id, playerId, stats);
       goals += st.goals;
       assists += st.assists;
       rows.push({
@@ -140,7 +129,7 @@ export default function PlayerProfileModal({
       longestStreak,
       currentStreak,
     };
-  }, [attendance, games, guestPlayers, motmVotes, now, playerId, stats]);
+  }, [attendance, games, motmVotes, now, playerId, stats]);
 
   const recentMotm = useMemo(() => {
     if (!playerId || !games?.length) return [];

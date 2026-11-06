@@ -211,29 +211,21 @@ export async function runLzvFill(cfg, match) {
   let ours;
   try {
     const gid = encodeURIComponent(game.id);
-    const [stats, guests] = await Promise.all([
-      api(`player_stats?game_id=eq.${gid}&select=player_id,goals,assists,played,kept_goal`),
-      api(`guest_players?game_id=eq.${gid}&select=name,goals,assists,kept_goal`),
-    ]);
+    const stats = await api(
+      `player_stats?game_id=eq.${gid}&select=player_id,goals,assists,played,kept_goal`
+    );
     const played = stats.filter((s) => s.played !== false);
     const ids = played.map((s) => `"${String(s.player_id).replace(/"/g, "")}"`).join(",");
-    const players = ids ? await api(`players?id=in.(${encodeURIComponent(ids)})&select=id,name`) : [];
-    const nameOf = Object.fromEntries(players.map((p) => [p.id, p.name]));
-    ours = [
-      ...played.map((s) => ({
-        name: nameOf[s.player_id] || String(s.player_id),
-        goals: s.goals || 0,
-        assists: s.assists || 0,
-        keeper: !!s.kept_goal,
-      })),
-      ...guests.map((g) => ({
-        name: g.name,
-        goals: g.goals || 0,
-        assists: g.assists || 0,
-        keeper: !!g.kept_goal,
-        guest: true,
-      })),
-    ];
+    const players = ids ? await api(`players?id=in.(${encodeURIComponent(ids)})&select=id,name,fixed`) : [];
+    const byId = Object.fromEntries(players.map((p) => [p.id, p]));
+    // Guests are non-fixed players; they keep the "(guest)" tag in the summary.
+    ours = played.map((s) => ({
+      name: byId[s.player_id]?.name || String(s.player_id),
+      goals: s.goals || 0,
+      assists: s.assists || 0,
+      keeper: !!s.kept_goal,
+      guest: byId[s.player_id]?.fixed === false,
+    }));
   } catch (e) {
     show(`Couldn't load stats: ${esc(e.message || e)}`);
     return;

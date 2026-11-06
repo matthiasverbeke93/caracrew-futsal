@@ -16,10 +16,10 @@ function loadPage(n) {
 }
 
 /** Fake Supabase REST: route by table name. */
-function mockDb({ game, stats = [], guests = [], players = [] }) {
+function mockDb({ game, stats = [], players = [] }) {
   globalThis.fetch = vi.fn(async (url) => {
     const table = /\/rest\/v1\/(\w+)/.exec(url)[1];
-    const body = { games: game ? [game] : [], player_stats: stats, guest_players: guests, players }[table];
+    const body = { games: game ? [game] : [], player_stats: stats, players }[table];
     return { ok: true, json: async () => body, text: async () => "" };
   });
 }
@@ -67,13 +67,14 @@ describe("runLzvFill on the Ploeg step", () => {
         { player_id: "p1", goals: 2, assists: 0, played: true, kept_goal: false },
         { player_id: "p2", goals: 0, assists: 1, played: true, kept_goal: true },
         { player_id: "p3", goals: 5, assists: 5, played: false, kept_goal: false },
+        { player_id: "p4", goals: 1, assists: 0, played: true, kept_goal: false },
       ],
       players: [
         { id: "p1", name: "Stef" },
         { id: "p2", name: "Steven Vits" },
         { id: "p3", name: "Koen Heeren" },
+        { id: "p4", name: "Some Guest", fixed: false },
       ],
-      guests: [{ name: "Some Guest", goals: 1, assists: 0, kept_goal: false }],
     });
     await runLzvFill(CFG, matchLzvRows);
 

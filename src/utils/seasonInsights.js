@@ -32,20 +32,18 @@ function formatMonthLabel(ym) {
 
 /**
  * One entry per played fixture (chronological), splitting who turned out:
- * `roster` = roster players marked Played on the Stats tab (`player_stats.played`),
- * `guests` = ad-hoc guests marked playing for that game (`guest_players.status`).
+ * players marked Played on the Stats tab (`player_stats.played`), split into
+ * `roster` (fixed players) and `guests` (everyone else, per `players`).
  * Games with no data yet count as 0. `players` is the combined total.
  */
-export function buildPlayersPerGameSeries(games, stats, guestPlayers) {
+export function buildPlayersPerGameSeries(games, stats, players) {
+  const fixedIds = new Set((players || []).filter((p) => p.fixed).map((p) => p.id));
   const rosterByGame = new Map();
+  const guestByGame = new Map();
   for (const s of stats || []) {
     if (s.played === false) continue;
-    rosterByGame.set(s.game_id, (rosterByGame.get(s.game_id) || 0) + 1);
-  }
-  const guestByGame = new Map();
-  for (const g of guestPlayers || []) {
-    if (g.status !== "playing") continue;
-    guestByGame.set(g.game_id, (guestByGame.get(g.game_id) || 0) + 1);
+    const bucket = fixedIds.has(s.player_id) ? rosterByGame : guestByGame;
+    bucket.set(s.game_id, (bucket.get(s.game_id) || 0) + 1);
   }
   return (games || [])
     .filter((g) => isPlayed(g))

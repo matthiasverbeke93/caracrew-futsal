@@ -85,10 +85,8 @@ export default function StatsTab({
   allGamePlayers,
   selectedGame,
   gameStats,
-  gameGuests = [],
   gameAttendance,
   selectedGameTotals,
-  saveGuestStat,
   saveStat,
   motmVotes,
   submitMotmVote,
@@ -106,10 +104,7 @@ export default function StatsTab({
   const [motmMessage, setMotmMessage] = useState(null);
   const now = useNow();
 
-  // Guest rows carry their own goals/assists — they count toward the scoreline too.
-  const sumOf = (field) =>
-    gameStats.reduce((sum, row) => sum + (row[field] || 0), 0) +
-    gameGuests.reduce((sum, row) => sum + (row[field] || 0), 0);
+  const sumOf = (field) => gameStats.reduce((sum, row) => sum + (row[field] || 0), 0);
   const currentGoals = sumOf("goals");
   const currentAssists = sumOf("assists");
   const goalsTarget = selectedGameTotals.goals;
@@ -311,17 +306,11 @@ export default function StatsTab({
           </thead>
           <tbody>
             {allGamePlayers.map((player) => {
-              const isAdHoc = player.type === "ad_hoc_guest";
-              const row = isAdHoc
-                ? player
-                : gameStats.find((s) => s.player_id === player.id);
-              const rowEditable =
-                statsWindowOpen && (isAdHoc ? canManageGame : canEditStatsFor(player.id));
+              const row = gameStats.find((s) => s.player_id === player.id);
+              const rowEditable = statsWindowOpen && canEditStatsFor(player.id);
               const disabledTitle = !statsWindowOpen
                 ? undefined
-                : isAdHoc
-                  ? "Admin only"
-                  : `Only ${player.name} or an admin can edit this`;
+                : `Only ${player.name} or an admin can edit this`;
 
               return (
                 <tr key={player.id}>
@@ -337,23 +326,17 @@ export default function StatsTab({
                     )}
                   </td>
                   <td className="stats-played-cell">
-                    {isAdHoc ? (
-                      <span className="stats-played-na" title="Guests use guest row only">
-                        —
-                      </span>
-                    ) : (
-                      <input
-                        type="checkbox"
-                        checked={!!row && row.played !== false}
-                        disabled={!rowEditable}
-                        title={
-                          !rowEditable
-                            ? disabledTitle
-                            : "Counts this game toward your RSVP / stats compliance scores"
-                        }
-                        onChange={(e) => saveStat(player.id, "played", e.target.checked)}
-                      />
-                    )}
+                    <input
+                      type="checkbox"
+                      checked={!!row && row.played !== false}
+                      disabled={!rowEditable}
+                      title={
+                        !rowEditable
+                          ? disabledTitle
+                          : "Counts this game toward your RSVP / stats compliance scores"
+                      }
+                      onChange={(e) => saveStat(player.id, "played", e.target.checked)}
+                    />
                   </td>
                   <td className="stats-played-cell">
                     {/* Deliberately not tied to `player.isGoalkeeper`: whoever went in
@@ -367,11 +350,7 @@ export default function StatsTab({
                           ? disabledTitle
                           : "This player kept goal in this match"
                       }
-                      onChange={(e) =>
-                        isAdHoc
-                          ? saveGuestStat(player.id, "kept_goal", e.target.checked)
-                          : saveStat(player.id, "kept_goal", e.target.checked)
-                      }
+                      onChange={(e) => saveStat(player.id, "kept_goal", e.target.checked)}
                     />
                   </td>
                   <td>
@@ -380,11 +359,7 @@ export default function StatsTab({
                       value={row?.goals}
                       disabled={!rowEditable}
                       title={!rowEditable ? disabledTitle : undefined}
-                      onCommit={(n) =>
-                        isAdHoc
-                          ? saveGuestStat(player.id, "goals", n)
-                          : saveStat(player.id, "goals", n)
-                      }
+                      onCommit={(n) => saveStat(player.id, "goals", n)}
                     />
                   </td>
                   <td>
@@ -393,11 +368,7 @@ export default function StatsTab({
                       value={row?.assists}
                       disabled={!rowEditable}
                       title={!rowEditable ? disabledTitle : undefined}
-                      onCommit={(n) =>
-                        isAdHoc
-                          ? saveGuestStat(player.id, "assists", n)
-                          : saveStat(player.id, "assists", n)
-                      }
+                      onCommit={(n) => saveStat(player.id, "assists", n)}
                     />
                   </td>
                 </tr>

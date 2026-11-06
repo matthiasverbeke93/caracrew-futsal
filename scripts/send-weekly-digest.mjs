@@ -216,18 +216,6 @@ async function main() {
     attendanceScoped = att || [];
   }
 
-  // Guests count toward the In headcount in the app, so the digest needs them too —
-  // otherwise a full fixture still looks short-handed here.
-  let guestsScoped = [];
-  if (gameIds.length > 0) {
-    const { data: gp, error: gpErr } = await supabase
-      .from("guest_players")
-      .select("*")
-      .in("game_id", gameIds);
-    if (gpErr) throw gpErr;
-    guestsScoped = gp || [];
-  }
-
   let motmScoped = [];
   if (gameIds.length > 0) {
     const { data: mv, error: mErr } = await supabase
@@ -257,29 +245,23 @@ async function main() {
       if (!row) missing.push(pl.name);
     }
     // "Do we have a goalie?" — the same check the app makes: a roster keeper who
-    // has actually said In (a keeper added as a guest counts via source_player_id).
+    // has actually said In. Guests are players rows too, so attendance covers them.
     const keeperIds = new Set(
       (players || []).filter((p) => p.is_goalkeeper).map((p) => p.id)
     );
     const keeperIn =
       keeperIds.size > 0 &&
-      (attendanceScoped.some(
+      attendanceScoped.some(
         (a) => a.game_id === nextGame.id && a.status === "playing" && keeperIds.has(a.player_id)
-      ) ||
-        guestsScoped.some(
-          (g) =>
-            g.game_id === nextGame.id &&
-            g.status === "playing" &&
-            keeperIds.has(g.source_player_id)
-        ));
+      );
     const keeperWarning =
       keeperIds.size > 0 && !keeperIn
         ? '<p style="margin:10px 0 0;color:#b91c1c;font-size:14px;"><strong>No goalkeeper has said In for this match.</strong></p>'
         : "";
 
-    const playingCount =
-      attendanceScoped.filter((a) => a.game_id === nextGame.id && a.status === "playing").length +
-      guestsScoped.filter((g) => g.game_id === nextGame.id && g.status === "playing").length;
+    const playingCount = attendanceScoped.filter(
+      (a) => a.game_id === nextGame.id && a.status === "playing"
+    ).length;
     const full = isGameFull(playingCount);
     const opp = escapeHtml(cleanOpponentName(nextGame.opponent));
     const when = escapeHtml(fmtWhen(nextGame));

@@ -140,7 +140,6 @@ export default function SelectedGamePanel({
   fixedPlayers,
   gameAttendance,
   gameStats,
-  gameGuests,
   opponentStrengths,
   seasonSlug,
   saveFinalScore,
@@ -203,9 +202,9 @@ export default function SelectedGamePanel({
     isAttendanceEditable(selectedGame, allGames) &&
     !isGameFull(counts.playing);
 
-  // Who played and still owes goals/assists. Roster only — a guest's stats are admin-entered
-  // (`saveGuestStat`), so there is nobody in the group chat to chase for them.
-  // A row marked "did not play" does not count as done for someone who was In.
+  // Who played and still owes goals/assists. Squad (fixed) players only — guests are never
+  // named in the chase (owner's call, 2026-11-06). A row marked "did not play" does not
+  // count as done.
   const { playedRoster, owing: owingStats } = playersOwingStats(
     fixedPlayers,
     gameAttendance,
@@ -291,9 +290,7 @@ export default function SelectedGamePanel({
   }
 
   function handleChaseStats() {
-    const recordedGoals =
-      (gameStats || []).reduce((sum, row) => sum + (row.goals || 0), 0) +
-      (gameGuests || []).reduce((sum, row) => sum + (row.goals || 0), 0);
+    const recordedGoals = (gameStats || []).reduce((sum, row) => sum + (row.goals || 0), 0);
     const wa = buildWhatsAppStatsChaseUrl(
       selectedGame,
       owingStats.map((p) => p.name.split(" ")[0]),

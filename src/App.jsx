@@ -221,7 +221,6 @@ export default function App() {
     players,
     fixedPlayers,
     attendance,
-    guestPlayers,
     externalPlayerPool,
     selectedGameId,
     setSelectedGameId,
@@ -239,18 +238,14 @@ export default function App() {
     allGamePlayers,
     gameAttendance,
     gameStats,
-    gameGuests,
     stats,
     selectedGameTotals,
     counts,
     saveAttendance,
-    saveGuestAttendance,
     saveStat,
-    saveGuestStat,
     saveFinalScore,
     submitMotmVote,
     addGuestPlayer,
-    removeGuestPlayer,
     reloadAll,
   } = useFutsalData(seasonSlug, { currentPlayerId: currentPlayer?.id, isAdmin });
 
@@ -264,21 +259,16 @@ export default function App() {
 
   /**
    * "Do we have a goalie for this match?" — computed here because it needs the
-   * roster flag, the fixture's RSVPs *and* its stats rows at once. Ad-hoc guests
-   * carry their own status/kept_goal on the row; everyone else is looked up.
+   * roster flag, the fixture's RSVPs *and* its stats rows at once. Everyone,
+   * guests included, is looked up in attendance and stats.
    */
   const keeperSummary = useMemo(
     () =>
       getGoalkeeperSummary(
         allGamePlayers,
         (player) =>
-          (player.type === "ad_hoc_guest"
-            ? player.status
-            : gameAttendance.find((a) => a.player_id === player.id)?.status) ?? null,
-        (player) =>
-          player.type === "ad_hoc_guest"
-            ? !!player.kept_goal
-            : !!gameStats.find((row) => row.player_id === player.id)?.kept_goal
+          gameAttendance.find((a) => a.player_id === player.id)?.status ?? null,
+        (player) => !!gameStats.find((row) => row.player_id === player.id)?.kept_goal
       ),
     [allGamePlayers, gameAttendance, gameStats]
   );
@@ -453,7 +443,6 @@ export default function App() {
           games={sortedFilteredGames}
           attendanceHighlightIds={attendanceHighlightIds}
           attendance={attendance}
-          guestPlayers={guestPlayers}
           gameStatusById={gameStatusById}
           gameFilters={gameFilters}
           onFiltersChange={setGameFilters}
@@ -490,7 +479,6 @@ export default function App() {
                 players={players}
                 attendance={attendance}
                 stats={stats}
-                guestPlayers={guestPlayers}
                 motmVotes={motmVotes}
                 opponentStrengths={opponentStrengths}
                 seasonSlug={seasonSlug}
@@ -541,7 +529,6 @@ export default function App() {
                 fixedPlayers={fixedPlayers}
                 gameAttendance={gameAttendance}
                 gameStats={gameStats}
-                gameGuests={gameGuests}
                 opponentStrengths={opponentStrengths}
                 seasonSlug={seasonSlug}
                 saveFinalScore={saveFinalScore}
@@ -562,9 +549,7 @@ export default function App() {
                     setNewGuestLastName={setNewGuestLastName}
                     addGuestPlayer={addGuestPlayer}
                     gameAttendance={gameAttendance}
-                    saveGuestAttendance={saveGuestAttendance}
                     saveAttendance={saveAttendance}
-                    removeGuestPlayer={removeGuestPlayer}
                     onOpenPlayer={openPlayer}
                     selectedGame={selectedGame}
                     allGames={games}
@@ -582,10 +567,8 @@ export default function App() {
                     allGamePlayers={allGamePlayers}
                     selectedGame={selectedGame}
                     gameStats={gameStats}
-                    gameGuests={gameGuests}
                     gameAttendance={gameAttendance}
                     selectedGameTotals={selectedGameTotals}
-                    saveGuestStat={saveGuestStat}
                     saveStat={saveStat}
                     motmVotes={motmVotes}
                     submitMotmVote={submitMotmVote}
@@ -638,7 +621,6 @@ export default function App() {
             games={games}
             attendance={attendance}
             stats={stats}
-            guestPlayers={guestPlayers}
             players={players}
             motmVotes={motmVotes}
           />

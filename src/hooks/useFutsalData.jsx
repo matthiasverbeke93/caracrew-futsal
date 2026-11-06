@@ -47,7 +47,6 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
   const [players, setPlayers] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [stats, setStats] = useState([]);
-  const [guestPlayers, setGuestPlayers] = useState([]);
   const [selectedGameId, setSelectedGameId] = useState(null);
   const [tab, setTab] = useState("attendance");
   // `?tab=stats` (the stats-chase WhatsApp link) opens the linked game on Game stats.
@@ -96,21 +95,16 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
         gameIds.length > 0
           ? supabase.from("player_stats").select("*").in("game_id", gameIds)
           : Promise.resolve(empty);
-      const guestsPromise =
-        gameIds.length > 0
-          ? supabase.from("guest_players").select("*").in("game_id", gameIds)
-          : Promise.resolve(empty);
       const motmPromise =
         gameIds.length > 0
           ? supabase.from("motm_votes").select("*").in("game_id", gameIds)
           : Promise.resolve(empty);
 
-      const [playersRes, attendanceRes, statsRes, guestsRes, motmRes, strengthsRes] =
+      const [playersRes, attendanceRes, statsRes, motmRes, strengthsRes] =
         await Promise.all([
           supabase.from("players").select("*").order("fixed", { ascending: false }),
           attendancePromise,
           statsPromise,
-          guestsPromise,
           motmPromise,
           supabase.from("opponent_strength").select("*").eq("season_slug", seasonSlug),
         ]);
@@ -118,7 +112,6 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       if (playersRes.error) console.error(playersRes.error);
       if (attendanceRes.error) console.error(attendanceRes.error);
       if (statsRes.error) console.error(statsRes.error);
-      if (guestsRes.error) console.error(guestsRes.error);
       if (motmRes.error) console.error(motmRes.error);
       if (strengthsRes.error) console.error(strengthsRes.error);
 
@@ -128,7 +121,6 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       setPlayers(playersRes.data || []);
       setAttendance(attendanceRes.data || []);
       setStats(statsRes.data || []);
-      setGuestPlayers(guestsRes.data || []);
       setMotmVotes(motmRes.data || []);
       setOpponentStrengths(strengthsRes.data || []);
 
@@ -192,11 +184,6 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     [players]
   );
 
-  const guestPlayersVisible = useMemo(
-    () => guestPlayers.filter((g) => !isHiddenRosterName(g.name)),
-    [guestPlayers]
-  );
-
   const selectedGame = useMemo(
     () => games.find((g) => g.id === selectedGameId),
     [games, selectedGameId]
@@ -245,14 +232,6 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     () => stats.filter((s) => s.game_id === selectedGameId),
     [stats, selectedGameId]
   );
-  const selectedGameGuests = useMemo(
-    () => guestPlayersVisible.filter((g) => g.game_id === selectedGameId),
-    [guestPlayersVisible, selectedGameId]
-  );
-  const adHocGameGuests = useMemo(
-    () => selectedGameGuests.filter((g) => !g.source_player_id),
-    [selectedGameGuests]
-  );
   const selectedGameTotals = useMemo(
     () => ({
       goals: selectedGame?.home_score ?? null,
@@ -274,56 +253,43 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
           ...player,
           type: player.isGuest ? "guest" : "fixed",
         })),
-      ...adHocGameGuests.map((player) => ({ ...player, type: "ad_hoc_guest" })),
     ];
-  }, [adHocGameGuests, gameAttendance, gameStats, sortedPlayersWithRole]);
+  }, [gameAttendance, gameStats, sortedPlayersWithRole]);
 
   const counts = useMemo(() => {
-    let rosterPlaying = 0;
-    let rosterCant = 0;
-    let rosterIfNeeded = 0;
-    let fixedAttendanceCount = 0;
+    // Roster = fixed players; guests = everyone else with an RSVP (non-fixed players,
+    // added via "Add guest"). Split so the nudge's roster tally adds up to the roster
+    // size — before 2026-11-06 guests were counted as roster here.
     const fixedIds = new Set(fixedPlayers.map((p) => p.id));
+    const blank = () => ({ playing: 0, cant: 0, if_needed: 0, total: 0 });
+    const roster = blank();
+    const guest = blank();
     for (const a of gameAttendance) {
-      if (fixedIds.has(a.player_id)) fixedAttendanceCount += 1;
-      if (a.status === "playing") rosterPlaying += 1;
-      else if (a.status === "cant") rosterCant += 1;
-      else if (a.status === "if_needed") rosterIfNeeded += 1;
-    }
-
-    let guestPlaying = 0;
-    let guestCant = 0;
-    let guestIfNeeded = 0;
-    for (const g of selectedGameGuests) {
-      if (g.status === "playing") guestPlaying += 1;
-      else if (g.status === "cant") guestCant += 1;
-      else if (g.status === "if_needed") guestIfNeeded += 1;
+      const bucket = fixedIds.has(a.player_id) ? roster : guest;
+      bucket.total += 1;
+      if (a.status in bucket) bucket[a.status] += 1;
     }
 
     return {
-      playing: rosterPlaying + guestPlaying,
-      cant: rosterCant + guestCant,
-      if_needed: rosterIfNeeded + guestIfNeeded,
-      missing: Math.max(fixedPlayers.length - fixedAttendanceCount, 0),
-      guests: selectedGameGuests.length,
-      // The totals above mix roster and guests, which is what the summary bar wants but
-      // makes a tally that cannot be reconciled against the roster size (`missing` is
-      // fixed-players-only). Anything that shows the two side by side — the WhatsApp
-      // nudge — needs them split out.
+      playing: roster.playing + guest.playing,
+      cant: roster.cant + guest.cant,
+      if_needed: roster.if_needed + guest.if_needed,
+      missing: Math.max(fixedPlayers.length - roster.total, 0),
+      guests: guest.total,
       roster: {
         size: fixedPlayers.length,
-        playing: rosterPlaying,
-        if_needed: rosterIfNeeded,
-        cant: rosterCant,
+        playing: roster.playing,
+        if_needed: roster.if_needed,
+        cant: roster.cant,
       },
       guestBreakdown: {
-        total: selectedGameGuests.length,
-        playing: guestPlaying,
-        if_needed: guestIfNeeded,
-        cant: guestCant,
+        total: guest.total,
+        playing: guest.playing,
+        if_needed: guest.if_needed,
+        cant: guest.cant,
       },
     };
-  }, [fixedPlayers, gameAttendance, selectedGameGuests]);
+  }, [fixedPlayers, gameAttendance]);
 
   const gameStatusById = useMemo(() => {
     const statusMap = {};
@@ -335,44 +301,27 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
 
     for (const game of games) {
       const gameAttendanceRows = attendance.filter((row) => row.game_id === game.id);
-      const gameGuestRows = guestPlayersVisible.filter((row) => row.game_id === game.id);
       const gameStatsRows = stats.filter((row) => row.game_id === game.id);
-      // Rows marked "did not play" are not counted as recorded — same rule as the
-      // stats chase (utils/statsChase.js), so the pill and the chase agree.
-      const recordedStatsRows = gameStatsRows.filter(hasRecordedStats);
-      // Guest rows carry their own goals/assists, so they count toward the scoreline
-      // (as the stats-chase nudge already does) and each In guest is "recorded" by its
-      // own row. Leaving them out kept "Stats missing" on forever for any game with a guest.
-      const playingGuestRows = gameGuestRows.filter((row) => row.status === "playing");
-      const actualGoals =
-        gameStatsRows.reduce((sum, row) => sum + (row.goals || 0), 0) +
-        gameGuestRows.reduce((sum, row) => sum + (row.goals || 0), 0);
-      const actualAssists =
-        gameStatsRows.reduce((sum, row) => sum + (row.assists || 0), 0) +
-        gameGuestRows.reduce((sum, row) => sum + (row.assists || 0), 0);
-      const playingCount =
-        gameAttendanceRows.filter((row) => row.status === "playing").length +
-        playingGuestRows.length;
+      const actualGoals = gameStatsRows.reduce((sum, row) => sum + (row.goals || 0), 0);
+      const actualAssists = gameStatsRows.reduce((sum, row) => sum + (row.assists || 0), 0);
+      const playingRows = gameAttendanceRows.filter((row) => row.status === "playing");
+      const playingCount = playingRows.length;
+      // Someone In without a usable stats row — same rule as the stats chase
+      // (utils/statsChase.js), so the pill and the chase agree.
+      const someoneOwesStats = playingRows.some(
+        (a) => !hasRecordedStats(gameStatsRows.find((row) => row.player_id === a.player_id))
+      );
       const played = isPlayed(game);
       const scoreTarget = game.home_score;
       const hasScoreTarget = scoreTarget !== null && scoreTarget !== undefined;
       const statsMissing =
-        played &&
-        (recordedStatsRows.length + playingGuestRows.length < playingCount ||
-          !hasScoreTarget ||
-          actualGoals < scoreTarget);
+        played && (someoneOwesStats || !hasScoreTarget || actualGoals < scoreTarget);
 
       // A keeper only counts once they are actually In. `keeperUnknown` keeps the
       // check quiet when nobody is flagged as a keeper at all — that is a missing
       // setting, not a missing goalie.
       const keeperIn =
-        keeperIds.size > 0 &&
-        (gameAttendanceRows.some(
-          (row) => row.status === "playing" && keeperIds.has(row.player_id)
-        ) ||
-          gameGuestRows.some(
-            (row) => row.status === "playing" && keeperIds.has(row.source_player_id)
-          ));
+        keeperIds.size > 0 && playingRows.some((row) => keeperIds.has(row.player_id));
 
       let playerReadiness = "players_right";
       if (playingCount <= 5) playerReadiness = "players_not_enough";
@@ -395,7 +344,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     }
 
     return statusMap;
-  }, [attendance, games, guestPlayersVisible, playersWithRole, stats]);
+  }, [attendance, games, playersWithRole, stats]);
 
   const filteredGames = useMemo(() => {
     if (!gameFilters.length) return games;
@@ -544,34 +493,6 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     }
   }
 
-  async function saveGuestAttendance(playerId, status) {
-    if (!isAttendanceEditable(selectedGame, games)) return;
-    if (!isAdmin) return;
-    const currentGuestStatus = selectedGameGuests.find((g) => g.id === playerId)?.status ?? null;
-    if (
-      isGameFull(gameStatusById[selectedGameId]?.playingCount) &&
-      !isRsvpAllowedWhenFull(currentGuestStatus, status ?? null)
-    ) {
-      return;
-    }
-    const updated_at = new Date().toISOString();
-    const snapshot = guestPlayers;
-    setGuestPlayers((prev) =>
-      prev.map((g) => (g.id === playerId ? { ...g, status, updated_at } : g))
-    );
-    const { data, error } = await supabase
-      .from("guest_players")
-      .update({ status, updated_at })
-      .eq("id", playerId)
-      .select();
-    if (error || !data?.length) {
-      console.error(error);
-      setGuestPlayers(snapshot);
-      notify(`Couldn't save guest attendance — ${SAVE_FAILED_HINT}`, "error");
-      loadAll();
-    }
-  }
-
   /**
    * Stat writes for one row run one after another, and only the newest may roll back.
    * Without this, two quick edits could commit out of order (the DB keeps the older
@@ -644,33 +565,6 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
         console.error(error);
         setStats(snapshot);
         notify(`Couldn't save stats — ${SAVE_FAILED_HINT}`, "error");
-        loadAll();
-      }
-    });
-  }
-
-  async function saveGuestStat(playerId, field, value) {
-    if (!isAdmin) return;
-    const existing = selectedGameGuests.find((g) => g.id === playerId);
-    const goals = field === "goals" ? toStatCount(value) : existing?.goals || 0;
-    const assists = field === "assists" ? toStatCount(value) : existing?.assists || 0;
-    const kept_goal =
-      field === "kept_goal" ? Boolean(value) : Boolean(existing?.kept_goal);
-    const updated_at = new Date().toISOString();
-    const snapshot = guestPlayers;
-    setGuestPlayers((prev) =>
-      prev.map((g) => (g.id === playerId ? { ...g, goals, assists, kept_goal, updated_at } : g))
-    );
-    await queueStatWrite(`guest:${playerId}`, async (isLatest) => {
-      const { data, error } = await supabase
-        .from("guest_players")
-        .update({ goals, assists, kept_goal, updated_at })
-        .eq("id", playerId)
-        .select();
-      if ((error || !data?.length) && isLatest()) {
-        console.error(error);
-        setGuestPlayers(snapshot);
-        notify(`Couldn't save guest stats — ${SAVE_FAILED_HINT}`, "error");
         loadAll();
       }
     });
@@ -805,24 +699,6 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     return {};
   }
 
-  async function removeGuestPlayer(playerId) {
-    if (!isAttendanceEditable(selectedGame, games)) return;
-    if (!isAdmin) return;
-    const snapshot = guestPlayers;
-    setGuestPlayers((prev) => prev.filter((g) => g.id !== playerId));
-    const { data, error } = await supabase
-      .from("guest_players")
-      .delete()
-      .eq("id", playerId)
-      .select();
-    if (error || !data?.length) {
-      console.error(error);
-      setGuestPlayers(snapshot);
-      notify(`Couldn't remove guest — ${SAVE_FAILED_HINT}`, "error");
-      loadAll();
-    }
-  }
-
   return {
     games,
     filteredGames,
@@ -853,18 +729,13 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
     gameStats,
     // The fixture's guest rows — guests carry their own goals/assists, so anything that
     // reconciles a scoreline needs them alongside `gameStats`.
-    gameGuests: selectedGameGuests,
     stats,
     selectedGameTotals,
     counts,
-    guestPlayers: guestPlayersVisible,
     saveAttendance,
-    saveGuestAttendance,
     saveStat,
-    saveGuestStat,
     saveFinalScore,
     submitMotmVote,
     addGuestPlayer,
-    removeGuestPlayer,
   };
 }

@@ -120,7 +120,7 @@ export function countPlayerMotmWins(playerId, games, votes, nowMs = Date.now()) 
  * Who can be nominated for player of the match.
  *
  * Two filters, both deliberate:
- * - **Roster only.** Guests (`guest` / `ad_hoc_guest`) never appear on the ballot,
+ * - **Roster only.** Guests (non-fixed players) never appear on the ballot,
  *   whether or not they turned up — MotM is a club award.
  * - **RSVP'd "In".** Only players who actually answered `playing` for this fixture.
  *   `if_needed` and `cant` are not "playing", and a blank RSVP means we have no

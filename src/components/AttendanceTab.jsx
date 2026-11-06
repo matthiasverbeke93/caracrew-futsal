@@ -18,9 +18,7 @@ export default function AttendanceTab({
   setNewGuestLastName,
   addGuestPlayer,
   gameAttendance,
-  saveGuestAttendance,
   saveAttendance,
-  removeGuestPlayer,
   onOpenPlayer,
   selectedGame,
   allGames,
@@ -49,9 +47,7 @@ export default function AttendanceTab({
 
   function statusOf(player) {
     return (
-      (player.type === "ad_hoc_guest"
-        ? player.status
-        : gameAttendance.find((a) => a.player_id === player.id)?.status) ?? null
+      gameAttendance.find((a) => a.player_id === player.id)?.status ?? null
     );
   }
 
@@ -77,10 +73,7 @@ export default function AttendanceTab({
 
   function renderPlayerCard(player) {
     const current = statusOf(player);
-    const isAdHoc = player.type === "ad_hoc_guest";
-    const rowEditable =
-      attendanceOpen &&
-      (isAdHoc ? canManageGame : canEditAttendanceFor(player.id));
+    const rowEditable = attendanceOpen && canEditAttendanceFor(player.id);
 
     return (
       <div
@@ -99,16 +92,6 @@ export default function AttendanceTab({
               </span>
             )}
           </strong>
-          {isAdHoc && (
-            <button
-              className="remove-player-button"
-              onClick={() => removeGuestPlayer(player.id)}
-              disabled={!canManageGame || !attendanceOpen}
-              title={!canManageGame ? "Admin only" : ""}
-            >
-              Remove
-            </button>
-          )}
         </div>
 
         {ATTENDANCE_OPTIONS.map((option) => {
@@ -124,17 +107,13 @@ export default function AttendanceTab({
               title={
                 !rowEditable ? disabledTitle(player) : fullTitle(current, option.value)
               }
-              onClick={() =>
-                isAdHoc
-                  ? saveGuestAttendance(player.id, option.value)
-                  : saveAttendance(player.id, option.value)
-              }
+              onClick={() => saveAttendance(player.id, option.value)}
             >
               {option.label}
             </button>
           );
         })}
-        {!isAdHoc && rowEditable && current && optionAllowed(current, null) && (
+        {rowEditable && current && optionAllowed(current, null) && (
           <button
             type="button"
             className="attendance-clear-rsvp"

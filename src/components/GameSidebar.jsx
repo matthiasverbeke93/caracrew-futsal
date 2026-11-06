@@ -214,7 +214,6 @@ export default function GameSidebar({
   games,
   attendanceHighlightIds,
   attendance,
-  guestPlayers,
   gameStatusById,
   gameFilters,
   onFiltersChange,
@@ -286,9 +285,8 @@ export default function GameSidebar({
       else if (status === "if_needed") c.ifNeeded += 1;
     };
     for (const row of attendance) bump(row.game_id, row.status);
-    for (const row of guestPlayers) bump(row.game_id, row.status);
     return m;
-  }, [attendance, guestPlayers]);
+  }, [attendance]);
 
   /**
    * The match whose stats still need completing is the one that just happened — but "All"

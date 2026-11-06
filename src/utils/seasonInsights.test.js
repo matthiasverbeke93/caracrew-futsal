@@ -23,15 +23,19 @@ describe("buildPlayersPerGameSeries", () => {
     { game_id: "gA", player_id: "3", played: false }, // excluded
     { game_id: "gB", player_id: "1", played: true },
     { game_id: "gFuture", player_id: "1", played: true }, // future game excluded
+    { game_id: "gA", player_id: "g", played: true }, // non-fixed player => guest
+    { game_id: "gA", player_id: "h", played: false }, // guest marked not played => excluded
   ];
-  const guests = [
-    { game_id: "gA", status: "playing" }, // counts as a guest
-    { game_id: "gA", status: "cant" }, // excluded
-    { game_id: "gFuture", status: "playing" }, // future game excluded
+  const players = [
+    { id: "1", fixed: true },
+    { id: "2", fixed: true },
+    { id: "3", fixed: true },
+    { id: "g", fixed: false },
+    { id: "h", fixed: false },
   ];
 
   it("splits roster/guests per played fixture in date order (future dropped)", () => {
-    const series = buildPlayersPerGameSeries(games, stats, guests);
+    const series = buildPlayersPerGameSeries(games, stats, players);
     expect(series.map((s) => s.id)).toEqual(["gA", "gB"]);
     expect(series.map((s) => s.roster)).toEqual([2, 1]);
     expect(series.map((s) => s.guests)).toEqual([1, 0]);

@@ -247,7 +247,6 @@ export default function SeasonOverviewPage({
   players,
   attendance,
   stats,
-  guestPlayers = [],
   motmVotes = [],
   opponentStrengths = [],
   seasonSlug,
@@ -318,8 +317,8 @@ export default function SeasonOverviewPage({
   const monthly = useMemo(() => buildMonthlyTeamGaSeries(games, stats), [games, stats]);
 
   const playersPerGame = useMemo(
-    () => buildPlayersPerGameSeries(games, stats, guestPlayers),
-    [games, stats, guestPlayers]
+    () => buildPlayersPerGameSeries(games, stats, players),
+    [games, stats, players]
   );
 
   const summary = useMemo(() => seasonPlayedSummary(games, stats), [games, stats]);

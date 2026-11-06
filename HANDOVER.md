@@ -407,6 +407,15 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-11-06** — *Stats chase skipped In players whose row says "did not play".*
+  - Reported on ZVC Tigers (2026-11-05): Cédric was In but missing from `Chase stats`. His `player_stats`
+    row existed with `played = false`, 0/0 — the Played box unticked — and the chase counted *any* row as done.
+  - New `utils/statsChase.js` (`playersOwingStats`, `hasRecordedStats`, with tests): an In roster player owes
+    stats unless they have a row with `played !== false`. Used by the chase **and** the sidebar `Stats missing`
+    pill, so they agree. If someone really sat out, set their RSVP to Out to stop the chase.
+  - Still by design: the chase only covers fixed players; non-fixed pool players (e.g. Maarten, Brandon) are not
+    named, though the pill does count them.
+  - Verified: lint clean, 376 tests pass, build clean. Not eyeballed in a browser.
 - **2026-10-07 (kickoff-gated windows + final-score validation)** — From a code review:
   - **Match day turns on kickoff, not midnight.** `hasKickedOff` moved from `hooks/useMatchClock.js` (still
     re-exported there) into `utils/game.js`. `isStatsEditable` now needs kickoff to have passed (it used to

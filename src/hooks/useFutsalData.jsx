@@ -11,6 +11,7 @@ import {
   parseFinalScore,
 } from "../utils/game";
 import { useToast } from "./useToast.jsx";
+import { hasRecordedStats } from "../utils/statsChase";
 
 /** Shown when an optimistic write fails and we roll the UI back. */
 const SAVE_FAILED_HINT = "check your connection and try again.";
@@ -336,6 +337,9 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       const gameAttendanceRows = attendance.filter((row) => row.game_id === game.id);
       const gameGuestRows = guestPlayersVisible.filter((row) => row.game_id === game.id);
       const gameStatsRows = stats.filter((row) => row.game_id === game.id);
+      // Rows marked "did not play" are not counted as recorded — same rule as the
+      // stats chase (utils/statsChase.js), so the pill and the chase agree.
+      const recordedStatsRows = gameStatsRows.filter(hasRecordedStats);
       // Guest rows carry their own goals/assists, so they count toward the scoreline
       // (as the stats-chase nudge already does) and each In guest is "recorded" by its
       // own row. Leaving them out kept "Stats missing" on forever for any game with a guest.
@@ -354,7 +358,7 @@ export function useFutsalData(seasonSlug, { currentPlayerId, isAdmin } = {}) {
       const hasScoreTarget = scoreTarget !== null && scoreTarget !== undefined;
       const statsMissing =
         played &&
-        (gameStatsRows.length + playingGuestRows.length < playingCount ||
+        (recordedStatsRows.length + playingGuestRows.length < playingCount ||
           !hasScoreTarget ||
           actualGoals < scoreTarget);
 

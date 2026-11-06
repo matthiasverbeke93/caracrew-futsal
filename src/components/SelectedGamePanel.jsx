@@ -18,6 +18,7 @@ import {
   formatMatchHeaderDateTime,
 } from "../utils/formatMatch";
 import { goalkeeperNames } from "../utils/goalkeeper";
+import { playersOwingStats } from "../utils/statsChase";
 import { getHeadToHeadSummary } from "../utils/headToHead";
 import { focusInitialMenuItem, handleMenuArrowKeys } from "../utils/menuNav";
 import { cleanOpponentName } from "../utils/opponent";
@@ -204,11 +205,11 @@ export default function SelectedGamePanel({
 
   // Who played and still owes goals/assists. Roster only — a guest's stats are admin-entered
   // (`saveGuestStat`), so there is nobody in the group chat to chase for them.
-  const playedRoster = (fixedPlayers || []).filter((p) =>
-    (gameAttendance || []).some((a) => a.player_id === p.id && a.status === "playing")
-  );
-  const owingStats = playedRoster.filter(
-    (p) => !(gameStats || []).some((row) => row.player_id === p.id)
+  // A row marked "did not play" does not count as done for someone who was In.
+  const { playedRoster, owing: owingStats } = playersOwingStats(
+    fixedPlayers,
+    gameAttendance,
+    gameStats
   );
   const canChaseStats = played && canManageGame && owingStats.length > 0;
 

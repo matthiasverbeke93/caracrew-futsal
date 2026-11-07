@@ -94,15 +94,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-11-05-2100-zvc-tigers@caracrew.org
-DTSTAMP:20261106T130948Z
-SEQUENCE:6
-LAST-MODIFIED:20261106T130948Z
+DTSTAMP:20261107T115257Z
+SEQUENCE:7
+LAST-MODIFIED:20261107T115257Z
 DTSTART;TZID=Europe/Brussels:20261105T210000
 DTEND;TZID=Europe/Brussels:20261105T220000
 SUMMARY:K. Caracrew SK vs ZVC Tigers
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs ZVC Tigers\nVenue: Winke
- tkaai Mechelen\nOpponent form: Very hard — position 2\, 3.00 pts/match\n
+ tkaai Mechelen\nOpponent form: Very hard — position 2\, 2.70 pts/match\n
  Result: 4–4 (D\, K. Caracrew SK first)\n\nMatch page: https://caracrew.o
  rg/?game=2627-2026-11-05-2100-zvc-tigers&season=2627
 URL:https://caracrew.org/?game=2627-2026-11-05-2100-zvc-tigers&season=2627
@@ -411,15 +411,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-05-04-2100-zvc-tigers@caracrew.org
-DTSTAMP:20261026T112639Z
-SEQUENCE:5
-LAST-MODIFIED:20261026T112639Z
+DTSTAMP:20261107T115257Z
+SEQUENCE:6
+LAST-MODIFIED:20261107T115257Z
 DTSTART;TZID=Europe/Brussels:20270504T210000
 DTEND;TZID=Europe/Brussels:20270504T220000
 SUMMARY:ZVC Tigers vs K. Caracrew SK
 LOCATION:Heiveld St-Katelijne-Waver
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at ZVC Tigers\nVenue: Heive
- ld St-Katelijne-Waver\nOpponent form: Very hard — position 2\, 3.00 pts/
+ ld St-Katelijne-Waver\nOpponent form: Very hard — position 2\, 2.70 pts/
  match\n\nMatch page: https://caracrew.org/?game=2627-2027-05-04-2100-zvc-t
  igers&season=2627
 URL:https://caracrew.org/?game=2627-2027-05-04-2100-zvc-tigers&season=2627

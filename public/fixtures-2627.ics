@@ -200,15 +200,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-12-17-2100-04united@caracrew.org
-DTSTAMP:20261109T141401Z
-SEQUENCE:9
-LAST-MODIFIED:20261109T141401Z
+DTSTAMP:20261111T125410Z
+SEQUENCE:10
+LAST-MODIFIED:20261111T125410Z
 DTSTART;TZID=Europe/Brussels:20261217T210000
 DTEND;TZID=Europe/Brussels:20261217T220000
 SUMMARY:K. Caracrew SK vs 04United
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs 04United\nVenue: Winketk
- aai Mechelen\nOpponent form: Medium — position 7\, 1.30 pts/match\n\nMat
+ aai Mechelen\nOpponent form: Medium — position 7\, 1.10 pts/match\n\nMat
  ch page: https://caracrew.org/?game=2627-2026-12-17-2100-04united&season=2
  627
 URL:https://caracrew.org/?game=2627-2026-12-17-2100-04united&season=2627
@@ -235,15 +235,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-01-14-2100-fc-tripel@caracrew.org
-DTSTAMP:20261102T134542Z
-SEQUENCE:6
-LAST-MODIFIED:20261102T134542Z
+DTSTAMP:20261111T125410Z
+SEQUENCE:7
+LAST-MODIFIED:20261111T125410Z
 DTSTART;TZID=Europe/Brussels:20270114T210000
 DTEND;TZID=Europe/Brussels:20270114T220000
 SUMMARY:K. Caracrew SK vs FC Tripel
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs FC Tripel\nVenue: Winket
- kaai Mechelen\nOpponent form: Hard — position 4\, 2.40 pts/match\n\nMatc
+ kaai Mechelen\nOpponent form: Hard — position 4\, 2.50 pts/match\n\nMatc
  h page: https://caracrew.org/?game=2627-2027-01-14-2100-fc-tripel&season=2
  627
 URL:https://caracrew.org/?game=2627-2027-01-14-2100-fc-tripel&season=2627
@@ -394,15 +394,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-04-24-1930-fc-tripel@caracrew.org
-DTSTAMP:20261102T134542Z
-SEQUENCE:6
-LAST-MODIFIED:20261102T134542Z
+DTSTAMP:20261111T125410Z
+SEQUENCE:7
+LAST-MODIFIED:20261111T125410Z
 DTSTART;TZID=Europe/Brussels:20270424T193000
 DTEND;TZID=Europe/Brussels:20270424T203000
 SUMMARY:FC Tripel vs K. Caracrew SK
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at FC Tripel\nVenue: Winket
- kaai Mechelen\nOpponent form: Hard — position 4\, 2.40 pts/match\n\nMatc
+ kaai Mechelen\nOpponent form: Hard — position 4\, 2.50 pts/match\n\nMatc
  h page: https://caracrew.org/?game=2627-2027-04-24-1930-fc-tripel&season=2
  627
 URL:https://caracrew.org/?game=2627-2027-04-24-1930-fc-tripel&season=2627
@@ -428,15 +428,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-05-09-2000-04united@caracrew.org
-DTSTAMP:20261109T141401Z
-SEQUENCE:9
-LAST-MODIFIED:20261109T141401Z
+DTSTAMP:20261111T125410Z
+SEQUENCE:10
+LAST-MODIFIED:20261111T125410Z
 DTSTART;TZID=Europe/Brussels:20270509T200000
 DTEND;TZID=Europe/Brussels:20270509T210000
 SUMMARY:04United vs K. Caracrew SK
 LOCATION:IHAM Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at 04United\nVenue: IHAM Me
- chelen\nOpponent form: Medium — position 7\, 1.30 pts/match\n\nMatch pag
+ chelen\nOpponent form: Medium — position 7\, 1.10 pts/match\n\nMatch pag
  e: https://caracrew.org/?game=2627-2027-05-09-2000-04united&season=2627
 URL:https://caracrew.org/?game=2627-2027-05-09-2000-04united&season=2627
 CATEGORIES:K. Caracrew SK,Futsal

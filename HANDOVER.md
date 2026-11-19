@@ -428,7 +428,8 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
     feeds carry the fix; a last `Notify on fixture changes` step fails the job when `applied != 0` or something
     was left for a human. Without `--apply` the script behaves as before.
   - **Verified:** mock PostgREST + doctored feed exercised update, move, insert and delete (exact requests
-    checked); live CI rehearsal described in the commit/next entry.
+    checked). Live CI rehearsal: a fake game (`2627-2027-06-30-2100-rehearsal-ignore`) inserted via MCP, push run
+    44551462591 deleted it and failed on purpose (`Changed 1 fixture(s)`); next run 44551588335 green.
 - **2026-11-06 (b)** — *Teammates fill in each other's goals; on-time scores count own saves only; old guest table dropped.*
   - **Why:** a usage review of 26-27 found goals regularly short of the score (ZVC Tigers: 2 of 4) and the
     stragglers' stats entered by an admin after the 2-day lock. The owner chose to let teammates fill gaps,

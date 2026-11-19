@@ -41,6 +41,24 @@ jobs:
         with:
           node-version: "24"
 
+      # FIRST, so today's feeds already carry the fix. Diffs LZV's live feed against `games` and fixes
+      # what is safe by itself (owner, 2026-11-19): same-day time/hall changes in place (RSVPs kept),
+      # a new date as a fresh row (RSVPs cleared), new fixtures added, ONE vanished upcoming fixture
+      # deleted (postponed). Played/past games, several vanishing at once, and ambiguous matches are
+      # left for a human with the SQL in the job summary. Before 2026-11-19 this step was read-only
+      # and ran last — see HANDOVER.md 2026-09-04 for why the check exists at all.
+      # continue-on-error so the feeds still regenerate; the last step turns it back into a failure.
+      - name: Fix LZV fixture drift
+        id: drift
+        continue-on-error: true
+        run: node scripts/check-lzv-drift.mjs --apply
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          LZV_SEASON_SLUG: ${{ vars.LZV_SEASON_SLUG || '2627' }}
+          LZV_OUR_TEAM_ID: ${{ vars.LZV_OUR_TEAM_ID || '742' }}
+
       - name: Generate calendar feeds
         run: node scripts/gen-ics.mjs
         env:
@@ -64,16 +82,18 @@ jobs:
             git push
           fi
 
-      # LAST, and allowed to fail the job. The steps above only re-render `games` into .ics; they
-      # cannot notice that LZV has MOVED a fixture, because the move never reached `games`. That is
-      # how fixture 1 of 26-27 kept 7 RSVPs for the wrong hall at the wrong hour until two days
-      # before kickoff (see HANDOVER.md, 2026-09-04). This step diffs LZV's live feed against
-      # `games` and fails with the fix-up SQL in the job summary. It is read-only on purpose — a
-      # withdrawn club is not a decision for a cron job, so a human runs the SQL.
-      - name: Check LZV for fixture drift
-        run: node scripts/check-lzv-drift.mjs
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          LZV_SEASON_SLUG: ${{ vars.LZV_SEASON_SLUG || '2627' }}
-          LZV_OUR_TEAM_ID: ${{ vars.LZV_OUR_TEAM_ID || '742' }}
+      # Fails on purpose when the drift step changed a fixture or left one for a human: the failed-run
+      # email is the owner's notification (they asked for GitHub email, 2026-11-19). The job summary
+      # says what was changed and what is left.
+      - name: Notify on fixture changes
+        if: always()
+        run: |
+          if [ "${{ steps.drift.outcome }}" = "failure" ]; then
+            echo "::error::Fixture drift left for a human (or the check failed) — see the job summary."
+            exit 1
+          fi
+          if [ "${{ steps.drift.outputs.applied }}" != "" ] && [ "${{ steps.drift.outputs.applied }}" != "0" ]; then
+            echo "::error::Changed ${{ steps.drift.outputs.applied }} fixture(s) automatically — see the job summary."
+            exit 1
+          fi
+          echo "No fixture changes."

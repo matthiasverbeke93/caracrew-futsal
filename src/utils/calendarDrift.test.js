@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diffFixtures, driftSql, formatDriftReport, hasDrift } from "./calendarDrift.js";
+import { describeAction, diffFixtures, driftSql, formatDriftReport, hasDrift, manualDiff, planAutoFix } from "./calendarDrift.js";
 
 /** A `games`/feed row. Defaults describe a home fixture so `isHomeFromTitle` can read it. */
 function row(overrides = {}) {
@@ -195,5 +195,56 @@ describe("formatDriftReport", () => {
     const report = formatDriftReport(diffFixtures([moved], [away]), { seasonSlug: "2627" });
     expect(report).toContain("2026-09-06 21:00 vs VT 09");
     expect(report).toContain("time 21:00 → 20:00");
+  });
+});
+
+describe("planAutoFix", () => {
+  const today = "2026-09-01";
+
+  it("updates a same-day time/hall change in place, keeping the id (and so the RSVPs)", () => {
+    const moved = { ...away, id: "2627-2026-09-06-2000-vt-09", game_time: "20:00:00", location: "IHAM Mechelen" };
+    const { actions, manual } = planAutoFix(diffFixtures([moved], [away]), { today });
+    expect(manual).toEqual([]);
+    expect(actions).toHaveLength(1);
+    expect(actions[0]).toMatchObject({ kind: "update", id: away.id, set: { game_time: "20:00:00", location: "IHAM Mechelen" } });
+    expect(describeAction(actions[0])).toContain("RSVPs kept");
+  });
+
+  it("moves a fixture with a new date to its feed id, so the old row and its RSVPs go", () => {
+    const rescheduled = { ...row(), id: "2627-2026-09-26-2100-vv-schemerboyz", game_date: "2026-09-26", is_home: true };
+    const { actions } = planAutoFix(diffFixtures([rescheduled], [row()]), { today });
+    expect(actions[0]).toMatchObject({ kind: "move", oldId: row().id });
+    expect(actions[0].insert.id).toBe(rescheduled.id);
+    expect(actions[0].insert).not.toHaveProperty("is_home");
+  });
+
+  it("adds a fixture games has never seen", () => {
+    const extra = row({ id: "2627-2027-02-27-2030-fc-de-wandelgang", opponent: "FC De Wandelgang", game_date: "2027-02-27", title: "FC De Wandelgang vs K. Caracrew SK" });
+    const { actions } = planAutoFix(diffFixtures([row(), extra], [row()]), { today });
+    expect(actions).toEqual([{ kind: "insert", insert: expect.objectContaining({ id: extra.id }) }]);
+  });
+
+  it("deletes one upcoming, unplayed fixture that vanished (the 2026-11-19 postponement)", () => {
+    const { actions, manual } = planAutoFix(diffFixtures([row()], [row(), away]), { today });
+    expect(manual).toEqual([]);
+    expect(actions).toEqual([expect.objectContaining({ kind: "delete", id: away.id })]);
+  });
+
+  it("never deletes or moves a played or past fixture — the FKs would cascade away the result", () => {
+    const played = planAutoFix(diffFixtures([row()], [row(), away]), { today, playedIds: new Set([away.id]) });
+    expect(played.actions).toEqual([]);
+    expect(played.manual[0].reason).toMatch(/played/);
+
+    const past = planAutoFix(diffFixtures([row()], [row(), away]), { today: "2026-10-01" });
+    expect(past.actions).toEqual([]);
+    expect(past.manual[0].reason).toMatch(/past/);
+  });
+
+  it("deletes nothing when several fixtures vanish at once", () => {
+    const third = row({ id: "2627-2026-10-08-2100-oranje-duivels", opponent: "Oranje Duivels", game_date: "2026-10-08", title: "K. Caracrew SK vs Oranje Duivels" });
+    const { actions, manual } = planAutoFix(diffFixtures([row()], [row(), away, third]), { today });
+    expect(actions).toEqual([]);
+    expect(manual).toHaveLength(2);
+    expect(hasDrift(manualDiff(manual))).toBe(true);
   });
 });

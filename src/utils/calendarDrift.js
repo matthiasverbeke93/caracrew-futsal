@@ -6,9 +6,10 @@
  * every job reported success and the team kept its RSVPs for the wrong hall at the wrong hour.
  * This module is the missing check: run it in CI, fail loudly, hand back the SQL to fix it.
  *
- * It cannot fix anything itself — the anon key cannot write to `games` (RLS: admin/service-role) —
- * and that is deliberate. A calendar change can mean "moved to Thursday" or "opponent withdrew and
- * their fixtures are being redistributed"; the second is not something a cron job should apply.
+ * Since 2026-11-19 the daily job fixes the safe cases itself (`planAutoFix`, applied by
+ * `scripts/check-lzv-drift.mjs --apply` with the service-role key). What a cron job should not
+ * decide — played or past games, several fixtures vanishing at once (a withdrawn club looks like
+ * that), ambiguous matches — still comes back as SQL for a human (`driftSql`).
  */
 
 import { isHomeFromTitle, slugifyOpponent, sqlLiteral } from "./lzvCalendar.js";
@@ -204,4 +205,80 @@ export function formatDriftReport(diff, { seasonSlug = "", feedUrl = "" } = {}) 
     lines.push("");
   }
   return lines.join("\n");
+}
+
+/** The columns a `games` insert may carry — feed rows also hold `is_home`, which is not a column. */
+const INSERT_COLUMNS = ["id", "season_slug", "opponent", "game_date", "game_time", "location", "title"];
+
+export function gameInsertRow(feed) {
+  return Object.fromEntries(INSERT_COLUMNS.map((c) => [c, feed[c] ?? null]));
+}
+
+/**
+ * Decide which drift the daily job may fix by itself (owner, 2026-11-19), and what is left for a human.
+ *
+ *   - same date, new time / hall / name → `update` in place, RSVPs stay
+ *   - new date                          → `move`: insert the feed's row, delete the old one; the RSVPs go
+ *                                         with the old row so the team answers again for the new date
+ *   - new in the feed                   → `insert`
+ *   - gone from the feed                → `delete` (postponed; the new date arrives later as an insert)
+ *
+ * Guards, each of which leaves the item in `manual` with a reason:
+ *   - a played game (`playedIds`: has a score, stats or MOTM votes) is never moved or deleted — the
+ *     FKs cascade, so that would wipe a result
+ *   - a game before `today` is never moved or deleted
+ *   - more than one game gone at once looks like a broken feed or a withdrawn club — none deleted
+ */
+export function planAutoFix(diff, { today, playedIds = new Set() } = {}) {
+  const actions = [];
+  const manual = [];
+  const untouchable = (db) =>
+    playedIds.has(db.id) ? "already played (score, stats or MOTM votes)" : db.game_date < today ? "in the past" : null;
+
+  for (const item of diff.changed) {
+    const { db, feed, changes } = item;
+    if (!changes.some((c) => c.field === "game_date")) {
+      const set = Object.fromEntries(changes.filter((c) => UPDATABLE.includes(c.field)).map((c) => [c.field, c.to]));
+      actions.push({ kind: "update", id: db.id, set, db, changes });
+      continue;
+    }
+    const why = untouchable(db);
+    if (why) manual.push({ kind: "changed", item, reason: `new date, but ${why}` });
+    else actions.push({ kind: "move", oldId: db.id, insert: gameInsertRow(feed), db, changes });
+  }
+
+  for (const feed of diff.added) actions.push({ kind: "insert", insert: gameInsertRow(feed) });
+
+  if (diff.removed.length > 1) {
+    for (const db of diff.removed) {
+      manual.push({ kind: "removed", db, reason: `${diff.removed.length} games gone at once — broken feed or withdrawn club?` });
+    }
+  } else {
+    for (const db of diff.removed) {
+      const why = untouchable(db);
+      if (why) manual.push({ kind: "removed", db, reason: why });
+      else actions.push({ kind: "delete", id: db.id, db });
+    }
+  }
+
+  return { actions, manual };
+}
+
+/** One line per applied action, for the job summary / email. */
+export function describeAction(a) {
+  const when = (r) => `${r.game_date} ${shortTime(r.game_time)} vs ${r.opponent}`;
+  if (a.kind === "update") return `Updated ${when(a.db)}: ${a.changes.map(describeChange).join(", ")} (RSVPs kept)`;
+  if (a.kind === "move") return `Moved ${when(a.db)} → ${a.insert.game_date} ${shortTime(a.insert.game_time)} (RSVPs cleared)`;
+  if (a.kind === "insert") return `Added ${when(a.insert)} @ ${a.insert.location ?? "?"}`;
+  if (a.kind === "delete") return `Deleted ${when(a.db)} — gone from LZV's feed, postponed? (RSVPs removed)`;
+  return JSON.stringify(a);
+}
+
+/** Rebuild a diff from what `planAutoFix` left for a human, so `driftSql`/`formatDriftReport` can show it. */
+export function manualDiff(manual) {
+  return {
+    changed: manual.filter((m) => m.kind === "changed").map((m) => m.item),
+    added: [],
+    removed: manual.filter((m) => m.kind === "removed").map((m) => m.db),
+  };
 }

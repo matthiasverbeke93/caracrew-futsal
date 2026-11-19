@@ -73,14 +73,15 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   `opponent_strength`, `player_claims`. Every `games` / `opponent_strength` row carries a `season_slug`.
   Migrations live in `supabase/*.sql` and are idempotent/safe to re-run.
 - **GitHub Actions:** `sync-lzv.yml` (weekly final scores from lzvcup.be), `sync-palmares.yml` (daily opponent
-  strength + current standings, which feed the stats-page league table), `weekly-digest.yml` (Friday RSVP/MOTM digest email via Resend), `sync-ics.yml` (daily: regenerate
-  the `.ics` feeds **from `games`**, then diff LZV's live feed against `games` and fail on drift). Driven by repo
+  strength + current standings, which feed the stats-page league table), `weekly-digest.yml` (Friday RSVP/MOTM digest email via Resend), `sync-ics.yml` (daily: diff LZV's live feed against `games` and **fix the safe drift itself**, then regenerate
+  the `.ics` feeds **from `games`**, then fail on purpose if anything changed — the email is the notification). Driven by repo
   vars `LZV_SEASON_SLUG` / `LZV_TEAM_URL` / `LZV_OUR_TEAM_ID` and secrets (`RESEND_API_KEY`, etc.).
 - 🔴 **Which job knows what about the calendar.** Nothing writes a fixture change automatically, and the jobs do
   not overlap the way the names suggest: `sync-lzv` reads **results only** (so it is silent about a fixture not
   yet played), `sync-ics` renders `games` into `.ics` and **never contacts LZV**, and `calendar:import` is a
   manual local script that prints SQL. The only thing that notices a *reschedule* is the drift check
-  (`scripts/check-lzv-drift.mjs`), and it deliberately only reports — see the 2026-09-04 log entry.
+  (`scripts/check-lzv-drift.mjs`). Since 2026-11-19 it applies the safe fixes itself in CI (`--apply`) — see
+  that log entry; locally without `--apply` it still only reports.
 
 ## Domain rules that shape the code
 - **Seasons:** multi-season via `season_slug` (`2526` = 25-26, `2627` = 26-27). `SeasonSwitcher` is a single
@@ -409,6 +410,25 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-11-19** — *Drift check now fixes the calendar itself; tonight's postponed game deleted.*
+  - **Trigger:** the 19 Nov 14:38 UTC Sync calendar feeds run failed: LZV dropped tonight's home game vs Wille ma ni
+    kunne (21:00) from the feed — postponed, no new date yet. Owner chose to delete it: removed by hand via the
+    Supabase MCP with its 15 RSVPs (no stats/guests); re-run green.
+  - **Owner decisions (2026-11-19):** the daily job fixes drift by itself and notifies by the GitHub failed-run email.
+    Same date, new time/hall/name → update in place, **RSVPs kept**. **New date → RSVPs cleared** (feed row
+    inserted under its own id, old row deleted; cascades attendance/guests/MOTM). New fixture → inserted. A
+    fixture gone from the feed → **deleted automatically** (postponed; the new date later arrives as an insert).
+  - **Guards (left for a human, SQL in the job summary):** never moves/deletes a game with a score, `player_stats`
+    or `motm_votes` (all FKs to `games` cascade), never one before today (Brussels), and deletes nothing when
+    **more than one** fixture vanishes in one run (withdrawn club / broken feed). Ambiguous matches stay manual.
+  - **Code:** `planAutoFix` / `describeAction` / `manualDiff` in `src/utils/calendarDrift.js` (+6 tests);
+    `--apply` in `scripts/check-lzv-drift.mjs` writes via PostgREST with `SUPABASE_SERVICE_ROLE_KEY` (plain
+    `fetch`, no `npm ci` in this job), every write idempotent (upsert / by-id patch / by-id delete; a move inserts
+    before it deletes). `sync-ics.yml`: drift step now runs **first** (`continue-on-error`) so the same run's
+    feeds carry the fix; a last `Notify on fixture changes` step fails the job when `applied != 0` or something
+    was left for a human. Without `--apply` the script behaves as before.
+  - **Verified:** mock PostgREST + doctored feed exercised update, move, insert and delete (exact requests
+    checked); live CI rehearsal described in the commit/next entry.
 - **2026-11-06 (b)** — *Teammates fill in each other's goals; on-time scores count own saves only; old guest table dropped.*
   - **Why:** a usage review of 26-27 found goals regularly short of the score (ZVC Tigers: 2 of 4) and the
     stragglers' stats entered by an admin after the 2-day lock. The owner chose to let teammates fill gaps,

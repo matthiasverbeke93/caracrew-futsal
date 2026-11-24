@@ -91,9 +91,9 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   keeper of teammates who were In with them (not *Played*; `utils/statsAccess.js`); any signed-in user votes
   MOTM once/game; **admin** sets scores, manages guests/roster, and overrides anyone.
 - **Editing windows:** attendance is editable only for the **next 3 not-yet-finished fixtures** (a match leaves
-  the window at estimated full-time, kickoff + 2h — `hasFinished` — so the next one opens that minute, not at midnight); stats lock **2 days**
+  the window at estimated full-time, kickoff + 1h — `hasFinished` — so the next one opens that minute, not at midnight); stats lock **2 days**
   after a game (`STATS_FREEZE_DAYS`, cut from 5 on 2026-08-31) **for players — admins are exempt**
-  (`isStatsEditable(game, { isAdmin })`); MOTM voting runs from estimated full-time (kickoff + 2h) to **5 days**
+  (`isStatsEditable(game, { isAdmin })`); MOTM voting runs from estimated full-time (kickoff + 1h, was 2h until 2026-11-24) to **5 days**
   later (`MOTM_VOTING_DAYS`, set on 2026-08-20 when it was 24h). Because a MotM win is only counted once voting
   closes, the winner surfaces 5 days after the match.
 - **Roster thresholds:** ≤5 playing = "not enough", 6 = "just enough", ≥7 = "right amount"
@@ -411,6 +411,10 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-11-24 (later)** — *Full-time is now kickoff + 1h (owner).* One constant, `FULL_TIME_AFTER_KICKOFF_MS` in
+  `utils/motm.js`, drives both MOTM voting opening and the RSVP window moving on (`hasFinished`). `hasKickedOff` now
+  reads the kickoff directly via the new `getKickoff` instead of subtracting 2h from the MOTM start. Guide and
+  Stats tab help text say "1 hour after kickoff". Tests updated; lint, tests, build green.
 - **2026-11-24** — *RSVP window frees tonight's slot at full-time, not midnight.*
   - **Trigger:** owner saw only 2 of the next 3 games open for RSVP. Cause: `nextUpcomingGamesByCalendar` filtered
     on `isPlayed` (day-granular), so after an evening match (23 Nov, Jan Breydel) that game kept one of the 3

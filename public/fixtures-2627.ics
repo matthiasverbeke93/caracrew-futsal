@@ -129,17 +129,17 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-11-23-2100-jan-breydel@caracrew.org
-DTSTAMP:20261123T162233Z
-SEQUENCE:12
-LAST-MODIFIED:20261123T162233Z
+DTSTAMP:20261124T161303Z
+SEQUENCE:13
+LAST-MODIFIED:20261124T161303Z
 DTSTART;TZID=Europe/Brussels:20261123T210000
 DTEND;TZID=Europe/Brussels:20261123T220000
 SUMMARY:Jan Breydel vs K. Caracrew SK
 LOCATION:Heiveld St-Katelijne-Waver
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Jan Breydel\nVenue: Heiv
  eld St-Katelijne-Waver\nOpponent form: Medium — position 6\, 1.50 pts/ma
- tch\n\nMatch page: https://caracrew.org/?game=2627-2026-11-23-2100-jan-bre
- ydel&season=2627
+ tch\nResult: 4–2 (W\, K. Caracrew SK first)\n\nMatch page: https://carac
+ rew.org/?game=2627-2026-11-23-2100-jan-breydel&season=2627
 URL:https://caracrew.org/?game=2627-2026-11-23-2100-jan-breydel&season=2627
 CATEGORIES:K. Caracrew SK,Futsal
 STATUS:CONFIRMED

@@ -171,7 +171,7 @@ export default function GuideModal({ onClose }) {
               from the GK badge.
             </p>
             <p>
-              <strong>MotM voting</strong> opens about 2 hours after kickoff — roughly the final
+              <strong>MotM voting</strong> opens about 1 hour after kickoff — roughly the final
               whistle — and runs for{" "}
               <strong>
                 {MOTM_VOTING_DAYS} day{MOTM_VOTING_DAYS === 1 ? "" : "s"}
@@ -214,7 +214,7 @@ export default function GuideModal({ onClose }) {
                   </tr>
                   <tr>
                     <th scope="row">Man of the Match</th>
-                    <td>2 hours after kickoff</td>
+                    <td>1 hour after kickoff</td>
                     <td>{MOTM_VOTING_DAYS} days later</td>
                   </tr>
                 </tbody>

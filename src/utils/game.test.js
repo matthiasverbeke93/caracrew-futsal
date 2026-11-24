@@ -117,9 +117,9 @@ describe("RSVP window frees tonight's slot at full-time, not midnight", () => {
     { id: "g4", game_date: "2027-01-05", game_time: "19:00:00" },
   ];
   const all = [tonight, ...later];
-  // Brussels is UTC+1 in late November: 21:00 kickoff = 20:00Z, full-time 23:00 = 22:00Z.
-  const duringMatch = Date.UTC(2026, 10, 23, 21, 30);
-  const justAfterFullTime = Date.UTC(2026, 10, 23, 22, 1);
+  // Brussels is UTC+1 in late November: 21:00 kickoff = 20:00Z, full-time 22:00 = 21:00Z.
+  const duringMatch = Date.UTC(2026, 10, 23, 20, 30);
+  const justAfterFullTime = Date.UTC(2026, 10, 23, 21, 1);
 
   it("tonight's match holds its slot until full-time", () => {
     expect(nextUpcomingGamesByCalendar(all, 3, duringMatch).map((g) => g.id)).toEqual(["tonight", "g2", "g3"]);

@@ -45,11 +45,22 @@ function parseGameStart(game) {
   return Number.isNaN(start.getTime()) ? null : start;
 }
 
-/** Estimated full-time (kickoff + 2h). */
+/**
+ * How long after kickoff a match counts as finished (owner, 2026-11-24: 1h, was 2h).
+ * Drives MOTM voting opening and the RSVP window moving on to the next fixture.
+ */
+export const FULL_TIME_AFTER_KICKOFF_MS = 60 * 60 * 1000;
+
+/** Kickoff instant (Brussels wall-clock; 21:00 when `game_time` is missing), or null. */
+export function getKickoff(game) {
+  return game ? parseGameStart(game) : null;
+}
+
+/** Estimated full-time (kickoff + FULL_TIME_AFTER_KICKOFF_MS). */
 export function getMotmVotingStart(game) {
   const start = parseGameStart(game);
   if (!start) return null;
-  return new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  return new Date(start.getTime() + FULL_TIME_AFTER_KICKOFF_MS);
 }
 
 /** Voting stays open this many days after estimated full-time. */
@@ -63,12 +74,12 @@ export function getMotmVotingEnd(game) {
 }
 
 /**
- * Voting runs from estimated full-time (kickoff + 2h) to MOTM_VOTING_DAYS days later.
+ * Voting runs from estimated full-time (kickoff + 1h) to MOTM_VOTING_DAYS days later.
  *
  * Deliberately NOT gated on `isPlayed()`. That helper is day-granular
  * (`game_date < today`), so it stayed false until midnight and swallowed the
- * start of every window: a 21:00 kickoff should open at 23:00 but stayed shut
- * for the last hour of match day, and the 26-27 calendar has 18:00-20:00 away
+ * start of every window: a 21:00 kickoff should open at 22:00 but stayed shut
+ * for the rest of match day, and the 26-27 calendar has 18:00-20:00 away
  * kickoffs that would have lost 2-4 hours each — the hours right after the
  * final whistle, when people actually vote. The `nowMs >= openAt` test already
  * implies the game has kicked off, so the extra gate only ever subtracted time.

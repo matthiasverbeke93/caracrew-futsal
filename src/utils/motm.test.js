@@ -12,31 +12,31 @@ import {
 describe("kickoff is Brussels wall-clock, whatever the runtime's time zone", () => {
   const iso = (d) => d.toISOString();
 
-  it("summer (CEST, UTC+2): 21:00 kickoff opens at 21:00Z", () => {
+  it("summer (CEST, UTC+2): 21:00 kickoff opens at 20:00Z", () => {
     const game = { game_date: "2026-09-06", game_time: "21:00:00" };
-    expect(iso(getMotmVotingStart(game))).toBe("2026-09-06T21:00:00.000Z");
-    expect(iso(getMotmVotingEnd(game))).toBe("2026-09-11T21:00:00.000Z");
+    expect(iso(getMotmVotingStart(game))).toBe("2026-09-06T20:00:00.000Z");
+    expect(iso(getMotmVotingEnd(game))).toBe("2026-09-11T20:00:00.000Z");
   });
 
-  it("winter (CET, UTC+1): 21:00 kickoff opens at 22:00Z", () => {
+  it("winter (CET, UTC+1): 21:00 kickoff opens at 21:00Z", () => {
     const game = { game_date: "2026-12-06", game_time: "21:00" };
-    expect(iso(getMotmVotingStart(game))).toBe("2026-12-06T22:00:00.000Z");
+    expect(iso(getMotmVotingStart(game))).toBe("2026-12-06T21:00:00.000Z");
   });
 
   it("the spring-forward day itself resolves to the post-change offset", () => {
     const game = { game_date: "2027-03-28", game_time: "21:00" };
-    expect(iso(getMotmVotingStart(game))).toBe("2027-03-28T21:00:00.000Z");
+    expect(iso(getMotmVotingStart(game))).toBe("2027-03-28T20:00:00.000Z");
   });
 
   it("a Sunday 14:00 kickoff is closed by the Friday 16:00 UTC digest run", () => {
     const game = { id: "g", game_date: "2026-09-20", game_time: "14:00", season_slug: "2627" };
-    // Opens 16:00 Brussels (14:00Z) Sunday, closes Friday 14:00Z.
-    expect(isMotmVotingOpen(game, Date.parse("2026-09-25T13:59:00Z"))).toBe(true);
+    // Opens 15:00 Brussels (13:00Z) Sunday, closes Friday 13:00Z.
+    expect(isMotmVotingOpen(game, Date.parse("2026-09-25T12:59:00Z"))).toBe(true);
     expect(isMotmVotingOpen(game, Date.parse("2026-09-25T16:00:00Z"))).toBe(false);
   });
 
   it("falls back to 21:00 without a kickoff time, and to null without a date", () => {
-    expect(iso(getMotmVotingStart({ game_date: "2026-09-06" }))).toBe("2026-09-06T21:00:00.000Z");
+    expect(iso(getMotmVotingStart({ game_date: "2026-09-06" }))).toBe("2026-09-06T20:00:00.000Z");
     expect(getMotmVotingStart({ game_date: null })).toBeNull();
   });
 });
@@ -111,21 +111,21 @@ describe("isMotmVotingOpen", () => {
     const today = isoOffset(0);
     const at = (hhmm) => new Date(`${today}T${hhmm}:00`).getTime();
 
-    it("21:00 home kickoff is open from 23:00 the same evening", () => {
+    it("21:00 home kickoff is open from 22:00 the same evening", () => {
       const game = { id: "g", game_date: today, game_time: "21:00", season_slug: "2627" };
       expect(isMotmVotingOpen(game, at("23:30"))).toBe(true);
     });
 
-    it("18:00 away kickoff is open from 20:00 the same evening", () => {
+    it("18:00 away kickoff is open from 19:00 the same evening", () => {
       // The 26-27 calendar has 18:00/19:00/19:30/20:00 away kickoffs — this one
       // used to lose four hours of its window.
       const game = { id: "g", game_date: today, game_time: "18:00", season_slug: "2627" };
-      expect(isMotmVotingOpen(game, at("20:30"))).toBe(true);
+      expect(isMotmVotingOpen(game, at("19:30"))).toBe(true);
     });
 
     it("stays shut before estimated full-time", () => {
       const game = { id: "g", game_date: today, game_time: "21:00", season_slug: "2627" };
-      expect(isMotmVotingOpen(game, at("22:00"))).toBe(false);
+      expect(isMotmVotingOpen(game, at("21:30"))).toBe(false);
       expect(isMotmVotingOpen(game, at("20:00"))).toBe(false);
     });
   });

@@ -1,6 +1,6 @@
 import { GAME_FULL_PLAYERS } from "../constants.js";
 import { isSeasonAttendanceLocked } from "../seasons.js";
-import { getMotmVotingStart } from "./motm.js";
+import { getKickoff, getMotmVotingStart } from "./motm.js";
 
 /**
  * Days after a match in which players can still enter their own goals/assists.
@@ -16,18 +16,16 @@ function localToday(nowMs = Date.now()) {
   return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
-const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
-
 /**
  * Has the match kicked off? Clock-based, unlike `isPlayed()` which is day-granular
  * (`game_date < today`) and so stays false until midnight after an evening kickoff.
- * Derived from the MOTM window (which opens at kickoff + 2h) so both read the same
- * kickoff time, including its 21:00 default when `game_time` is missing.
+ * Uses the same kickoff parsing as the MOTM window, including its 21:00 default
+ * when `game_time` is missing.
  */
 export function hasKickedOff(game, nowMs = Date.now()) {
-  const votingStart = game ? getMotmVotingStart(game) : null;
-  if (!votingStart) return false;
-  return nowMs >= votingStart.getTime() - TWO_HOURS_MS;
+  const kickoff = getKickoff(game);
+  if (!kickoff) return false;
+  return nowMs >= kickoff.getTime();
 }
 
 export function isPlayed(game) {
@@ -43,7 +41,7 @@ function compareByKickoff(a, b) {
 }
 
 /**
- * Has the match finished? Clock-based: estimated full-time (kickoff + 2h, the same
+ * Has the match finished? Clock-based: estimated full-time (kickoff + 1h, the same
  * instant MOTM voting opens). Unlike `isPlayed()`, this turns true on match night,
  * not at midnight. Undated games never count as finished.
  */

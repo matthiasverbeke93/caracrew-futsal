@@ -225,7 +225,7 @@ export default function StatsTab({
           )}
           {votingPending && !motmSeasonLocked && (
             <p className="motm-hint">
-              MOTM voting opens about 2 hours after kickoff, then stays open for
+              MOTM voting opens about 1 hour after kickoff, then stays open for
               {MOTM_VOTING_DAYS} days.
             </p>
           )}

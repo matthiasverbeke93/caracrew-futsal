@@ -12,6 +12,7 @@ import {
   nextUpcomingGamesByCalendar,
 } from "../utils/game";
 import { cleanOpponentName } from "../utils/opponent";
+import { useNow } from "../hooks/useMatchClock";
 import { fixtureDateBlock } from "../utils/formatMatch";
 
 export default function MyNextGamesTiles({
@@ -23,9 +24,10 @@ export default function MyNextGamesTiles({
   onJumpToGame,
   onMarkAttendance,
 }) {
+  const now = useNow(60_000);
   const upcoming = useMemo(
-    () => nextUpcomingGamesByCalendar(games, 3),
-    [games]
+    () => nextUpcomingGamesByCalendar(games, 3, now),
+    [games, now]
   );
 
   const statusByGameId = useMemo(() => {

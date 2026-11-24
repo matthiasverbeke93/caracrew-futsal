@@ -7,6 +7,7 @@ import {
   isRsvpAllowedWhenFull,
 } from "../utils/game";
 import { isSeasonAttendanceLocked } from "../seasons";
+import { useNow } from "../hooks/useMatchClock";
 import { groupPlayersByAttendance, hasAnyAttendanceVote } from "../utils/attendanceGroups";
 
 export default function AttendanceTab({
@@ -28,13 +29,15 @@ export default function AttendanceTab({
   isSignedIn,
   onRequestSignIn,
 }) {
+  // Re-render each minute so RSVP opens at the previous match's full-time without a reload.
+  const now = useNow(60_000);
   const lockedBecausePreview = isSeasonAttendanceLocked(selectedGame?.season_slug);
   const lockedBecausePlayed =
     !lockedBecausePreview && !isAttendanceEditableByCalendar(selectedGame);
   const lockedBecauseOutsideWindow =
     !lockedBecausePreview &&
     !lockedBecausePlayed &&
-    !isAttendanceInUpcomingWindow(selectedGame, allGames, 3);
+    !isAttendanceInUpcomingWindow(selectedGame, allGames, 3, now);
   const attendanceOpen = isAttendanceEditable(selectedGame, allGames);
   // Enough players already: the fixture is full and RSVP closes, except for an In
   // player dropping out (which frees the spot and reopens the match).

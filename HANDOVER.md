@@ -90,7 +90,8 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
 - **Roles:** anyone reads; a signed-in *linked* player edits their own attendance/stats, and goals/assists/
   keeper of teammates who were In with them (not *Played*; `utils/statsAccess.js`); any signed-in user votes
   MOTM once/game; **admin** sets scores, manages guests/roster, and overrides anyone.
-- **Editing windows:** attendance is editable only for the **next 3 upcoming fixtures**; stats lock **2 days**
+- **Editing windows:** attendance is editable only for the **next 3 not-yet-finished fixtures** (a match leaves
+  the window at estimated full-time, kickoff + 2h — `hasFinished` — so the next one opens that minute, not at midnight); stats lock **2 days**
   after a game (`STATS_FREEZE_DAYS`, cut from 5 on 2026-08-31) **for players — admins are exempt**
   (`isStatsEditable(game, { isAdmin })`); MOTM voting runs from estimated full-time (kickoff + 2h) to **5 days**
   later (`MOTM_VOTING_DAYS`, set on 2026-08-20 when it was 24h). Because a MotM win is only counted once voting
@@ -410,6 +411,16 @@ Fixtures / More / Stats tabs. Use it for any layout work; it also prints `scroll
   guests into more of the season metrics/tables.
 
 ## Session log
+- **2026-11-24** — *RSVP window frees tonight's slot at full-time, not midnight.*
+  - **Trigger:** owner saw only 2 of the next 3 games open for RSVP. Cause: `nextUpcomingGamesByCalendar` filtered
+    on `isPlayed` (day-granular), so after an evening match (23 Nov, Jan Breydel) that game kept one of the 3
+    slots — locked, since it had kicked off — until midnight. Owner rule: the 3rd game opens the minute the match
+    of that day ends.
+  - New `hasFinished(game, nowMs)` in `utils/game.js` = now ≥ estimated full-time (kickoff + 2h, same instant as
+    MOTM voting). `nextUpcomingGamesByCalendar` / `isAttendanceInUpcomingWindow` use it and take `nowMs`. The
+    weekly digest uses the same function, so it follows too. `App`, `MyNextGamesTiles` and `AttendanceTab` tick a
+    `useNow(60_000)` clock so the window moves without a reload. Between kickoff and full-time tonight's match
+    still holds its (locked) slot. Tests added; gates green (lint, tests, build).
 - **2026-11-19** — *Drift check now fixes the calendar itself; tonight's postponed game deleted.*
   - **Trigger:** the 19 Nov 14:38 UTC Sync calendar feeds run failed: LZV dropped tonight's home game vs Wille ma ni
     kunne (21:00) from the feed — postponed, no new date yet. Owner chose to delete it: removed by hand via the

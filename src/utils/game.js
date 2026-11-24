@@ -43,13 +43,26 @@ function compareByKickoff(a, b) {
 }
 
 /**
- * Next upcoming fixtures in strict calendar order (date, then time).
- * Does not depend on attendance / RSVP — only not-yet-played by date.
+ * Has the match finished? Clock-based: estimated full-time (kickoff + 2h, the same
+ * instant MOTM voting opens). Unlike `isPlayed()`, this turns true on match night,
+ * not at midnight. Undated games never count as finished.
  */
-export function nextUpcomingGamesByCalendar(allGames, limit = 3) {
+export function hasFinished(game, nowMs = Date.now()) {
+  const fullTime = game ? getMotmVotingStart(game) : null;
+  if (!fullTime) return false;
+  return nowMs >= fullTime.getTime();
+}
+
+/**
+ * Next upcoming fixtures in strict calendar order (date, then time).
+ * Does not depend on attendance / RSVP — only not-yet-finished by the clock, so
+ * tonight's match frees its slot at full-time and the next fixture's RSVP opens
+ * right away, instead of the window staying one short until midnight.
+ */
+export function nextUpcomingGamesByCalendar(allGames, limit = 3, nowMs = Date.now()) {
   if (!allGames?.length) return [];
   return [...allGames]
-    .filter((g) => !isPlayed(g))
+    .filter((g) => !hasFinished(g, nowMs))
     .sort(compareByKickoff)
     .slice(0, limit);
 }
@@ -103,9 +116,9 @@ export function isAttendanceEditableByCalendar(game, nowMs = Date.now()) {
 }
 
 /** Only the next fixtures are open for RSVP; later future games stay visible but locked. */
-export function isAttendanceInUpcomingWindow(game, allGames, limit = 3) {
+export function isAttendanceInUpcomingWindow(game, allGames, limit = 3, nowMs = Date.now()) {
   if (!game?.id || !allGames?.length) return false;
-  return nextUpcomingGamesByCalendar(allGames, limit).some((g) => g.id === game.id);
+  return nextUpcomingGamesByCalendar(allGames, limit, nowMs).some((g) => g.id === game.id);
 }
 
 /** Attendance locks to the next 3 upcoming games. Preview seasons are read-only. */

@@ -27,6 +27,7 @@ import { useAuthSession } from "./hooks/useAuthSession";
 import { useFutsalData } from "./hooks/useFutsalData";
 import { usePendingClaimsCount } from "./hooks/usePendingClaimsCount";
 import { nextUpcomingGamesByCalendar } from "./utils/game";
+import { useNow } from "./hooks/useMatchClock";
 import { getGoalkeeperSummary } from "./utils/goalkeeper";
 import { statsEditScope } from "./utils/statsAccess";
 import {
@@ -291,9 +292,11 @@ export default function App() {
     return players.find((p) => p.id === myClaim.player_id)?.name || myClaim.player_id;
   }, [myClaim, players]);
 
+  // Ticks each minute so tonight's match leaves the RSVP window at full-time by itself.
+  const now = useNow(60_000);
   const nextAttendanceGames = useMemo(
-    () => nextUpcomingGamesByCalendar(games, 3),
-    [games]
+    () => nextUpcomingGamesByCalendar(games, 3, now),
+    [games, now]
   );
 
   const promotedNextGameIds = useMemo(() => {

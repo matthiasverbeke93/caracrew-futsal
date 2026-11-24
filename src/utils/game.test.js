@@ -109,6 +109,29 @@ describe("match day turns on kickoff, not the calendar day", () => {
   });
 });
 
+describe("RSVP window frees tonight's slot at full-time, not midnight", () => {
+  const tonight = { id: "tonight", game_date: "2026-11-23", game_time: "21:00:00" };
+  const later = [
+    { id: "g2", game_date: "2026-12-03", game_time: "21:00:00" },
+    { id: "g3", game_date: "2026-12-12", game_time: "18:00:00" },
+    { id: "g4", game_date: "2027-01-05", game_time: "19:00:00" },
+  ];
+  const all = [tonight, ...later];
+  // Brussels is UTC+1 in late November: 21:00 kickoff = 20:00Z, full-time 23:00 = 22:00Z.
+  const duringMatch = Date.UTC(2026, 10, 23, 21, 30);
+  const justAfterFullTime = Date.UTC(2026, 10, 23, 22, 1);
+
+  it("tonight's match holds its slot until full-time", () => {
+    expect(nextUpcomingGamesByCalendar(all, 3, duringMatch).map((g) => g.id)).toEqual(["tonight", "g2", "g3"]);
+    expect(isAttendanceInUpcomingWindow(later[2], all, 3, duringMatch)).toBe(false);
+  });
+
+  it("the 3rd next fixture opens the minute tonight's match ends", () => {
+    expect(nextUpcomingGamesByCalendar(all, 3, justAfterFullTime).map((g) => g.id)).toEqual(["g2", "g3", "g4"]);
+    expect(isAttendanceInUpcomingWindow(later[2], all, 3, justAfterFullTime)).toBe(true);
+  });
+});
+
 describe("parseFinalScore", () => {
   it("accepts two whole numbers, including 0", () => {
     expect(parseFinalScore("5", "2")).toEqual({ kind: "score", home: 5, away: 2 });

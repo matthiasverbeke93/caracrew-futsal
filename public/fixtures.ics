@@ -59,15 +59,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2026-10-08-2100-oranje-duivels@caracrew.org
-DTSTAMP:20261109T141401Z
-SEQUENCE:7
-LAST-MODIFIED:20261109T141401Z
+DTSTAMP:20261128T142724Z
+SEQUENCE:8
+LAST-MODIFIED:20261128T142724Z
 DTSTART;TZID=Europe/Brussels:20261008T210000
 DTEND;TZID=Europe/Brussels:20261008T220000
 SUMMARY:K. Caracrew SK vs Oranje Duivels
 LOCATION:Winketkaai Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nHome vs Oranje Duivels\nVenue: W
- inketkaai Mechelen\nOpponent form: Very hard — position 2\, 2.60 pts/mat
+ inketkaai Mechelen\nOpponent form: Very hard — position 2\, 2.30 pts/mat
  ch\nResult: 3–8 (L\, K. Caracrew SK first)\n\nMatch page: https://caracr
  ew.org/?game=2627-2026-10-08-2100-oranje-duivels&season=2627
 URL:https://caracrew.org/?game=2627-2026-10-08-2100-oranje-duivels&season=2
@@ -182,15 +182,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-01-05-1900-oranje-duivels@caracrew.org
-DTSTAMP:20261109T141401Z
-SEQUENCE:6
-LAST-MODIFIED:20261109T141401Z
+DTSTAMP:20261128T142724Z
+SEQUENCE:7
+LAST-MODIFIED:20261128T142724Z
 DTSTART;TZID=Europe/Brussels:20270105T190000
 DTEND;TZID=Europe/Brussels:20270105T200000
 SUMMARY:Oranje Duivels vs K. Caracrew SK
 LOCATION:Kouter Leest
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at Oranje Duivels\nVenue: K
- outer Leest\nOpponent form: Very hard — position 2\, 2.60 pts/match\n\nM
+ outer Leest\nOpponent form: Very hard — position 2\, 2.30 pts/match\n\nM
  atch page: https://caracrew.org/?game=2627-2027-01-05-1900-oranje-duivels&
  season=2627
 URL:https://caracrew.org/?game=2627-2027-01-05-1900-oranje-duivels&season=2
@@ -393,15 +393,15 @@ STATUS:CONFIRMED
 END:VEVENT
 BEGIN:VEVENT
 UID:2627-2027-05-09-2000-04united@caracrew.org
-DTSTAMP:20261118T142830Z
-SEQUENCE:11
-LAST-MODIFIED:20261118T142830Z
+DTSTAMP:20261128T142724Z
+SEQUENCE:12
+LAST-MODIFIED:20261128T142724Z
 DTSTART;TZID=Europe/Brussels:20270509T200000
 DTEND;TZID=Europe/Brussels:20270509T210000
 SUMMARY:04United vs K. Caracrew SK
 LOCATION:IHAM Mechelen
 DESCRIPTION:Competition: LZV Cup · 26-27\nAway at 04United\nVenue: IHAM Me
- chelen\nOpponent form: Medium — position 7\, 1.00 pts/match\n\nMatch pag
+ chelen\nOpponent form: Medium — position 7\, 1.20 pts/match\n\nMatch pag
  e: https://caracrew.org/?game=2627-2027-05-09-2000-04united&season=2627
 URL:https://caracrew.org/?game=2627-2027-05-09-2000-04united&season=2627
 CATEGORIES:K. Caracrew SK,Futsal
